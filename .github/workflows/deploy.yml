@@ -1,0 +1,20 @@
+name: Deploy (VPS)
+
+# Manual, gated deployment to a Linux VPS running docker compose.
+# Required repository secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY. The server holds its own .env (never in git).
+on:
+  workflow_dispatch:
+    inputs:
+      sha: { description: "Image tag (commit SHA) to deploy", required: true }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with: { ssh-private-key: "${{ secrets.DEPLOY_SSH_KEY }}" }
+      - name: Pull and restart
+        run: |
+          ssh -o StrictHostKeyChecking=accept-new ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "cd /opt/vendocas && ./scripts/backup.sh && IMAGE_TAG=${{ inputs.sha }} docker compose --profile app pull && IMAGE_TAG=${{ inputs.sha }} docker compose --profile app up -d && docker compose ps"

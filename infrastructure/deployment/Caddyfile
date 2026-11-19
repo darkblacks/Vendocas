@@ -1,0 +1,21 @@
+# Automatic HTTPS (Let's Encrypt). The web app proxies /api/v1/* to the API (same-origin cookies);
+# the API host is exposed separately for provider webhooks, the tracking SDK and server-to-server API keys.
+{$APP_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	reverse_proxy web:3000
+}
+
+{$API_DOMAIN} {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	# Actuator is never public (Prometheus scrapes it on the internal network).
+	@actuator path /actuator/*
+	handle @actuator {
+		respond /actuator/health/* 200
+		respond 404
+	}
+	reverse_proxy api:8080 {
+		header_up X-Forwarded-For {remote_host}
+	}
+}

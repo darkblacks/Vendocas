@@ -1,0 +1,9 @@
+# Production profile: real email delivery is mandatory (MailerConfig refuses MAIL_MODE=log with this profile).
+app:
+  mail:
+    mode: ses
+  security:
+    secure-cookies: true
+logging:
+  level:
+    root: INFO
