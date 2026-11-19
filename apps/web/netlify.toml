@@ -1,0 +1,16 @@
+# Netlify project: "Vendocas Web" (public app) — base directory apps/web (monorepo).
+# NOT deployed yet. See docs/netlify-web-setup.md. Independent from the Control Center site (separate project, domain,
+# cookies and variables). The browser only talks to this origin; /api/v1/* is proxied server-side to API_INTERNAL_URL.
+[build]
+  base = "apps/web"
+  command = "cd ../.. && pnpm install --frozen-lockfile && pnpm --filter @vendocas/tracking-sdk build && pnpm --filter @vendocas/web build"
+  publish = ".next"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../../packages/design-system ../../packages/api-client ../../packages/tracking-sdk ../../pnpm-lock.yaml"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+  # API_INTERNAL_URL is set per context in the Netlify UI (homologation = Codespace forwarded URL of port 8080).
+
+# The Next.js runtime (@netlify/plugin-nextjs v5) is applied automatically by Netlify for Next.js sites;
+# it is intentionally not pinned here so no extra package is required in this repository.

@@ -470,5 +470,11 @@
   },
   "legal": {
     "draftNotice": "Draft provided as a starting point. It must be reviewed by qualified counsel for each market before commercial launch."
+  },
+  "backend": {
+    "title": "Service temporarily unavailable.",
+    "body": "The server is offline (the test environment may be switched off). Your data is safe; pages will work again once it is back.",
+    "retryIn": "Checking again in {seconds}s",
+    "retry": "Try now"
   }
 }

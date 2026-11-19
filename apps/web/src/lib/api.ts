@@ -1,3 +1,5 @@
+import { backendStatus, isUnavailableResponse } from "./backend-status";
+
 /**
  * Browser API access. The access token lives only in memory; the refresh token is an httpOnly,
  * SameSite=Strict cookie scoped to /api/v1/auth (same origin thanks to the Next rewrite).
@@ -25,7 +27,11 @@ export const session = {
   savedOrg(): string | null { try { return localStorage.getItem("vd_org"); } catch { return null; } },
 };
 
+export const UNAVAILABLE = "BACKEND_UNAVAILABLE";
+const unavailable = () => new ApiError(503, UNAVAILABLE, "Service temporarily unavailable");
+
 export async function refreshAccessToken(): Promise<string | null> {
+  if (!backendStatus.get().up) return null;
   if (!refreshing) {
     refreshing = fetch("/api/v1/auth/refresh", { method: "POST", credentials: "include", headers: { "X-Requested-With": "XMLHttpRequest" } })
       .then(async (r) => (r.ok ? ((await r.json()) as { accessToken: string }).accessToken : null))
@@ -42,18 +48,31 @@ export async function api<T = unknown>(path: string, opts: Options = {}): Promis
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
   if (opts.tenant !== false && organizationId) headers["X-Organization-Id"] = organizationId;
   if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-  const res = await fetch(`/api/v1${path}`, {
-    method: opts.method ?? (opts.body !== undefined || opts.form ? "POST" : "GET"),
-    headers, credentials: "include",
-    body: opts.form ?? (opts.body !== undefined ? JSON.stringify(opts.body) : undefined),
-  });
+  // Fail fast while the API is known to be down (e.g. homologation Codespace switched off): no request loops.
+  if (!backendStatus.get().up) throw unavailable();
+  let res: Response;
+  try {
+    res = await fetch(`/api/v1${path}`, {
+      method: opts.method ?? (opts.body !== undefined || opts.form ? "POST" : "GET"),
+      headers, credentials: "include",
+      body: opts.form ?? (opts.body !== undefined ? JSON.stringify(opts.body) : undefined),
+    });
+  } catch {
+    backendStatus.markDown();
+    throw unavailable();
+  }
+  if (isUnavailableResponse(res)) {
+    backendStatus.markDown();
+    throw unavailable();
+  }
   if (res.status === 401 && opts.retry !== false && !path.startsWith("/auth/login")) {
     const t = await refreshAccessToken();
     if (t) return api<T>(path, { ...opts, retry: false });
   }
   if (res.status === 204 || res.status === 202 && res.headers.get("content-length") === "0") return undefined as T;
   const text = await res.text();
-  const data = text ? JSON.parse(text) : undefined;
+  let data: unknown;
+  try { data = text ? JSON.parse(text) : undefined; } catch { data = undefined; }
   if (!res.ok) {
     const d = (data ?? {}) as Record<string, unknown>;
     throw new ApiError(res.status, String(d.code ?? "ERROR"), String(d.detail ?? res.statusText), d);

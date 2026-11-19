@@ -12,7 +12,8 @@ const securityHeaders = [
 ];
 
 const config: NextConfig = {
-  output: "standalone",
+  // Docker image uses the standalone server; on Netlify the Next.js runtime packages the app itself.
+  output: process.env.NETLIFY ? undefined : "standalone",
   poweredByHeader: false,
   transpilePackages: ["@vendocas/design-system", "@vendocas/api-client"],
   // The API is served under the same origin (/api/v1/*) so the refresh cookie is first-party.

@@ -470,5 +470,11 @@
   },
   "legal": {
     "draftNotice": "Minuta fornecida como ponto de partida. Deve ser revisada por advogado qualificado em cada mercado antes do lançamento comercial."
+  },
+  "backend": {
+    "title": "Serviço temporariamente indisponível.",
+    "body": "O servidor está desligado (o ambiente de homologação pode estar parado). Seus dados estão preservados; as páginas voltam a funcionar quando ele estiver no ar.",
+    "retryIn": "Nova verificação em {seconds}s",
+    "retry": "Tentar agora"
   }
 }

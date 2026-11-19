@@ -470,5 +470,11 @@
   },
   "legal": {
     "draftNotice": "Borrador como punto de partida. Debe revisarlo un abogado cualificado en cada mercado antes del lanzamiento comercial."
+  },
+  "backend": {
+    "title": "Servicio temporalmente no disponible.",
+    "body": "El servidor está apagado (el entorno de pruebas puede estar detenido). Tus datos están a salvo; las páginas volverán a funcionar cuando esté disponible.",
+    "retryIn": "Nueva comprobación en {seconds}s",
+    "retry": "Intentar ahora"
   }
 }
