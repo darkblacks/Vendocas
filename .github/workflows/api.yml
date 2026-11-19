@@ -1,0 +1,73 @@
+name: API
+
+# Java 25 backend (apps/api): compile, tests (unit + Testcontainers), migration check, jar artifact, versioned image.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: API (Java 25, verify, package)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "25", cache: maven }
+      - name: Migrations are append-only and well named
+        run: |
+          cd apps/api/src/main/resources/db/migration
+          ls | grep -vE '^V[0-9]+__[a-z0-9_]+\.sql$' && { echo "::error::bad migration file name"; exit 1; } || true
+          test "$(ls | sed -E 's/^V([0-9]+)__.*/\1/' | sort -n | uniq -d)" = "" || { echo "::error::duplicate migration version"; exit 1; }
+          if [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+            changed=$(git diff --name-only --diff-filter=MD "${{ github.event.before }}" HEAD -- . || true)
+            test -z "$changed" || { echo "::error::applied migrations must not be edited/deleted: $changed"; exit 1; }
+          fi
+      - name: Compile and test (Flyway migrations run against a real Postgres via Testcontainers)
+        run: mvn -B verify
+        working-directory: apps/api
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: api-test-reports, path: "apps/api/target/*-reports/" }
+      - uses: actions/upload-artifact@v4
+        with: { name: api-jar-${{ github.sha }}, path: "apps/api/target/vendocas-api-*.jar", retention-days: 14 }
+
+  image:
+    name: Docker image (versioned by commit)
+    needs: build
+    runs-on: ubuntu-latest
+    permissions: { contents: read, packages: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}" }
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infrastructure/docker/api.Dockerfile
+          # Image registry push is an artifact, not a deployment. Nothing is started anywhere.
+          push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
+          tags: ghcr.io/${{ github.repository }}/api:${{ github.sha }}
+          labels: org.opencontainers.image.revision=${{ github.sha }}
+
+  # Prepared, NOT active. The homologation server is the GitHub Codespace, which pulls `main` itself on start
+  # (infrastructure/codespaces/start.sh). This job only exists for a future dedicated homologation host and is gated by
+  # ENABLE_API_HOMOLOG_DEPLOY=true + secrets HOMOLOG_HOST, HOMOLOG_USER, HOMOLOG_SSH_KEY.
+  deploy-homolog:
+    name: Deploy API to homologation (disabled by default)
+    needs: image
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && vars.ENABLE_API_HOMOLOG_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment: homologation
+    concurrency: { group: api-homolog, cancel-in-progress: false }
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with: { ssh-private-key: "${{ secrets.HOMOLOG_SSH_KEY }}" }
+      - run: |
+          ssh -o StrictHostKeyChecking=accept-new "${{ secrets.HOMOLOG_USER }}@${{ secrets.HOMOLOG_HOST }}" \
+            "cd /opt/vendocas && ./scripts/backup.sh && IMAGE_TAG=${GITHUB_SHA} docker compose --profile app pull api && IMAGE_TAG=${GITHUB_SHA} docker compose --profile app up -d api"

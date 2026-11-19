@@ -1,0 +1,52 @@
+name: Web
+
+# Public Vendocas frontend (apps/web). Called by ci.yml when apps/web or its packages change; can also be run manually.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Web (lint, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @vendocas/tracking-sdk build
+      - run: pnpm --filter @vendocas/web lint
+      - run: pnpm --filter @vendocas/web test
+      - run: pnpm --filter @vendocas/web build
+        env:
+          # Build must not need real API credentials; the API URL is only used for rewrites.
+          API_INTERNAL_URL: https://api.invalid
+      - name: Netlify configuration present
+        run: test -f apps/web/netlify.toml
+
+  # Prepared, NOT active. Enable only after the Netlify site exists and the owner authorizes it:
+  #   repository variable ENABLE_NETLIFY_WEB_DEPLOY=true, secrets NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID_WEB.
+  deploy-netlify:
+    name: Deploy web to Netlify (disabled by default)
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ENABLE_NETLIFY_WEB_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment: netlify-web
+    concurrency: { group: netlify-web, cancel-in-progress: false }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Build and deploy (production)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_WEB }}
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" && test -n "$NETLIFY_SITE_ID" || { echo "::error::Netlify secrets missing"; exit 1; }
+          pnpm dlx netlify-cli@17 deploy --build --prod --cwd apps/web --message "web ${GITHUB_SHA::7}"

@@ -1,0 +1,57 @@
+name: Control Center
+
+# Private Control Center (apps/control). Independent from the public web app and from the Java API.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Control (lint, test, build)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_DB: control_test, POSTGRES_USER: vendocas, POSTGRES_PASSWORD: vendocas }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U vendocas" --health-interval 5s --health-retries 10
+    env:
+      # Throwaway test database. Tests generate their own random master key; GitHub/providers are faked.
+      TEST_DATABASE_URL: postgres://vendocas:vendocas@localhost:5432/control_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @vendocas/control lint
+      - run: pnpm --filter @vendocas/control test
+      - run: pnpm --filter @vendocas/control build
+      - name: Netlify configuration present (incl. scheduled function)
+        run: grep -q 'codespace-scheduler' apps/control/netlify.toml
+
+  # Prepared, NOT active. Requires ENABLE_NETLIFY_CONTROL_DEPLOY=true plus NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID_CONTROL.
+  # The site's own runtime secrets (CONTROL_DATABASE_URL, CONTROL_MASTER_KEYS, …) live in Netlify, never here.
+  deploy-netlify:
+    name: Deploy Control Center to Netlify (disabled by default)
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ENABLE_NETLIFY_CONTROL_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    environment: netlify-control
+    concurrency: { group: netlify-control, cancel-in-progress: false }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Build and deploy (production)
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID_CONTROL }}
+        run: |
+          test -n "$NETLIFY_AUTH_TOKEN" && test -n "$NETLIFY_SITE_ID" || { echo "::error::Netlify secrets missing"; exit 1; }
+          pnpm dlx netlify-cli@17 deploy --build --prod --cwd apps/control --message "control ${GITHUB_SHA::7}"
