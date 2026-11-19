@@ -1,0 +1,38 @@
+// Vendocas homologation environment (GitHub Codespaces). NOT production.
+// Data lives in named Docker volumes + /workspaces/.vendocas (survive stop/start; see docs/codespaces-setup.md for rebuild/deletion).
+{
+  "name": "Vendocas (homologação)",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/java:1": { "version": "25", "jdkDistro": "tem", "installMaven": "true", "mavenVersion": "3.9.11" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "22", "pnpmVersion": "10.28.0" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": { "moby": true },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "hostRequirements": { "cpus": 4, "memory": "8gb", "storage": "32gb" },
+  "forwardPorts": [8080, 3000],
+  "portsAttributes": {
+    "8080": { "label": "Vendocas API", "onAutoForward": "silent" },
+    "3000": { "label": "Vendocas Web (opcional)", "onAutoForward": "silent" }
+  },
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
+  // Runs once when the container is created: tools check + dependency install. Never touches data.
+  "postCreateCommand": "bash infrastructure/codespaces/setup.sh",
+  // Runs on every start (also after a stop): safe update, build if needed, start API + workers, health checks.
+  "postStartCommand": "bash infrastructure/codespaces/start.sh",
+  "remoteEnv": {
+    "VENDOCAS_STATE_DIR": "/workspaces/.vendocas",
+    "DB_URL": "jdbc:postgresql://postgres:5432/vendocas",
+    "DB_USER": "vendocas",
+    "DB_PASSWORD": "vendocas",
+    "REDIS_HOST": "redis",
+    "SPRING_PROFILES_ACTIVE": "dev"
+  },
+  "customizations": {
+    "vscode": { "extensions": ["vscjava.vscode-java-pack", "vmware.vscode-spring-boot", "dbaeumer.vscode-eslint", "bradlc.vscode-tailwindcss"] },
+    "codespaces": { "openFiles": ["docs/codespaces-setup.md"] }
+  }
+}

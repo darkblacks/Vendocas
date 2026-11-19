@@ -1,0 +1,41 @@
+# Codespace services. Database and Redis data are in named volumes (never removed by the scripts in this repo).
+name: vendocas-homolog
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+    volumes:
+      - ../..:/workspaces:cached
+      - m2cache:/home/vscode/.m2
+    command: sleep infinity
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: vendocas
+      POSTGRES_USER: vendocas
+      # Local-only homologation credential, reachable only inside the codespace network (no published port).
+      POSTGRES_PASSWORD: vendocas
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vendocas -d vendocas"]
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "noeviction"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:
+  m2cache:
