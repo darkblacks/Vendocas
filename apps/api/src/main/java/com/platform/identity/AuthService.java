@@ -75,7 +75,7 @@ public class AuthService {
         u.setTimeZone(validZone(req.timeZone()));
         u.setCreatedAt(now());
         u.setUpdatedAt(now());
-        users.save(u);
+        users.saveAndFlush(u);
         emails.verifyEmail(email, u.getLocale(), createToken(u.getId(), "EMAIL_VERIFICATION", Duration.ofHours(48)));
         audit.record(null, u.getId(), "USER", "user.registered", "user", u.getId(), Map.of(), null);
     }

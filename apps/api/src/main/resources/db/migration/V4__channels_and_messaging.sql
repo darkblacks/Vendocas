@@ -156,6 +156,7 @@ CREATE TABLE messages (
     cost_reserved_minor bigint     NOT NULL DEFAULT 0,
     cost_charged_minor bigint      NOT NULL DEFAULT 0,
     cost_currency      varchar(3),
+    render_meta        jsonb       NOT NULL DEFAULT '{}'::jsonb,   -- rendered html, headers, WhatsApp template params
     queued_at          timestamptz,
     sent_at            timestamptz,
     delivered_at       timestamptz,

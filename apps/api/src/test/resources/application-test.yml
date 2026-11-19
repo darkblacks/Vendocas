@@ -1,0 +1,18 @@
+app:
+  mail:
+    mode: log
+  security:
+    jwt-secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtbm90LWZvci1wcm9kdWN0aW9uLXVzZS0xMjM0NTY=
+    credentials-encryption-key: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    secure-cookies: false
+  stripe:
+    webhook-secret: whsec_test_only_secret
+  meta:
+    app-secret: meta_test_app_secret
+    webhook-verify-token: verify-me
+  workers:
+    enabled: false   # tests drive workers explicitly for determinism
+spring:
+  data:
+    redis:
+      port: 6390     # nothing listens here: exercises the rate-limiter fallback

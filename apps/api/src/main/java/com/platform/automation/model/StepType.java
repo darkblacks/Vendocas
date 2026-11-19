@@ -1,0 +1,6 @@
+package com.platform.automation.model;
+
+public enum StepType {
+    WAIT, WAIT_UNTIL, CONDITION, SEND, ADD_TAG, REMOVE_TAG, SET_CONTACT_STATUS, CREATE_TASK, CREATE_OPPORTUNITY,
+    NOTIFY_OPERATOR, CALL_WEBHOOK, END
+}

@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     ResponseEntity<ProblemDetail> integrity(DataIntegrityViolationException ex) {
-        log.debug("Integrity violation", ex);
+        log.warn("Integrity violation: {}", ex.getMostSpecificCause().getMessage());
         return build(ErrorCode.CONFLICT, "Conflicts with existing data (duplicate or invalid reference)", Map.of());
     }
 
