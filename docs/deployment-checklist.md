@@ -9,10 +9,11 @@ Marque na ordem. Nada abaixo foi executado automaticamente.
 - [ ] `bash infrastructure/codespaces/backup.sh` funcionando
 
 ## Control Center
-- [ ] Postgres externo criado (TLS, usuário dedicado)
+- [ ] Projeto Neon criado; connection string copiada (não vai para variável de ambiente)
 - [ ] Chave mestra gerada localmente e guardada offline
 - [ ] Projeto Netlify `apps/control` + variáveis ([netlify-control-setup.md](netlify-control-setup.md))
 - [ ] Domínio dedicado e `CONTROL_PUBLIC_ORIGIN`
+- [ ] `/bootstrap`: token + connection string do Neon → **Testar e conectar**
 - [ ] Bootstrap do dono + MFA + códigos de recuperação guardados ([security.md](security.md))
 - [ ] Remover `CONTROL_BOOTSTRAP_TOKEN`
 - [ ] Token GitHub fine-grained cadastrado e **testado** ([github-token-setup.md](github-token-setup.md))

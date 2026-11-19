@@ -1,5 +1,6 @@
 import { schedulerTick } from "../../src/server/codespaces";
 import { oplog } from "../../src/server/audit";
+import { ConfigError } from "../../src/server/env";
 
 /**
  * Netlify Scheduled Function (cron "*\/5 * * * *", configured in netlify.toml). It is not reachable as a public URL in
@@ -12,6 +13,8 @@ export default async () => {
     if (r.checked) await oplog("scheduler", "INFO", `Scheduler checked ${r.checked} session(s)`, { actions: r.actions });
     return new Response(null, { status: 204 });
   } catch (e) {
+    // Before /bootstrap has stored the database there is nothing to supervise.
+    if (e instanceof ConfigError && e.code === "DATABASE_NOT_CONFIGURED") return new Response(null, { status: 204 });
     console.error("[scheduler] failed", (e as Error).name);
     return new Response(null, { status: 500 });
   }

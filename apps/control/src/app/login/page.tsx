@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { call, message, setCsrf } from "@/lib/client";
 import { Alert, Button, Card, Field, Input } from "@/components/ui";
 import { EnrollMfa, type Enrollment } from "@/components/enroll";
@@ -12,6 +12,8 @@ export default function Login() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [setupPending, setSetupPending] = useState(false);
+  useEffect(() => { call<{ stage: string }>("/api/bootstrap").then((s) => setSetupPending(s.stage !== "DONE")).catch(() => undefined); }, []);
 
   async function step1(e: React.FormEvent) {
     e.preventDefault(); setBusy(true); setError(null);
@@ -30,6 +32,7 @@ export default function Login() {
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm space-y-4">
         <div><h1 className="text-lg font-semibold">Vendocas Control Center</h1><p className="text-sm text-muted-foreground">Acesso restrito a administradores autorizados.</p></div>
+        {setupPending && <Alert tone="info">A configuração inicial ainda não foi concluída. <a className="underline" href="/bootstrap">Abrir configuração inicial</a></Alert>}
         {enroll ? <EnrollMfa enroll={enroll} /> : !challenge ? (
           <form onSubmit={step1} className="space-y-3">
             <Field label="E-mail" id="email"><Input id="email" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} /></Field>

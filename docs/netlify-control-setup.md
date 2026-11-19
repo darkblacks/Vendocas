@@ -2,12 +2,17 @@
 
 Nada foi criado na Netlify. Siga estes passos somente quando decidir publicar.
 
-## 1. Banco externo persistente
+## 1. Banco externo persistente (Neon)
 
-Crie um Postgres gerenciado (Neon, Supabase, RDS…) **separado** do banco do Vendocas. Use um usuário dedicado com
-permissão apenas nesse banco e TLS obrigatório:
-`postgres://cc_user:<senha>@<host>/control?sslmode=require`. As tabelas são criadas automaticamente na primeira
-requisição (ou rode `CONTROL_DATABASE_URL=… pnpm --filter @vendocas/control db:migrate`).
+Crie um projeto no [Neon](https://neon.tech) **separado** do banco do Vendocas (PostgreSQL 14+). No painel do Neon,
+**Connect → Connection string**, copie a URL completa, por exemplo
+`postgresql://neondb_owner:<senha>@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require`.
+Funcionam tanto a URL direta quanto a *pooled* (`-pooler`).
+
+**Não** coloque essa URL em variável de ambiente nem no Git: ela é colada uma única vez em `/bootstrap` (passo 6).
+O Control Center testa a conexão, aplica as tabelas e guarda a URL **criptografada** (AES-256-GCM com a chave mestra)
+no **Netlify Blobs** (store `vendocas-control-config`, consistência forte) — armazenamento persistente da Netlify,
+fora do Codespace e fora do sistema de arquivos temporário das funções.
 
 ## 2. Projeto
 
@@ -26,7 +31,7 @@ Desative *Deploy Previews* para este site (ou proteja-os com senha da Netlify): 
 
 | Variável | Secreta | Exemplo / observação |
 |---|---|---|
-| `CONTROL_DATABASE_URL` | sim | URL do passo 1 |
+| `CONTROL_DATABASE_URL` | — | **não defina** no fluxo normal (a URL é colada em `/bootstrap`). Só como override de emergência — se definida, tem prioridade e o passo de banco do bootstrap fica desativado |
 | `CONTROL_MASTER_KEYS` | sim | `v1:<base64>` — ver [credentials-vault.md](credentials-vault.md) |
 | `CONTROL_ACTIVE_KEY_VERSION` | não | `v1` |
 | `CONTROL_BOOTSTRAP_TOKEN` | sim | `pnpm --filter @vendocas/control bootstrap:token`; remova após o bootstrap |
@@ -51,7 +56,14 @@ isolados. HTTPS é automático na Netlify; o app envia HSTS.
 
 ## 6. Primeiro acesso
 
-Siga o bootstrap em [security.md](security.md#bootstrap-do-primeiro-dono).
+Abra `https://<seu-domínio>/` — sem configuração, você é levado a `/bootstrap`:
+
+1. **Banco de dados**: token de bootstrap + connection string do Neon → **Testar e conectar**.
+2. **Proprietário**: e-mail autorizado, nome, senha.
+3. **MFA**: QR code + código; guarde os códigos de recuperação.
+
+Depois disso o bootstrap fica bloqueado (inclusive o passo do banco). Detalhes em
+[security.md](security.md#bootstrap-do-primeiro-dono).
 
 ## 7. Deploy por GitHub Actions (opcional)
 

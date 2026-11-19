@@ -25,21 +25,35 @@ Mutação exige: `Origin` igual a `CONTROL_PUBLIC_ORIGIN` **e** cabeçalho `X-CS
 
 ## Bootstrap do primeiro dono
 
-1. Defina na Netlify: `CONTROL_DATABASE_URL`, `CONTROL_MASTER_KEYS`, `CONTROL_ACTIVE_KEY_VERSION`,
-   `CONTROL_BOOTSTRAP_TOKEN` (≥ 32 caracteres, gerado localmente) e `CONTROL_BOOTSTRAP_EMAIL`.
-2. Acesse `/bootstrap`. O servidor verifica o banco (migrações) e a chave mestra (cifra/decifra um teste) antes de
-   aceitar qualquer dado.
-3. Informe o token, o e-mail autorizado, nome e senha.
+1. Defina na Netlify: `CONTROL_MASTER_KEYS`, `CONTROL_ACTIVE_KEY_VERSION`, `CONTROL_BOOTSTRAP_TOKEN` (≥ 32 caracteres,
+   gerado localmente) e `CONTROL_BOOTSTRAP_EMAIL`. Não defina `CONTROL_DATABASE_URL`.
+2. Acesse `/bootstrap` e informe o token de bootstrap (exigido em todas as etapas).
+3. **Banco**: cole a connection string do Neon e clique em **Testar e conectar**. O servidor:
+   * valida o formato sem nunca devolvê-la: `postgres(ql)://`, usuário, senha, nome do banco, `sslmode=require`
+     (ou `verify-ca`/`verify-full`) obrigatório; recusa parâmetros que leem arquivos do servidor (`sslrootcert`,
+     `sslcert`, `sslkey`, `passfile`, `service`), `host=` e endereços locais/privados;
+   * conecta (timeout 10 s), exige PostgreSQL 14+, aplica as migrações (prova permissão de criar tabelas);
+   * verifica a chave mestra, cifra a URL (AES-256-GCM, AAD `cc_database_url`) e grava no Netlify Blobs;
+   * responde só “conectado: Neon · PostgreSQL x.y”. Erros viram códigos fixos (`DB_AUTH_FAILED`, `DB_NOT_FOUND`,
+     `DB_UNREACHABLE`, `DB_TLS_FAILED`…), sem repassar o texto do driver (que pode conter usuário/host).
+   A URL não aparece em respostas, HTML, logs nem auditoria (a auditoria guarda só uma impressão digital curta). Até o
+   proprietário concluir o MFA ela pode ser substituída (com o token); depois, não.
+4. Informe o e-mail autorizado, nome e senha do proprietário.
 4. Escaneie o QR (ou digite o segredo) num app autenticador e confirme um código → conta ativa, códigos de recuperação
    exibidos **uma vez** (guarde-os offline).
-5. O bootstrap é **trancado permanentemente** (`cc_system_state.bootstrap_completed_at`); novas tentativas retornam
-   `BOOTSTRAP_LOCKED` e são auditadas.
+5. O bootstrap é **trancado permanentemente**: no banco (`cc_system_state.bootstrap_completed_at`) e na configuração
+   guardada (`lockedAt`). Novas tentativas — inclusive trocar o banco — retornam `BOOTSTRAP_LOCKED`.
 6. Remova `CONTROL_BOOTSTRAP_TOKEN` da Netlify.
 
 Administradores adicionais: Segurança → *Novo administrador* (OWNER + reautenticação) gera uma senha temporária; no
 primeiro login a pessoa é obrigada a cadastrar MFA.
 
 ### Recuperação
+
+* **Trocar o banco depois do bootstrap** (senha do Neon rotacionada, migração de projeto): defina `CONTROL_DATABASE_URL`
+  como variável **secreta** na Netlify (tem prioridade sobre a URL guardada) e publique de novo.
+* **Configuração do Netlify Blobs perdida**: abra `/bootstrap` e cole a URL do mesmo banco; como ele já concluiu o
+  bootstrap, é religado e bloqueado na hora, sem criar um novo proprietário.
 
 * **Perdeu o autenticador (ADMIN/VIEWER)**: entre com um código de recuperação, se tiver; em qualquer caso o OWNER usa
   Configurações → *Redefinir MFA* (com reautenticação). Isso apaga o segredo TOTP e os códigos, encerra as sessões e

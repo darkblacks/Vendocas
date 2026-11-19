@@ -3,6 +3,7 @@ import { audit } from "./audit";
 import type { AuthContext } from "./auth";
 import { activeKey, mask, open, seal, uuid } from "./crypto";
 import { db, tx } from "./db";
+import { rotateDatabaseConfig } from "./database-config";
 import { HttpError, bad, redact } from "./http";
 import { PROVIDERS, provider, type Environment, type ProviderDef } from "./providers";
 
@@ -181,7 +182,7 @@ export async function historyFor(providerId: string) {
  */
 export async function rotateEncryptionKeys(ctx: AuthContext) {
   const key = activeKey();
-  return tx(async (c) => {
+  const result = await tx(async (c) => {
     let credentials = 0, users = 0;
     const rows = (await c.query("SELECT * FROM integration_credentials WHERE encryption_key_version <> $1 FOR UPDATE", [key.version])).rows;
     for (const r of rows) {
@@ -203,4 +204,8 @@ export async function rotateEncryptionKeys(ctx: AuthContext) {
     await audit(ctx.actor, "vault.rotate_keys", "SUCCESS", key.version, { credentials, users }, c);
     return { activeVersion: key.version, credentials, users };
   });
+  // The stored database connection string (external config store) follows the same key.
+  const databaseConfig = await rotateDatabaseConfig();
+  if (databaseConfig) await audit(ctx.actor, "bootstrap.database_config_rotated", "SUCCESS", key.version);
+  return { ...result, databaseConfig };
 }

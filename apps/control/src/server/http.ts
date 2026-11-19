@@ -17,7 +17,8 @@ export function redact(text: string): string {
     .replace(/github_pat_[A-Za-z0-9_]{20,}/g, "github_pat_[REDACTED]")
     .replace(/EAA[A-Za-z0-9]{20,}/g, "EAA[REDACTED]")
     .replace(/AKIA[0-9A-Z]{16}/g, "AKIA[REDACTED]")
-    .replace(/(Bearer|Basic|token)\s+[A-Za-z0-9._\-+/=]{12,}/gi, "$1 [REDACTED]");
+    .replace(/(Bearer|Basic|token)\s+[A-Za-z0-9._\-+/=]{12,}/gi, "$1 [REDACTED]")
+    .replace(/postgres(ql)?:\/\/[^\s"'`]+/gi, "postgres://[REDACTED]");
 }
 
 export function json(data: unknown, status = 200, headers: Record<string, string> = {}): Response {
@@ -45,7 +46,9 @@ export async function body<T>(req: Request, parse: (v: unknown) => T): Promise<T
   let raw: unknown;
   try { raw = await req.json(); } catch { throw bad("Malformed JSON body"); }
   try { return parse(raw); } catch (e) {
-    throw bad("Invalid input", { issues: (e as { issues?: unknown }).issues ?? undefined });
+    // Only path/code/message: never echo submitted values (they may be secrets).
+    const issues = (e as { issues?: { path?: unknown; code?: unknown; message?: unknown }[] }).issues;
+    throw bad("Invalid input", { issues: issues?.map((i) => ({ path: i.path, code: i.code, message: i.message })) });
   }
 }
 

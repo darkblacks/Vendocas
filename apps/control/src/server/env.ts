@@ -1,4 +1,5 @@
-/** Server-only configuration. Every secret comes from the hosting environment (Netlify env vars), never from Git. */
+/** Server-only configuration. Secrets come from the hosting environment (Netlify env vars), never from Git.
+ *  The database URL is resolved in database-config.ts (env override or the encrypted value saved by /bootstrap). */
 export class ConfigError extends Error {
   constructor(public code: string, message: string) {
     super(message);
@@ -12,7 +13,6 @@ function req(name: string): string {
 }
 
 export const env = {
-  databaseUrl: () => req("CONTROL_DATABASE_URL"),
   /** "v1:<base64 32 bytes>,v2:<base64 32 bytes>" — all versions able to decrypt. */
   masterKeys: () => req("CONTROL_MASTER_KEYS"),
   /** Version used for new encryptions, e.g. "v2". */

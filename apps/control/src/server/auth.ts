@@ -1,8 +1,9 @@
 import QRCode from "qrcode";
 import { audit, type Actor } from "./audit";
 import { open, randomToken, safeEqual, seal, sha256, uuid } from "./crypto";
-import { db, tx } from "./db";
-import { env } from "./env";
+import { db, migrate, resetPool, tx } from "./db";
+import { lockDatabaseConfig, mapConnectionError, probeDatabase, saveDatabaseConfig, storedDatabaseConfig, validateConnectionString } from "./database-config";
+import { ConfigError, env } from "./env";
 import { HttpError, bad, clientIp, deny } from "./http";
 import { DUMMY_HASH, hashPassword, passwordProblem, verifyPassword } from "./password";
 import { rateLimit } from "./rate-limit";
@@ -33,14 +34,96 @@ const userAad = (userId: string) => `cc_user_mfa:${userId}`;
 const challengeAad = (id: string) => `cc_challenge:${id}`;
 
 // ------------------------------------------------------------------ bootstrap
+export type BootstrapStage = "DATABASE" | "OWNER" | "DONE";
+
+/** Works before any database exists: tells the UI which bootstrap step is next. Never reveals the connection string. */
 export async function bootstrapStatus() {
-  const p = await db();
-  const s = await p.query("SELECT bootstrap_completed_at FROM cc_system_state WHERE id = 1");
-  return {
-    completed: !!s.rows[0]?.bootstrap_completed_at,
-    tokenConfigured: !!env.bootstrapToken(),
-    emailConfigured: !!env.bootstrapEmail(),
+  const base = { tokenConfigured: (env.bootstrapToken()?.length ?? 0) >= 32, emailConfigured: !!env.bootstrapEmail() };
+  const fromEnv = !!process.env.CONTROL_DATABASE_URL?.trim();
+  let stored: Awaited<ReturnType<typeof storedDatabaseConfig>> = null;
+  let storeError: string | null = null;
+  if (!fromEnv) {
+    try { stored = await storedDatabaseConfig(); } catch (e) { storeError = e instanceof ConfigError ? e.code : "CONFIG_STORE_UNAVAILABLE"; }
+  }
+  const database = {
+    configured: fromEnv || !!stored,
+    source: fromEnv ? "env" as const : stored ? "store" as const : null,
+    provider: stored?.provider ?? null,
+    serverVersion: stored?.serverVersion ?? null,
+    configuredAt: stored?.configuredAt ?? null,
+    locked: fromEnv || !!stored?.lockedAt,
+    reachable: null as boolean | null,
+    error: storeError,
   };
+  let completed = !!stored?.lockedAt;
+  if (database.configured) {
+    try {
+      const p = await db();
+      completed = !!(await p.query("SELECT bootstrap_completed_at FROM cc_system_state WHERE id = 1")).rows[0]?.bootstrap_completed_at || completed;
+      database.reachable = true;
+    } catch (e) {
+      database.reachable = false;
+      database.error = e instanceof HttpError || e instanceof ConfigError ? e.code : mapConnectionError(e).code;
+    }
+  }
+  const stage: BootstrapStage = !database.configured ? "DATABASE" : completed ? "DONE" : "OWNER";
+  return { stage, completed, database, ...base };
+}
+
+// Bootstrap attempts before a database exists cannot use the Postgres limiter; the token has >= 256 bits of entropy,
+// this per-instance limiter only slows down noise.
+const memoryHits = new Map<string, { start: number; hits: number }>();
+function memoryRateLimit(bucket: string, limit: number, windowMs: number) {
+  const now = Date.now();
+  const e = memoryHits.get(bucket);
+  if (!e || now - e.start > windowMs) { memoryHits.set(bucket, { start: now, hits: 1 }); return; }
+  if (++e.hits > limit) throw new HttpError(429, "RATE_LIMITED", "Too many attempts, try again later");
+}
+
+function checkBootstrapToken(presented: string) {
+  const configured = env.bootstrapToken();
+  if (!configured || configured.length < 32) throw new HttpError(503, "BOOTSTRAP_NOT_CONFIGURED", "CONTROL_BOOTSTRAP_TOKEN is not configured (min. 32 characters)");
+  return safeEqual(sha256(presented), sha256(configured));
+}
+
+/**
+ * Step 1 of bootstrap: paste the PostgreSQL (Neon) connection string. Requires the bootstrap token, validates and
+ * tests the URL (TLS, version, CREATE privilege by applying the migrations), then stores it encrypted in the external
+ * config store. Refused once bootstrap is locked. The URL is never logged nor returned.
+ */
+export async function bootstrapDatabase(req: Request, input: { token: string; connectionString: string }) {
+  const ip = clientIp(req);
+  memoryRateLimit(`bootstrap-db:${ip}`, 10, 15 * 60_000);
+  if (!checkBootstrapToken(input.token)) {
+    console.warn("[bootstrap] database step: invalid token", { ip });
+    throw deny("BOOTSTRAP_TOKEN_INVALID", "Invalid bootstrap token");
+  }
+  if (process.env.CONTROL_DATABASE_URL?.trim()) {
+    throw new HttpError(409, "DATABASE_FROM_ENV", "The database is defined by CONTROL_DATABASE_URL in the environment; nothing to configure here");
+  }
+  const current = await storedDatabaseConfig();
+  if (current?.lockedAt) throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed");
+  if (current) {
+    // Before locking, a wrong URL may be replaced — but never once the currently stored database finished bootstrap.
+    try {
+      const p = await db();
+      if ((await p.query("SELECT bootstrap_completed_at FROM cc_system_state WHERE id = 1")).rows[0]?.bootstrap_completed_at) {
+        await lockDatabaseConfig();
+        throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed");
+      }
+    } catch (e) {
+      if (e instanceof HttpError && e.code === "BOOTSTRAP_LOCKED") throw e;
+      // stored database unreachable: replacing it is the point of this call
+    }
+  }
+  seal("probe", "probe"); // master key must be usable before anything is stored (ConfigError → 503)
+  const url = validateConnectionString(input.connectionString);
+  const probe = await probeDatabase(url, migrate);
+  const saved = await saveDatabaseConfig(url, probe);
+  resetPool();
+  await audit({ id: null, label: "bootstrap", ip }, "bootstrap.database_configured", "SUCCESS", saved.fingerprint,
+    { provider: probe.provider, serverVersion: probe.serverVersion, relinked: probe.alreadyInitialized });
+  return { ok: true, provider: probe.provider, serverVersion: probe.serverVersion, alreadyInitialized: probe.alreadyInitialized };
 }
 
 export interface EnrollmentChallenge { enrollToken: string; secret: string; otpauthUri: string; qrDataUrl: string }
@@ -52,12 +135,10 @@ export interface EnrollmentChallenge { enrollToken: string; secret: string; otpa
 export async function bootstrapStart(req: Request, input: { token: string; email: string; displayName: string; password: string }): Promise<EnrollmentChallenge> {
   const ip = clientIp(req);
   await rateLimit(`bootstrap:${ip}`, 5, 3600);
-  const configured = env.bootstrapToken();
   const actor: Actor = { id: null, label: `bootstrap:${input.email}`, ip };
   const status = await bootstrapStatus();
   if (status.completed) { await audit(actor, "bootstrap.start", "DENIED", null, { reason: "already completed" }); throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed"); }
-  if (!configured || configured.length < 32) throw new HttpError(503, "BOOTSTRAP_NOT_CONFIGURED", "CONTROL_BOOTSTRAP_TOKEN is not configured (min. 32 characters)");
-  if (!safeEqual(sha256(input.token), sha256(configured))) {
+  if (!checkBootstrapToken(input.token)) {
     await audit(actor, "bootstrap.start", "DENIED", null, { reason: "bad token" });
     throw deny("BOOTSTRAP_TOKEN_INVALID", "Invalid bootstrap token");
   }
@@ -125,9 +206,13 @@ export async function completeEnrollment(req: Request, enrollToken: string, code
       await c.query("UPDATE cc_system_state SET bootstrap_completed_at = COALESCE(bootstrap_completed_at, now()), bootstrap_owner_id = COALESCE(bootstrap_owner_id, $1), updated_at = now() WHERE id = 1", [ch.user_id]);
     }
     await audit({ id: ch.user_id, label: ch.email, ip }, "mfa.enrolled", "SUCCESS", ch.user_id, {}, c);
-    return { ok: true as const, userId: ch.user_id as string, recoveryCodes: codes };
+    return { ok: true as const, userId: ch.user_id as string, recoveryCodes: codes, owner: ch.role === "OWNER" };
   });
   if (!result.ok) throw new HttpError(401, "MFA_INVALID", "Invalid code");
+  if (result.owner) {
+    // The database also records completion; this additionally freezes the stored connection string.
+    await lockDatabaseConfig().catch((e) => console.error("[bootstrap] could not lock stored database config", (e as Error).name));
+  }
   const session = await createSession(result.userId, req);
   return { ...session, recoveryCodes: result.recoveryCodes };
 }

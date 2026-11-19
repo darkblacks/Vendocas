@@ -6,7 +6,9 @@ Nenhum valor real fica no Git. `.env` é ignorado; use `.env.example` como model
 
 | Variável | Obrigatória | Secreta | Descrição |
 |---|---|---|---|
-| `CONTROL_DATABASE_URL` | sim | sim | Postgres externo persistente (`sslmode=require`) |
+| `CONTROL_DATABASE_URL` | não | sim | **override** opcional. No fluxo normal a connection string do Neon é colada em `/bootstrap` e guardada criptografada no Netlify Blobs. Se definida, tem prioridade (testes, scripts, emergência) |
+| `CONTROL_CONFIG_STORE` | não | não | `netlify-blobs` (padrão em produção) ou `file` (padrão em dev; só para hospedagem própria com disco persistente) |
+| `CONTROL_STATE_DIR` | não | não | diretório do modo `file` (padrão `apps/control/.control-state`, ignorado pelo Git) |
 | `CONTROL_MASTER_KEYS` | sim | sim | `v1:<b64 32 bytes>[,v2:…]` |
 | `CONTROL_ACTIVE_KEY_VERSION` | sim | não | versão usada para novas gravações |
 | `CONTROL_BOOTSTRAP_TOKEN` | só no bootstrap | sim | ≥ 32 caracteres; remover depois |

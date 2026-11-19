@@ -36,6 +36,12 @@ registro não decifra. Segredos de MFA dos usuários usam o mesmo esquema (`cc_u
 2. Segurança → **Rotacionar chave** (OWNER + reautenticação): recifra todas as credenciais e segredos de MFA com `v2`.
 3. Confirme que o relatório mostra 0 registros em `v1`; remova `v1` da variável e publique.
 
+## Connection string do banco do Control Center
+
+Não fica no banco (seria circular): é guardada no Netlify Blobs, chave `database` do store `vendocas-control-config`,
+como `{ sealed: {ciphertext, nonce, keyVersion}, fingerprint, provider, serverVersion, configuredAt, lockedAt }`,
+cifrada com a mesma chave mestra (AAD `cc_database_url`). A rotação de chave também a recifra.
+
 ## Provedores e campos
 
 | Provedor | Campos | Teste de conexão |

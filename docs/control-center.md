@@ -29,8 +29,10 @@ Netlify Scheduled Function "codespace-scheduler" (a cada 5 min) ──► mesmo 
 
 * O navegador **nunca** fala com o GitHub nem recebe tokens. Toda chamada passa pelos route handlers.
 * A chave mestra fica **apenas** em variável de ambiente secreta da Netlify (`CONTROL_MASTER_KEYS`).
-* As migrações do banco do Control Center rodam automaticamente na primeira requisição (lock consultivo), ou
-  manualmente com `pnpm --filter @vendocas/control db:migrate`.
+* A connection string do banco (Neon) é colada uma vez em `/bootstrap`, testada e guardada criptografada no
+  **Netlify Blobs** (persistente; fora do Codespace e das funções). `CONTROL_DATABASE_URL`, se definida, tem prioridade.
+* As migrações rodam numa única transação com lock consultivo de transação (compatível com o pooler do Neon): durante o
+  bootstrap, na primeira requisição de cada instância, ou com `pnpm --filter @vendocas/control db:migrate`.
 
 ## Ciclo de uma sessão (limite de 6 h)
 
@@ -70,7 +72,8 @@ Usuários do Vendocas (app público) não existem aqui e não podem obter acesso
 
 ```bash
 createdb control_dev   # ou use o Postgres do docker compose
-export CONTROL_DATABASE_URL=postgres://vendocas:vendocas@localhost:5432/control_dev
+# Opção A: cole a URL em http://localhost:3100/bootstrap (fica criptografada em apps/control/.control-state/)
+# Opção B: export CONTROL_DATABASE_URL=postgres://vendocas:vendocas@localhost:5432/control_dev
 export CONTROL_MASTER_KEYS="$(pnpm --silent --filter @vendocas/control keys:generate)"
 export CONTROL_ACTIVE_KEY_VERSION=v1
 export CONTROL_BOOTSTRAP_TOKEN="$(pnpm --silent --filter @vendocas/control bootstrap:token)"
