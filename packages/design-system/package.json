@@ -1,0 +1,14 @@
+{
+  "name": "@vendocas/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Design tokens (light/dark) and class utilities shared by Vendocas UIs.",
+  "exports": {
+    "./tokens.css": "./src/tokens.css",
+    "./cn": "./src/cn.ts"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.7.0"
+  }
+}

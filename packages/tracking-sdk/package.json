@@ -1,0 +1,15 @@
+{
+  "name": "@vendocas/tracking-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lightweight website tracking SDK (no dependencies, ~2 KB).",
+  "type": "module",
+  "main": "dist/vendocas.js",
+  "scripts": {
+    "build": "tsc -p . && node build.mjs",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

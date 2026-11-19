@@ -1,0 +1,6 @@
+{
+  "name": "@vendocas/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contract exported from the running API (GET /v3/api-docs). Regenerate with scripts/export-openapi.sh."
+}
