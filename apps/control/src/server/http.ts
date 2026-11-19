@@ -28,16 +28,26 @@ export function json(data: unknown, status = 200, headers: Record<string, string
   });
 }
 
-/** Wraps a route handler: maps known errors to JSON, never leaks stack traces or secrets. */
-export function handle<A extends unknown[]>(fn: (...args: A) => Promise<Response>) {
+/** Every API answer must arrive well before the platform's gateway timeout, and always as JSON. */
+export const HANDLER_DEADLINE_MS = 9_500;
+
+/** Wraps a route handler: maps known errors to JSON, never leaks stack traces or secrets, enforces a deadline. */
+export function handle<A extends unknown[]>(fn: (...args: A) => Promise<Response>, deadlineMs = HANDLER_DEADLINE_MS) {
   return async (...args: A): Promise<Response> => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      return await fn(...args);
+      const work = fn(...args);
+      work.catch(() => undefined); // if the deadline wins, a later rejection must not become unhandled
+      return await Promise.race([work, new Promise<never>((_, rej) => {
+        timer = setTimeout(() => rej(new HttpError(503, "OPERATION_TIMEOUT", "The operation took too long; please try again")), deadlineMs);
+      })]);
     } catch (e) {
       if (e instanceof HttpError) return json({ code: e.code, message: redact(e.message), ...e.extra }, e.status);
       if (e instanceof ConfigError) return json({ code: e.code, message: e.message }, 503);
       console.error("[control] unhandled", redact(e instanceof Error ? `${e.name}: ${e.message}` : String(e)));
       return json({ code: "INTERNAL", message: "Unexpected error" }, 500);
+    } finally {
+      clearTimeout(timer);
     }
   };
 }

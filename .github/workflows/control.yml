@@ -34,7 +34,7 @@ jobs:
         run: grep -q 'codespace-scheduler' apps/control/netlify.toml
 
   # Prepared, NOT active. Requires ENABLE_NETLIFY_CONTROL_DEPLOY=true plus NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID_CONTROL.
-  # The site's own runtime secrets (CONTROL_DATABASE_URL, CONTROL_MASTER_KEYS, …) live in Netlify, never here.
+  # The site's runtime configuration is only CONTROL_SETUP_EMAIL + CONTROL_SETUP_KEY, set in Netlify, never here.
   deploy-netlify:
     name: Deploy Control Center to Netlify (disabled by default)
     needs: build

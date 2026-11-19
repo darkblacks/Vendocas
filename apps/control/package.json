@@ -12,8 +12,7 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "db:migrate": "node --experimental-strip-types scripts/migrate.ts",
-    "bootstrap:token": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\"",
-    "keys:generate": "node -e \"console.log('v1:'+require('crypto').randomBytes(32).toString('base64'))\""
+    "setup:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64url'))\""
   },
   "dependencies": {
     "@netlify/blobs": "11.1.8",

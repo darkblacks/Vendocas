@@ -38,7 +38,7 @@ describe("credentials vault", () => {
     expect(JSON.parse(text).masked.secretKey).toBe("••••DEFG");
     const row = (await sql("SELECT * FROM integration_credentials WHERE provider = 'STRIPE'"))[0]!;
     expect(JSON.stringify(row)).not.toContain(STRIPE_KEY);
-    expect(row.encryption_key_version).toBe("v1");
+    expect(row.encryption_key_version).toMatch(/^sk-[0-9a-f]{12}$/);
     const list = await (await (await import("@/app/api/vault/route")).GET(req("GET", "/api/vault", { client: owner }))).text();
     expect(list).not.toContain(STRIPE_KEY);
     expect((await reveal("STRIPE", "TEST")).secretKey).toBe(STRIPE_KEY); // authorized server-side decryption
@@ -90,27 +90,37 @@ describe("credentials vault", () => {
     expect(JSON.stringify(await sql("SELECT * FROM integration_credential_history"))).not.toContain(STRIPE_KEY);
   });
 
-  it("fails closed when the master key is missing", async () => {
-    const saved = process.env.CONTROL_MASTER_KEYS;
-    delete process.env.CONTROL_MASTER_KEYS;
+  it("fails closed when the installation key is missing", async () => {
+    const saved = process.env.CONTROL_SETUP_KEY;
+    delete process.env.CONTROL_SETUP_KEY;
     try {
       const v = await vaultP();
       const r = await v.PUT!(req("PUT", "/api/vault/FOCUS_NFE", { client: owner, body: { environment: "TEST", values: { token: "abc123token" } } }), ctxFor("FOCUS_NFE"));
       expect(r.status).toBe(503);
-      expect((await r.json()).code).toBe("CONFIG_MISSING");
+      expect((await r.json()).code).toBe("SETUP_NOT_CONFIGURED");
       await expect(reveal("STRIPE", "TEST")).rejects.toThrow();
-    } finally { process.env.CONTROL_MASTER_KEYS = saved; }
+    } finally { process.env.CONTROL_SETUP_KEY = saved; }
   });
 
-  it("rotates the master key and keeps everything decryptable", async () => {
-    const v2 = randomBytes(32).toString("base64");
-    process.env.CONTROL_MASTER_KEYS = `${process.env.CONTROL_MASTER_KEYS},v2:${v2}`;
-    process.env.CONTROL_ACTIVE_KEY_VERSION = "v2";
+  it("cannot decrypt with a different installation key", async () => {
+    const saved = process.env.CONTROL_SETUP_KEY;
+    process.env.CONTROL_SETUP_KEY = randomBytes(32).toString("base64url");
+    try {
+      await expect(reveal("STRIPE", "TEST")).rejects.toMatchObject({ code: "SETUP_KEY_MISMATCH" });
+    } finally { process.env.CONTROL_SETUP_KEY = saved; }
+  });
+
+  it("rotates the installation key (HKDF-derived keys) and keeps everything decryptable", async () => {
+    const oldKey = process.env.CONTROL_SETUP_KEY!;
+    process.env.CONTROL_SETUP_KEY_PREVIOUS = oldKey;
+    process.env.CONTROL_SETUP_KEY = randomBytes(32).toString("base64url");
+    const before = (await sql("SELECT encryption_key_version FROM integration_credentials WHERE provider = 'STRIPE'"))[0]!.encryption_key_version;
     const r = await (await (await import("@/app/api/vault/rotate/route")).POST(req("POST", "/api/vault/rotate", { client: owner }))).json();
-    expect(r.activeVersion).toBe("v2");
+    expect(r.activeVersion).not.toBe(before);
+    expect(r.activeVersion).toMatch(/^sk-[0-9a-f]{12}$/); // a fingerprint, never the key
     expect(r.credentials).toBeGreaterThanOrEqual(1);
     expect(r.users).toBeGreaterThanOrEqual(1);
-    process.env.CONTROL_MASTER_KEYS = `v2:${v2}`; // old key removed from the environment
+    delete process.env.CONTROL_SETUP_KEY_PREVIOUS; // old key removed from the environment
     expect((await reveal("STRIPE", "TEST")).secretKey).toBe(STRIPE_KEY);
     await reauth(owner); // MFA secret also re-encrypted
   });

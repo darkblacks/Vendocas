@@ -14,46 +14,77 @@
 ## Autorização
 
 Verificada **no servidor** em cada route handler (`requireAuth`): papel mínimo, sessão válida, CSRF, reautenticação.
-Negações geram auditoria `authz.denied`. O repositório controlável vem de `CONTROL_GITHUB_REPOSITORY` (servidor); o
-nome do codespace é validado por regex e confrontado com a lista real do GitHub — parâmetros do navegador não decidem
-qual conta/servidor é controlado.
+Negações geram auditoria `authz.denied`. O repositório controlável é definido pelo OWNER em Configurações (reautenticação
++ verificação no GitHub) e guardado no banco; a cada operação o servidor usa esse valor — nunca um parâmetro do
+navegador. O nome do codespace é validado por regex e confrontado com a lista real do GitHub.
 
 ## CSRF
 
-Mutação exige: `Origin` igual a `CONTROL_PUBLIC_ORIGIN` **e** cabeçalho `X-CSRF-Token` igual ao token da sessão
-(comparação em tempo constante). Somado a SameSite=Strict.
+Mutação exige: `Origin` igual à origem do próprio site (ou às URLs automáticas da Netlify `URL`/`DEPLOY_PRIME_URL`) **e**
+cabeçalho `X-CSRF-Token` igual ao token da sessão (comparação em tempo constante). Somado a SameSite=Strict. As etapas
+da instalação usam a mesma checagem de `Origin` com o cookie de instalação SameSite=Strict.
 
-## Bootstrap do primeiro dono
+## Chave de instalação
 
-1. Defina na Netlify: `CONTROL_MASTER_KEYS`, `CONTROL_ACTIVE_KEY_VERSION`, `CONTROL_BOOTSTRAP_TOKEN` (≥ 32 caracteres,
-   gerado localmente) e `CONTROL_BOOTSTRAP_EMAIL`. Não defina `CONTROL_DATABASE_URL`.
-2. Acesse `/bootstrap` e informe o token de bootstrap (exigido em todas as etapas).
-3. **Banco**: cole a connection string do Neon e clique em **Testar e conectar**. O servidor:
-   * valida o formato sem nunca devolvê-la: `postgres(ql)://`, usuário, senha, nome do banco, `sslmode=require`
-     (ou `verify-ca`/`verify-full`) obrigatório; recusa parâmetros que leem arquivos do servidor (`sslrootcert`,
-     `sslcert`, `sslkey`, `passfile`, `service`), `host=` e endereços locais/privados;
-   * conecta (timeout 10 s), exige PostgreSQL 14+, aplica as migrações (prova permissão de criar tabelas);
-   * verifica a chave mestra, cifra a URL (AES-256-GCM, AAD `cc_database_url`) e grava no Netlify Blobs;
-   * responde só “conectado: Neon · PostgreSQL x.y”. Erros viram códigos fixos (`DB_AUTH_FAILED`, `DB_NOT_FOUND`,
-     `DB_UNREACHABLE`, `DB_TLS_FAILED`…), sem repassar o texto do driver (que pode conter usuário/host).
-   A URL não aparece em respostas, HTML, logs nem auditoria (a auditoria guarda só uma impressão digital curta). Até o
-   proprietário concluir o MFA ela pode ser substituída (com o token); depois, não.
-4. Informe o e-mail autorizado, nome e senha do proprietário.
-4. Escaneie o QR (ou digite o segredo) num app autenticador e confirme um código → conta ativa, códigos de recuperação
-   exibidos **uma vez** (guarde-os offline).
-5. O bootstrap é **trancado permanentemente**: no banco (`cc_system_state.bootstrap_completed_at`) e na configuração
-   guardada (`lockedAt`). Novas tentativas — inclusive trocar o banco — retornam `BOOTSTRAP_LOCKED`.
-6. Remova `CONTROL_BOOTSTRAP_TOKEN` da Netlify.
+`CONTROL_SETUP_KEY` (≥ 32 caracteres aleatórios) é a **raiz de confiança**. Dela derivam, por HKDF-SHA256 com contextos
+distintos, a chave de autenticação da instalação e as chaves AES-256-GCM da configuração e dos dados (detalhes em
+[credentials-vault.md](credentials-vault.md)). Consequências:
+
+* **Perda** da chave = perda definitiva do que foi cifrado (connection string, cofre, MFA). Guarde-a num gerenciador de
+  senhas.
+* **Vazamento** da chave: com ela e o e-mail, alguém só consegue abrir uma sessão de instalação **se a instalação ainda
+  não foi concluída**; depois, as etapas de instalação ficam bloqueadas. Mas ela permite decifrar dados se o atacante
+  também obtiver o banco/Blobs — rotacione.
+* **Rotação**: exige recriptografia (Segurança → Recriptografar), com a chave antiga temporariamente em
+  `CONTROL_SETUP_KEY_PREVIOUS`.
+
+## Instalação (bootstrap do primeiro dono)
+
+Pré-requisito: só `CONTROL_SETUP_EMAIL` e `CONTROL_SETUP_KEY` na Netlify.
+
+1. **E-mail + chave** (`POST /api/bootstrap/session`). A página carrega sem consultar banco ou cofre
+   (`GET /api/bootstrap` não faz E/S). No servidor: limite de tentativas por IP (por instância e, com melhor esforço,
+   global no Blobs), comparação em tempo constante do e-mail e da chave (via HMAC com a chave de contexto
+   `install-auth`), resposta idêntica para e-mail ou chave errados, atraso fixo em falhas, nada disso em logs (só o IP).
+   O e-mail sozinho não basta. Sucesso → cookie `__Host-vcc_setup` (HttpOnly, Secure, SameSite=Strict, 30 min), assinado
+   com HMAC, sem estado no servidor; invalidado se a chave ou o e-mail mudarem.
+2. **Banco** — **Testar conexão** (`/api/bootstrap/database/test`, somente leitura) e **Salvar e continuar**
+   (`/api/bootstrap/database`). O servidor:
+   * valida o formato sem nunca devolvê-lo: `postgres(ql)://`, um host, usuário, senha, banco, `sslmode=require`
+     (ou `verify-ca`/`verify-full`); recusa `host=`/`hostaddr=`, parâmetros que leem arquivos (`sslrootcert`, `sslcert`,
+     `sslkey`, `passfile`, `service`…), portas fora de 5432/6432/6543;
+   * **anti-SSRF**: resolve o DNS uma vez (timeout 3 s), recusa se **qualquer** endereço for loopback, privado,
+     link-local (metadados de nuvem), CGNAT, multicast ou reservado (IPv4/IPv6, inclusive mapeados), e conecta ao IP
+     verificado — sem janela para *DNS rebinding* — enquanto o TLS valida o certificado e envia SNI com o nome original;
+   * **TLS** com verificação de certificado; conexão em até 6 s e cada consulta em até 6 s;
+   * no salvar: prepara o esquema (migrações numa transação com `lock_timeout`/`statement_timeout`), cifra a URL com
+     AES-256-GCM (nonce novo, AAD `cc_database_url`, chave `config-encryption`) e grava no Netlify Blobs;
+   * erros viram códigos fixos (`DB_AUTH_FAILED`, `DB_NOT_FOUND`, `DB_UNREACHABLE`, `DB_TLS_FAILED`…), sem o texto do
+     driver. A URL não aparece em respostas, HTML, logs nem auditoria (só uma impressão digital curta).
+3. **Proprietário** (`/api/bootstrap/owner`): nome e senha; o e-mail é o de `CONTROL_SETUP_EMAIL`. A conta nasce
+   `PENDING_MFA`, **sem privilégios**.
+4. **MFA** (`/api/auth/enroll`): QR code + código → conta ativa, 10 códigos de recuperação exibidos uma vez, sessão
+   normal criada e cookie de instalação apagado.
+5. **Bloqueio**: a conclusão é gravada no banco (`cc_system_state.bootstrap_completed_at`) dentro de uma transação que
+   trava a linha de estado (`FOR UPDATE`), serializando instalações concorrentes — só um proprietário pode concluir — e
+   também no Blobs (`lockedAt`). Depois disso, nova sessão de instalação → `INSTALLATION_COMPLETE`; trocar o banco ou
+   criar outro proprietário (mesmo com um cookie antigo) → `BOOTSTRAP_LOCKED`.
+
+Prazo: toda resposta de `/api/*` é JSON e chega em menos de 10 s (prazo interno de 9,5 s). O Blobs tem 2,5 s por
+requisição e 4 s por operação, sem as retentativas internas de 5 s do SDK (que, somadas, causavam o HTTP 504 de 30 s).
 
 Administradores adicionais: Segurança → *Novo administrador* (OWNER + reautenticação) gera uma senha temporária; no
 primeiro login a pessoa é obrigada a cadastrar MFA.
 
 ### Recuperação
 
-* **Trocar o banco depois do bootstrap** (senha do Neon rotacionada, migração de projeto): defina `CONTROL_DATABASE_URL`
-  como variável **secreta** na Netlify (tem prioridade sobre a URL guardada) e publique de novo.
-* **Configuração do Netlify Blobs perdida**: abra `/bootstrap` e cole a URL do mesmo banco; como ele já concluiu o
-  bootstrap, é religado e bloqueado na hora, sem criar um novo proprietário.
+* **Trocar o banco depois da instalação** (senha do Neon rotacionada, migração de projeto): defina `CONTROL_DATABASE_URL`
+  como variável **secreta** na Netlify (tem prioridade sobre a URL guardada) e publique de novo. É a única situação em
+  que uma variável a mais é usada, e é opcional.
+* **Configuração do Netlify Blobs perdida**: abra `/bootstrap`, informe e-mail e chave e cole a URL do mesmo banco; como
+  ele já concluiu a instalação, é religado e bloqueado na hora, sem criar um novo proprietário.
+* **Banco salvo inacessível antes de concluir** (URL errada, projeto apagado): a etapa de banco reaparece para colar uma
+  URL corrigida.
 
 * **Perdeu o autenticador (ADMIN/VIEWER)**: entre com um código de recuperação, se tiver; em qualquer caso o OWNER usa
   Configurações → *Redefinir MFA* (com reautenticação). Isso apaga o segredo TOTP e os códigos, encerra as sessões e
@@ -62,15 +93,18 @@ primeiro login a pessoa é obrigada a cadastrar MFA.
 * **Perdeu a senha (ADMIN/VIEWER)**: o OWNER desativa a conta e cria uma nova (senha temporária + MFA obrigatório).
 * **OWNER perdeu o autenticador**: use um dos 10 códigos de recuperação. O MFA do OWNER não pode ser redefinido pelo painel.
 * **OWNER perdeu autenticador e códigos**: recuperação manual de emergência, fora do sistema e com acesso direto ao
-  banco: (1) gere um novo `CONTROL_BOOTSTRAP_TOKEN` na Netlify; (2) no banco, em transação,
-  `DELETE FROM cc_sessions WHERE user_id = '<id>'; DELETE FROM cc_recovery_codes WHERE user_id = '<id>';
-  UPDATE cc_users SET status = 'DISABLED' WHERE status = 'ACTIVE'; UPDATE cc_system_state SET bootstrap_completed_at = NULL,
-  bootstrap_owner_id = NULL WHERE id = 1;` (3) refaça o bootstrap com um novo e-mail em `CONTROL_BOOTSTRAP_EMAIL` (o bootstrap exige que nenhuma conta esteja ativa; depois reative os administradores em Configurações);
-  (4) remova o token. O cofre continua legível (depende só da chave mestra). Registre o incidente.
+  banco: (1) no banco, em transação, `DELETE FROM cc_sessions WHERE user_id = '<id>'; DELETE FROM cc_recovery_codes
+  WHERE user_id = '<id>'; UPDATE cc_users SET status = 'DISABLED' WHERE status = 'ACTIVE'; UPDATE cc_system_state SET
+  bootstrap_completed_at = NULL, bootstrap_owner_id = NULL WHERE id = 1;` (2) no Netlify Blobs (store
+  `vendocas-control-config`, chave `database`), remova o campo `lockedAt` — ou apague a chave e cole a URL de novo;
+  (3) se o e-mail do dono mudar, ajuste `CONTROL_SETUP_EMAIL` (um e-mail ainda não usado) e publique; (4) refaça a
+  instalação e reative os administradores em Configurações. O cofre continua legível (depende só da chave de
+  instalação). Registre o incidente.
 
 ## Criptografia
 
-AES-256-GCM, nonce de 96 bits por gravação, AAD ligado ao registro, chaves versionadas fora do banco. Ver
+AES-256-GCM, nonce de 96 bits por gravação, AAD ligado ao registro, chaves derivadas de `CONTROL_SETUP_KEY` (HKDF-SHA256)
+e identificadas por impressão digital, nunca guardadas. Ver
 [credentials-vault.md](credentials-vault.md). Criptografia **não** substitui autorização: decifrar só ocorre dentro de
 operações autorizadas.
 

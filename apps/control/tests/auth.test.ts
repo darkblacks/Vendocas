@@ -9,22 +9,27 @@ describe("bootstrap and authentication", () => {
 
   beforeAll(async () => { await resetDb(); });
 
-  it("rejects a wrong bootstrap token and an unauthorized email", async () => {
-    const boot = await route<H>("bootstrap");
-    expect((await boot.POST!(req("POST", "/api/bootstrap", { body: { token: "wrong-token-xxxxxxxxxxxxxxxx", ...OWNER } }))).status).toBe(403);
-    const r = await boot.POST!(req("POST", "/api/bootstrap", { body: { token: process.env.CONTROL_BOOTSTRAP_TOKEN, ...OWNER, email: "intruder@example.com" } }));
-    expect(r.status).toBe(403);
-    expect((await r.json()).code).toBe("BOOTSTRAP_EMAIL");
+  it("rejects a wrong installation key or a different e-mail (same answer for both)", async () => {
+    const { setupSession } = await import("./helpers");
+    const wrongKey = await setupSession(OWNER.email, "x".repeat(40));
+    expect(wrongKey.res.status).toBe(401);
+    expect(wrongKey.cookie).toBeNull();
+    const wrongEmail = await setupSession("intruder@example.com");
+    expect(wrongEmail.res.status).toBe(401);
+    expect((await wrongEmail.res.json()).code).toBe("SETUP_CREDENTIALS_INVALID");
+    // owner creation without a setup session is refused
+    const owner = await import("@/app/api/bootstrap/owner/route");
+    const r = await owner.POST(req("POST", "/api/bootstrap/owner", { body: { displayName: "Someone", password: OWNER.password } }));
+    expect((await r.json()).code).toBe("SETUP_SESSION_REQUIRED");
   });
 
   it("creates the owner, forces MFA enrollment and then locks bootstrap", async () => {
     owner = await bootstrapOwner();
     expect(owner.recoveryCodes).toHaveLength(10);
-    const status = await (await (await route<H>("bootstrap")).GET!(req("GET", "/api/bootstrap"))).json();
-    expect(status.completed).toBe(true);
-    const again = await (await route<H>("bootstrap")).POST!(req("POST", "/api/bootstrap", { body: { token: process.env.CONTROL_BOOTSTRAP_TOKEN, ...OWNER } }));
-    expect(again.status).toBe(403);
-    expect((await again.json()).code).toBe("BOOTSTRAP_LOCKED");
+    const { setupSession } = await import("./helpers");
+    const again = await setupSession();
+    expect(again.res.status).toBe(409);
+    expect((await again.res.json()).code).toBe("INSTALLATION_COMPLETE");
     const users = await sql("SELECT role, status, mfa_enabled_at FROM cc_users");
     expect(users).toHaveLength(1);
     expect(users[0]).toMatchObject({ role: "OWNER", status: "ACTIVE" });

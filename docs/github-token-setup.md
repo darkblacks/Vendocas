@@ -32,8 +32,9 @@ Escopo `codespace` (e `repo` se o repositório for privado, para ler Actions). �
 
 1. Control Center → **Credenciais** → *GitHub* → ambiente **LIVE** → cole o token → **Salvar** (pede reautenticação).
 2. **Testar**: chama `GET /user` e `GET /user/codespaces`; mostra o login, sem nunca devolver o token.
-3. **Servidor** → selecione o codespace do repositório `CONTROL_GITHUB_REPOSITORY` (somente esse repositório é aceito,
-   validado no servidor).
+3. **Configurações** → *Repositório GitHub* (`owner/nome`, ex.: `darkblacks/Vendocas`). O servidor confere no GitHub, com
+   o token, que o repositório existe e é visível; só codespaces dele podem ser listados e controlados.
+4. **Servidor** → selecione o codespace.
 
 ## Revogar / trocar
 

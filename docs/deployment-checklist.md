@@ -10,13 +10,13 @@ Marque na ordem. Nada abaixo foi executado automaticamente.
 
 ## Control Center
 - [ ] Projeto Neon criado; connection string copiada (não vai para variável de ambiente)
-- [ ] Chave mestra gerada localmente e guardada offline
-- [ ] Projeto Netlify `apps/control` + variáveis ([netlify-control-setup.md](netlify-control-setup.md))
-- [ ] Domínio dedicado e `CONTROL_PUBLIC_ORIGIN`
-- [ ] `/bootstrap`: token + connection string do Neon → **Testar e conectar**
-- [ ] Bootstrap do dono + MFA + códigos de recuperação guardados ([security.md](security.md))
-- [ ] Remover `CONTROL_BOOTSTRAP_TOKEN`
+- [ ] `CONTROL_SETUP_KEY` gerada localmente (≥ 32 caracteres) e guardada em um gerenciador de senhas
+- [ ] Projeto Netlify `apps/control` com **apenas** `CONTROL_SETUP_EMAIL` e `CONTROL_SETUP_KEY` ([netlify-control-setup.md](netlify-control-setup.md))
+- [ ] Domínio dedicado
+- [ ] `/bootstrap`: e-mail + chave → connection string → **Testar conexão** → **Salvar e continuar**
+- [ ] Proprietário + MFA + códigos de recuperação guardados ([security.md](security.md))
 - [ ] Token GitHub fine-grained cadastrado e **testado** ([github-token-setup.md](github-token-setup.md))
+- [ ] Configurações → repositório GitHub (e URL do app web, opcional)
 - [ ] Codespace selecionado; limite de sessão definido (≤ 6 h)
 - [ ] Credencial *Vendocas API (homologation)* cadastrada e testada
 - [ ] Ligar → acompanhar `STARTING → RUNNING`; Desligar → `STOPPED` confirmado pelo GitHub

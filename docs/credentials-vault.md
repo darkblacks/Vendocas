@@ -10,7 +10,7 @@ Tabela `integration_credentials` (banco do Control Center):
 | `provider`, `environment` | ex.: `STRIPE` / `TEST` ou `LIVE` (um registro ativo por par) |
 | `encrypted_payload` | JSON dos campos, cifrado com **AES-256-GCM** |
 | `nonce` | 96 bits aleatórios, **novo a cada gravação** |
-| `encryption_key_version` | versão da chave mestra usada (`v1`, `v2`, …) |
+| `encryption_key_version` | impressão digital da chave usada (`sk-…`, derivada de `CONTROL_SETUP_KEY`) |
 | `masked_hint` | apenas pistas não secretas (ex.: `••••4f2a`, account SID público) |
 | `status` | `UNTESTED`, `VALID`, `INVALID`, `DISABLED`, `REVOKED` |
 | `last_tested_at`, `last_error_code`, `last_error_message` | resultado do último teste (mensagem higienizada) |
@@ -22,25 +22,37 @@ quem/quando — **sem** valores.
 O AAD (dados autenticados adicionais) do GCM é `vault:<id>:<provider>:<env>`: um ciphertext copiado para outro
 registro não decifra. Segredos de MFA dos usuários usam o mesmo esquema (`cc_user_mfa:<userId>`).
 
-## Chave mestra
+## Chaves de criptografia (derivadas de `CONTROL_SETUP_KEY`)
 
-* Variável **secreta** da Netlify `CONTROL_MASTER_KEYS="v1:<base64 32 bytes>"` e `CONTROL_ACTIVE_KEY_VERSION=v1`.
-* Gere com `pnpm --filter @vendocas/control keys:generate` (localmente, nunca em CI) e guarde uma cópia offline
-  (gerenciador de senhas). **Sem a chave, nada no cofre pode ser lido** — não existe recuperação.
-* Nunca no Git, nunca no banco, nunca no armazenamento temporário de funções.
-* Ausente/ inválida → o cofre responde `503 CONFIG_MISSING` (falha fechada).
+Não existe mais “chave mestra” separada. Da chave de instalação saem, por HKDF-SHA256 (sal fixo da aplicação, um
+contexto `info` por uso):
+
+| Contexto | Uso |
+|---|---|
+| `vendocas-control/v1/install-auth` | HMAC que assina a sessão de instalação e compara a chave apresentada |
+| `vendocas-control/v1/config-encryption` | AES-256-GCM da configuração fora do banco (connection string do Neon) |
+| `vendocas-control/v1/data-encryption` | AES-256-GCM dos dados no banco (cofre, segredos MFA, desafios) |
+
+Cada registro guarda `keyVersion = sk-<impressão digital>` (derivada da chave, nunca a chave). Chave ausente ou curta →
+`503 SETUP_NOT_CONFIGURED` (falha fechada). Chave diferente da usada na gravação → `SETUP_KEY_MISMATCH`.
 
 ### Rotação
 
-1. Gere `v2` e defina `CONTROL_MASTER_KEYS="v1:…,v2:…"`, `CONTROL_ACTIVE_KEY_VERSION=v2`; publique.
-2. Segurança → **Rotacionar chave** (OWNER + reautenticação): recifra todas as credenciais e segredos de MFA com `v2`.
-3. Confirme que o relatório mostra 0 registros em `v1`; remova `v1` da variável e publique.
+1. Na Netlify, copie o valor atual de `CONTROL_SETUP_KEY` para `CONTROL_SETUP_KEY_PREVIOUS`, defina uma nova
+   `CONTROL_SETUP_KEY` e publique. (A sessão de instalação e o login continuam funcionando; dados antigos seguem legíveis.)
+2. Segurança → **Recriptografar com a chave ativa** (OWNER + reautenticação): recifra credenciais, segredos MFA e a
+   connection string no Blobs, cada um com nonce novo.
+3. Confira o relatório, remova `CONTROL_SETUP_KEY_PREVIOUS` e publique.
+
+**Perda da chave**: sem ela (e sem a anterior, durante uma rotação) nada do que foi cifrado pode ser lido. Guarde-a em um
+gerenciador de senhas. Para recomeçar do zero: nova chave, apague o blob `database` do store `vendocas-control-config` e
+use um banco novo.
 
 ## Connection string do banco do Control Center
 
 Não fica no banco (seria circular): é guardada no Netlify Blobs, chave `database` do store `vendocas-control-config`,
 como `{ sealed: {ciphertext, nonce, keyVersion}, fingerprint, provider, serverVersion, configuredAt, lockedAt }`,
-cifrada com a mesma chave mestra (AAD `cc_database_url`). A rotação de chave também a recifra.
+cifrada com a chave de contexto `config-encryption` (AAD `cc_database_url`). A rotação também a recifra.
 
 ## Provedores e campos
 

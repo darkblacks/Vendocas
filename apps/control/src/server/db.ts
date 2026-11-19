@@ -1,5 +1,5 @@
 import pg from "pg";
-import { resolveDatabase } from "./database-config";
+import { pgConfig, resolveDatabase } from "./database-config";
 import { MIGRATIONS } from "./migrations";
 
 let pool: pg.Pool | null = null;
@@ -7,14 +7,9 @@ let poolUrl: string | null = null;
 let locked = false;
 let ready: Promise<void> | null = null;
 
-function newPool(url: string) {
-  const p = new pg.Pool({
-    connectionString: url,
-    max: Number(process.env.CONTROL_DB_POOL_MAX ?? 3),
-    idleTimeoutMillis: 10_000,
-    connectionTimeoutMillis: 8_000,
-    // TLS is governed by sslmode in the URL (Neon URLs carry sslmode=require).
-  });
+async function newPool(url: string) {
+  // Same hardened config as the bootstrap probe: TLS verified, host checked/pinned, connect + query timeouts.
+  const p = new pg.Pool({ ...(await pgConfig(new URL(url))), max: Number(process.env.CONTROL_DB_POOL_MAX ?? 3), idleTimeoutMillis: 10_000 });
   p.on("error", () => undefined); // idle-client errors (e.g. Neon scale-to-zero) must not crash the function
   return p;
 }
@@ -29,7 +24,7 @@ export async function getPool(): Promise<pg.Pool> {
   const d = await resolveDatabase();
   if (!pool || poolUrl !== d.url) {
     const old = pool;
-    pool = newPool(d.url);
+    pool = await newPool(d.url);
     poolUrl = d.url;
     ready = null;
     if (old) void old.end().catch(() => undefined);
@@ -46,6 +41,9 @@ export async function migrate(p: pg.Pool): Promise<void> {
   const c = await p.connect();
   try {
     await c.query("BEGIN");
+    // Never wait forever: a stuck concurrent migration must surface as an error, not as a gateway timeout.
+    await c.query("SET LOCAL lock_timeout = '5s'");
+    await c.query("SET LOCAL statement_timeout = '15s'");
     await c.query("SELECT pg_advisory_xact_lock(727001)");
     await c.query("CREATE TABLE IF NOT EXISTS cc_schema_migrations (id int PRIMARY KEY, name text NOT NULL, applied_at timestamptz NOT NULL DEFAULT now())");
     const done = new Set((await c.query<{ id: number }>("SELECT id FROM cc_schema_migrations")).rows.map((r) => r.id));

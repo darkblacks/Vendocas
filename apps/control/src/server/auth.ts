@@ -1,9 +1,9 @@
 import QRCode from "qrcode";
 import { audit, type Actor } from "./audit";
 import { open, randomToken, safeEqual, seal, sha256, uuid } from "./crypto";
-import { db, migrate, resetPool, tx } from "./db";
-import { lockDatabaseConfig, mapConnectionError, probeDatabase, saveDatabaseConfig, storedDatabaseConfig, validateConnectionString } from "./database-config";
-import { ConfigError, env } from "./env";
+import { db, tx } from "./db";
+import { lockDatabaseConfig } from "./database-config";
+import { env } from "./env";
 import { HttpError, bad, clientIp, deny } from "./http";
 import { DUMMY_HASH, hashPassword, passwordProblem, verifyPassword } from "./password";
 import { rateLimit } from "./rate-limit";
@@ -33,141 +33,10 @@ export const clearSessionCookie = () => sessionCookie("", 0);
 const userAad = (userId: string) => `cc_user_mfa:${userId}`;
 const challengeAad = (id: string) => `cc_challenge:${id}`;
 
-// ------------------------------------------------------------------ bootstrap
-export type BootstrapStage = "DATABASE" | "OWNER" | "DONE";
-
-/** Works before any database exists: tells the UI which bootstrap step is next. Never reveals the connection string. */
-export async function bootstrapStatus() {
-  const base = { tokenConfigured: (env.bootstrapToken()?.length ?? 0) >= 32, emailConfigured: !!env.bootstrapEmail() };
-  const fromEnv = !!process.env.CONTROL_DATABASE_URL?.trim();
-  let stored: Awaited<ReturnType<typeof storedDatabaseConfig>> = null;
-  let storeError: string | null = null;
-  if (!fromEnv) {
-    try { stored = await storedDatabaseConfig(); } catch (e) { storeError = e instanceof ConfigError ? e.code : "CONFIG_STORE_UNAVAILABLE"; }
-  }
-  const database = {
-    configured: fromEnv || !!stored,
-    source: fromEnv ? "env" as const : stored ? "store" as const : null,
-    provider: stored?.provider ?? null,
-    serverVersion: stored?.serverVersion ?? null,
-    configuredAt: stored?.configuredAt ?? null,
-    locked: fromEnv || !!stored?.lockedAt,
-    reachable: null as boolean | null,
-    error: storeError,
-  };
-  let completed = !!stored?.lockedAt;
-  if (database.configured) {
-    try {
-      const p = await db();
-      completed = !!(await p.query("SELECT bootstrap_completed_at FROM cc_system_state WHERE id = 1")).rows[0]?.bootstrap_completed_at || completed;
-      database.reachable = true;
-    } catch (e) {
-      database.reachable = false;
-      database.error = e instanceof HttpError || e instanceof ConfigError ? e.code : mapConnectionError(e).code;
-    }
-  }
-  const stage: BootstrapStage = !database.configured ? "DATABASE" : completed ? "DONE" : "OWNER";
-  return { stage, completed, database, ...base };
-}
-
-// Bootstrap attempts before a database exists cannot use the Postgres limiter; the token has >= 256 bits of entropy,
-// this per-instance limiter only slows down noise.
-const memoryHits = new Map<string, { start: number; hits: number }>();
-function memoryRateLimit(bucket: string, limit: number, windowMs: number) {
-  const now = Date.now();
-  const e = memoryHits.get(bucket);
-  if (!e || now - e.start > windowMs) { memoryHits.set(bucket, { start: now, hits: 1 }); return; }
-  if (++e.hits > limit) throw new HttpError(429, "RATE_LIMITED", "Too many attempts, try again later");
-}
-
-function checkBootstrapToken(presented: string) {
-  const configured = env.bootstrapToken();
-  if (!configured || configured.length < 32) throw new HttpError(503, "BOOTSTRAP_NOT_CONFIGURED", "CONTROL_BOOTSTRAP_TOKEN is not configured (min. 32 characters)");
-  return safeEqual(sha256(presented), sha256(configured));
-}
-
-/**
- * Step 1 of bootstrap: paste the PostgreSQL (Neon) connection string. Requires the bootstrap token, validates and
- * tests the URL (TLS, version, CREATE privilege by applying the migrations), then stores it encrypted in the external
- * config store. Refused once bootstrap is locked. The URL is never logged nor returned.
- */
-export async function bootstrapDatabase(req: Request, input: { token: string; connectionString: string }) {
-  const ip = clientIp(req);
-  memoryRateLimit(`bootstrap-db:${ip}`, 10, 15 * 60_000);
-  if (!checkBootstrapToken(input.token)) {
-    console.warn("[bootstrap] database step: invalid token", { ip });
-    throw deny("BOOTSTRAP_TOKEN_INVALID", "Invalid bootstrap token");
-  }
-  if (process.env.CONTROL_DATABASE_URL?.trim()) {
-    throw new HttpError(409, "DATABASE_FROM_ENV", "The database is defined by CONTROL_DATABASE_URL in the environment; nothing to configure here");
-  }
-  const current = await storedDatabaseConfig();
-  if (current?.lockedAt) throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed");
-  if (current) {
-    // Before locking, a wrong URL may be replaced — but never once the currently stored database finished bootstrap.
-    try {
-      const p = await db();
-      if ((await p.query("SELECT bootstrap_completed_at FROM cc_system_state WHERE id = 1")).rows[0]?.bootstrap_completed_at) {
-        await lockDatabaseConfig();
-        throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed");
-      }
-    } catch (e) {
-      if (e instanceof HttpError && e.code === "BOOTSTRAP_LOCKED") throw e;
-      // stored database unreachable: replacing it is the point of this call
-    }
-  }
-  seal("probe", "probe"); // master key must be usable before anything is stored (ConfigError → 503)
-  const url = validateConnectionString(input.connectionString);
-  const probe = await probeDatabase(url, migrate);
-  const saved = await saveDatabaseConfig(url, probe);
-  resetPool();
-  await audit({ id: null, label: "bootstrap", ip }, "bootstrap.database_configured", "SUCCESS", saved.fingerprint,
-    { provider: probe.provider, serverVersion: probe.serverVersion, relinked: probe.alreadyInitialized });
-  return { ok: true, provider: probe.provider, serverVersion: probe.serverVersion, alreadyInitialized: probe.alreadyInitialized };
-}
-
 export interface EnrollmentChallenge { enrollToken: string; secret: string; otpauthUri: string; qrDataUrl: string }
 
-/**
- * First-owner creation. Requires the out-of-band CONTROL_BOOTSTRAP_TOKEN, is refused forever once an owner has
- * finished MFA enrollment, and never runs if the database or master key are not configured (both are touched here).
- */
-export async function bootstrapStart(req: Request, input: { token: string; email: string; displayName: string; password: string }): Promise<EnrollmentChallenge> {
-  const ip = clientIp(req);
-  await rateLimit(`bootstrap:${ip}`, 5, 3600);
-  const actor: Actor = { id: null, label: `bootstrap:${input.email}`, ip };
-  const status = await bootstrapStatus();
-  if (status.completed) { await audit(actor, "bootstrap.start", "DENIED", null, { reason: "already completed" }); throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed"); }
-  if (!checkBootstrapToken(input.token)) {
-    await audit(actor, "bootstrap.start", "DENIED", null, { reason: "bad token" });
-    throw deny("BOOTSTRAP_TOKEN_INVALID", "Invalid bootstrap token");
-  }
-  const email = input.email.trim().toLowerCase();
-  const allowed = env.bootstrapEmail();
-  if (allowed && allowed !== email) throw deny("BOOTSTRAP_EMAIL", "This email is not authorized for bootstrap");
-  const problem = passwordProblem(input.password, email);
-  if (problem) throw bad(problem);
-  seal("probe", "probe"); // fails fast if the master key is missing/invalid
-
-  const hash = await hashPassword(input.password);
-  return tx(async (c) => {
-    await c.query("SELECT 1 FROM cc_system_state WHERE id = 1 FOR UPDATE");
-    const done = await c.query("SELECT bootstrap_completed_at FROM cc_system_state WHERE id = 1");
-    if (done.rows[0]?.bootstrap_completed_at) throw deny("BOOTSTRAP_LOCKED", "Bootstrap already completed");
-    const active = await c.query("SELECT 1 FROM cc_users WHERE status = 'ACTIVE' LIMIT 1");
-    if (active.rowCount) throw deny("BOOTSTRAP_LOCKED", "An active administrator already exists");
-    // An unfinished previous attempt (owner still PENDING_MFA) is replaced.
-    await c.query("DELETE FROM cc_users WHERE status = 'PENDING_MFA' AND role = 'OWNER'");
-    const id = uuid();
-    await c.query("INSERT INTO cc_users (id, email, display_name, password_hash, role, status) VALUES ($1,$2,$3,$4,'OWNER','PENDING_MFA')",
-      [id, email, input.displayName.trim(), hash]);
-    const ch = await createEnrollment(c, id, email);
-    await audit({ ...actor, id }, "bootstrap.start", "SUCCESS", id, {}, c);
-    return ch;
-  });
-}
-
-async function createEnrollment(c: import("pg").PoolClient, userId: string, email: string): Promise<EnrollmentChallenge> {
+/** Starts a mandatory TOTP enrollment for a PENDING_MFA user (used by installation and by first login of admins). */
+export async function createEnrollment(c: import("pg").PoolClient, userId: string, email: string): Promise<EnrollmentChallenge> {
   const token = randomToken();
   const id = uuid();
   const secret = newTotpSecret();
@@ -189,6 +58,11 @@ export async function completeEnrollment(req: Request, enrollToken: string, code
       [sha256(enrollToken)]);
     const ch = r.rows[0];
     if (!ch) throw deny("CHALLENGE_INVALID", "Enrollment expired; start again");
+    if (ch.role === "OWNER") {
+      // Serialized with owner creation: only the owner created by the (single) installation can ever complete it.
+      const st = (await c.query("SELECT bootstrap_completed_at, bootstrap_owner_id FROM cc_system_state WHERE id = 1 FOR UPDATE")).rows[0];
+      if (st?.bootstrap_completed_at && st.bootstrap_owner_id !== ch.user_id) throw deny("BOOTSTRAP_LOCKED", "Installation already completed");
+    }
     if (ch.attempts >= 5) throw deny("CHALLENGE_LOCKED", "Too many attempts; start again");
     const secret = open(JSON.parse(ch.pending_secret_enc), challengeAad(ch.id));
     if (!verifyTotp(secret, code)) {
@@ -295,7 +169,14 @@ export async function createSession(userId: string, req: Request) {
   return { cookie: sessionCookie(token, SESSION_ABSOLUTE_HOURS * 3600), csrfToken: csrf };
 }
 
-function readCookie(req: Request, name: string): string | null {
+/** State-changing requests must come from this site (Origin header), in addition to SameSite=Strict cookies. */
+export function assertSameOrigin(req: Request) {
+  const origin = req.headers.get("origin");
+  const allowed = new Set([new URL(req.url).origin, ...env.allowedOrigins()]);
+  if (!origin || !allowed.has(origin)) throw deny("CSRF", "Cross-origin request refused");
+}
+
+export function readCookie(req: Request, name: string): string | null {
   const raw = req.headers.get("cookie") ?? "";
   for (const part of raw.split(";")) {
     const [k, ...v] = part.trim().split("=");
@@ -332,9 +213,7 @@ export async function requireAuth(req: Request, opts: { role?: Role; mutation?: 
   if (!ctx) throw new HttpError(401, "UNAUTHENTICATED", "Sign in required");
   const mutation = opts.mutation ?? !["GET", "HEAD", "OPTIONS"].includes(req.method);
   if (mutation) {
-    const origin = req.headers.get("origin");
-    const expected = env.publicOrigin() ?? new URL(req.url).origin;
-    if (!origin || origin !== expected) throw deny("CSRF", "Cross-origin request refused");
+    assertSameOrigin(req);
     const csrf = req.headers.get("x-csrf-token") ?? "";
     if (!safeEqual(csrf, ctx.session.csrfToken)) throw deny("CSRF", "Missing or invalid CSRF token");
   }

@@ -2,26 +2,34 @@
 
 Nenhum valor real fica no Git. `.env` é ignorado; use `.env.example` como modelo.
 
-## Control Center (`apps/control`, Netlify Functions)
+## Control Center (`apps/control`, Netlify)
 
-| Variável | Obrigatória | Secreta | Descrição |
-|---|---|---|---|
-| `CONTROL_DATABASE_URL` | não | sim | **override** opcional. No fluxo normal a connection string do Neon é colada em `/bootstrap` e guardada criptografada no Netlify Blobs. Se definida, tem prioridade (testes, scripts, emergência) |
-| `CONTROL_CONFIG_STORE` | não | não | `netlify-blobs` (padrão em produção) ou `file` (padrão em dev; só para hospedagem própria com disco persistente) |
-| `CONTROL_STATE_DIR` | não | não | diretório do modo `file` (padrão `apps/control/.control-state`, ignorado pelo Git) |
-| `CONTROL_MASTER_KEYS` | sim | sim | `v1:<b64 32 bytes>[,v2:…]` |
-| `CONTROL_ACTIVE_KEY_VERSION` | sim | não | versão usada para novas gravações |
-| `CONTROL_BOOTSTRAP_TOKEN` | só no bootstrap | sim | ≥ 32 caracteres; remover depois |
-| `CONTROL_BOOTSTRAP_EMAIL` | só no bootstrap | não | único e-mail aceito para o primeiro dono |
-| `CONTROL_GITHUB_REPOSITORY` | sim | não | `owner/repo` cujos codespaces podem ser controlados |
-| `CONTROL_PUBLIC_ORIGIN` | produção | não | origem esperada no cabeçalho `Origin` |
-| `CONTROL_WEB_APP_URL` | não | não | link para o app web |
-| `CONTROL_NETLIFY_WEB_URL` | não | não | informativo (página Deploys) |
-| `CONTROL_GITHUB_API_URL` | não | não | padrão `https://api.github.com` (testes usam um falso) |
-| `CONTROL_DB_POOL_MAX` | não | não | padrão 3 |
-| `TEST_DATABASE_URL` | testes | não | banco descartável dos testes |
+**Obrigatórias — e as únicas a configurar manualmente:**
 
-O token do GitHub e as chaves de provedores **não** são variáveis: ficam no cofre.
+| Variável | Secreta | Descrição |
+|---|---|---|
+| `CONTROL_SETUP_EMAIL` | não | e-mail do dono da instalação |
+| `CONTROL_SETUP_KEY` | sim | chave de instalação (≥ 32 caracteres). Raiz de confiança: as chaves de autenticação da instalação e de criptografia são derivadas dela com HKDF-SHA256 |
+
+Todo o resto é configurado na interface e guardado criptografado: connection string do Neon (Netlify Blobs), repositório
+GitHub e links (banco), tokens e chaves de provedores (cofre).
+
+**Opcionais / situacionais (não exigidas):**
+
+| Variável | Quando |
+|---|---|
+| `CONTROL_SETUP_KEY_PREVIOUS` | só durante a rotação da chave de instalação (leitura dos dados antigos); remova depois |
+| `CONTROL_DATABASE_URL` | override de emergência do banco (tem prioridade sobre a URL salva); também usada por testes e scripts |
+| `CONTROL_CONFIG_STORE`, `CONTROL_STATE_DIR` | hospedagem fora da Netlify / desenvolvimento local (`file`) |
+| `CONTROL_DB_POOL_MAX` | ajuste fino (padrão 3) |
+| `TEST_DATABASE_URL` | testes automatizados |
+
+Lidas automaticamente quando a Netlify as fornece: `URL`, `DEPLOY_PRIME_URL`, `NODE_ENV`.
+
+**Removidas** (modelo anterior, não use): `CONTROL_MASTER_KEYS`, `CONTROL_ACTIVE_KEY_VERSION`, `CONTROL_BOOTSTRAP_TOKEN`,
+`CONTROL_BOOTSTRAP_EMAIL`, `CONTROL_GITHUB_REPOSITORY`, `CONTROL_PUBLIC_ORIGIN`, `CONTROL_WEB_APP_URL`,
+`CONTROL_NETLIFY_WEB_URL`. Se `CONTROL_MASTER_KEYS` ainda existir numa instalação antiga, ela só é lida para decifrar dados
+antigos; use “Recriptografar” em Segurança e depois apague a variável.
 
 ## App web (`apps/web`)
 

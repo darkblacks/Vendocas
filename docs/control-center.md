@@ -28,9 +28,12 @@ Netlify Scheduled Function "codespace-scheduler" (a cada 5 min) ──► mesmo 
 ```
 
 * O navegador **nunca** fala com o GitHub nem recebe tokens. Toda chamada passa pelos route handlers.
-* A chave mestra fica **apenas** em variável de ambiente secreta da Netlify (`CONTROL_MASTER_KEYS`).
+* Configuração manual: **só** `CONTROL_SETUP_EMAIL` e `CONTROL_SETUP_KEY` na Netlify. Todas as chaves de criptografia são
+  derivadas da chave de instalação (HKDF-SHA256); nenhuma chave fica no Git, no banco ou no navegador.
 * A connection string do banco (Neon) é colada uma vez em `/bootstrap`, testada e guardada criptografada no
-  **Netlify Blobs** (persistente; fora do Codespace e das funções). `CONTROL_DATABASE_URL`, se definida, tem prioridade.
+  **Netlify Blobs** (persistente; fora do Codespace e das funções). `CONTROL_DATABASE_URL`, se definida, tem prioridade
+  (override opcional).
+* Repositório GitHub e links ficam em Configurações (banco); tokens e chaves de provedores no cofre.
 * As migrações rodam numa única transação com lock consultivo de transação (compatível com o pooler do Neon): durante o
   bootstrap, na primeira requisição de cada instância, ou com `pnpm --filter @vendocas/control db:migrate`.
 
@@ -64,7 +67,7 @@ Execuções simultâneas do agendador não duplicam ações: cada sessão é “
 |---|---|
 | VIEWER | ver dashboard, sessões, status |
 | ADMIN | + ligar/desligar, ver/gerenciar cofre, logs, auditoria |
-| OWNER | + criar/desativar administradores, selecionar codespace, alterar limite, rotacionar chave mestra |
+| OWNER | + criar/desativar administradores, selecionar codespace, alterar limite, definir repositório/links, rotacionar a chave de instalação |
 
 Usuários do Vendocas (app público) não existem aqui e não podem obter acesso.
 
@@ -72,14 +75,11 @@ Usuários do Vendocas (app público) não existem aqui e não podem obter acesso
 
 ```bash
 createdb control_dev   # ou use o Postgres do docker compose
-# Opção A: cole a URL em http://localhost:3100/bootstrap (fica criptografada em apps/control/.control-state/)
-# Opção B: export CONTROL_DATABASE_URL=postgres://vendocas:vendocas@localhost:5432/control_dev
-export CONTROL_MASTER_KEYS="$(pnpm --silent --filter @vendocas/control keys:generate)"
-export CONTROL_ACTIVE_KEY_VERSION=v1
-export CONTROL_BOOTSTRAP_TOKEN="$(pnpm --silent --filter @vendocas/control bootstrap:token)"
-export CONTROL_BOOTSTRAP_EMAIL=voce@exemplo.com
-export CONTROL_GITHUB_REPOSITORY=darkblacks/Vendocas
-pnpm --filter @vendocas/control dev    # http://localhost:3100
+export CONTROL_SETUP_EMAIL=voce@exemplo.com
+export CONTROL_SETUP_KEY="$(pnpm --silent --filter @vendocas/control setup:key)"
+pnpm --filter @vendocas/control dev    # http://localhost:3100 → /bootstrap
+# Em desenvolvimento a URL salva fica criptografada em apps/control/.control-state/ (ignorado pelo Git);
+# o modo local aceita postgres://…@localhost sem TLS. Em produção TLS e host público são obrigatórios.
 ```
 
 Testes: `TEST_DATABASE_URL=postgres://…/control_test pnpm --filter @vendocas/control test` (o GitHub e os provedores

@@ -159,4 +159,10 @@ CREATE TABLE IF NOT EXISTS cc_operation_log (
 CREATE INDEX IF NOT EXISTS ix_cc_oplog ON cc_operation_log(created_at DESC);
 `,
   },
+  {
+    id: 2,
+    name: "settings_in_ui",
+    // Repository and links are configured in the UI (no environment variables); the column for the repository exists.
+    sql: `ALTER TABLE cc_system_state ADD COLUMN IF NOT EXISTS web_app_url text;`,
+  },
 ];

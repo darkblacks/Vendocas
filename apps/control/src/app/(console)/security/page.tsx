@@ -14,8 +14,8 @@ export default function Security() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Segurança e auditoria</h1>
-      {me?.role === "OWNER" && <Card><Title>Rotação da chave mestra</Title>
-        <p className="text-sm text-muted-foreground">1) Adicione a nova versão em CONTROL_MASTER_KEYS e mude CONTROL_ACTIVE_KEY_VERSION no ambiente. 2) Clique abaixo para recriptografar todas as credenciais e segredos MFA. 3) Remova a versão antiga do ambiente.</p>
+      {me?.role === "OWNER" && <Card><Title>Rotação da chave de instalação</Title>
+        <p className="text-sm text-muted-foreground">1) Na Netlify, copie o valor atual de CONTROL_SETUP_KEY para CONTROL_SETUP_KEY_PREVIOUS e defina uma nova CONTROL_SETUP_KEY; publique. 2) Clique abaixo para recriptografar credenciais, segredos MFA e a connection string do banco. 3) Remova CONTROL_SETUP_KEY_PREVIOUS e publique.</p>
         <Button className="mt-3" variant="outline" onClick={async () => { setMsg(null); try { const r = await call<{ activeVersion: string; credentials: number; users: number }>("/api/vault/rotate", { method: "POST" });
           setMsg({ tone: "ok", text: `Recriptografado com ${r.activeVersion}: ${r.credentials} credenciais, ${r.users} segredos MFA.` }); } catch (e) { setMsg({ tone: "bad", text: message(e) }); } }}>Recriptografar com a chave ativa</Button>
         {msg && <div className="mt-3"><Alert tone={msg.tone}>{msg.text}</Alert></div>}</Card>}

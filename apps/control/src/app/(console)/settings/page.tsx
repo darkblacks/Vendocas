@@ -9,25 +9,42 @@ interface U { id: string; email: string; displayName: string; role: string; stat
 
 export default function SettingsPage() {
   const me = useMe();
-  const s = usePoll<{ maxSessionHours: number; repository: string | null; selectedCodespace: string | null; links: { web: string | null } }>("/api/settings", 0);
+  const s = usePoll<{ maxSessionHours: number; repository: string | null; webAppUrl: string | null; selectedCodespace: string | null; links: { web: string | null } }>("/api/settings", 0);
   const users = usePoll<U[]>(me && me.role !== "VIEWER" ? "/api/users" : null, 0);
   const [hours, setHours] = useState("6");
+  const [repo, setRepo] = useState("");
+  const [webUrl, setWebUrl] = useState("");
   const [msg, setMsg] = useState<{ tone: "ok" | "bad"; text: string } | null>(null);
   const [pw, setPw] = useState({ currentPassword: "", newPassword: "" });
   const [nu, setNu] = useState({ email: "", displayName: "", role: "ADMIN" });
   const [temp, setTemp] = useState<string | null>(null);
-  useEffect(() => { if (s.data) setHours(String(s.data.maxSessionHours)); }, [s.data]);
+  useEffect(() => {
+    if (!s.data) return;
+    setHours(String(s.data.maxSessionHours)); setRepo(s.data.repository ?? ""); setWebUrl(s.data.webAppUrl ?? "");
+  }, [s.data]);
   const act = async (fn: () => Promise<unknown>, ok: string) => { setMsg(null); try { await fn(); setMsg({ tone: "ok", text: ok }); } catch (e) { setMsg({ tone: "bad", text: message(e) }); } };
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Configurações</h1>
       {msg && <Alert tone={msg.tone}>{msg.text}</Alert>}
       <Card><Title>Servidor</Title>
-        <dl className="mb-3 space-y-1 text-sm"><div>Repositório controlado (servidor): <span className="font-mono">{s.data?.repository ?? "não configurado"}</span></div>
+        <dl className="mb-3 space-y-1 text-sm"><div>Repositório controlado: <span className="font-mono">{s.data?.repository ?? "não configurado"}</span></div>
           <div>Codespace selecionado: <span className="font-mono">{s.data?.selectedCodespace ?? "—"}</span></div></dl>
         {me?.role === "OWNER" && <div className="flex flex-wrap items-end gap-2">
           <Field label="Limite de sessão (horas, máximo 6)" id="h"><Input id="h" type="number" min="0.5" max="6" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)} className="w-32" /></Field>
           <Button onClick={() => act(() => call("/api/settings", { method: "PUT", body: { maxSessionHours: Number(hours) } }).then(() => s.reload()), "Limite atualizado (vale para novas sessões).")}>Salvar</Button></div>}
+        {me?.role === "OWNER" && <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div className="flex items-end gap-2">
+            <Field label="Repositório GitHub (owner/nome)" id="repo" hint="Só Codespaces deste repositório podem ser controlados. Exige o token GitHub cadastrado em Credenciais.">
+              <Input id="repo" placeholder="darkblacks/Vendocas" value={repo} onChange={(e) => setRepo(e.target.value)} /></Field>
+            <Button onClick={() => act(() => call("/api/settings", { method: "PUT", body: { githubRepository: repo } }).then(() => s.reload()), "Repositório verificado no GitHub e salvo.")}>Salvar</Button>
+          </div>
+          <div className="flex items-end gap-2">
+            <Field label="URL do app web (opcional)" id="web" hint="Link exibido no painel, ex.: https://app.seudominio.com">
+              <Input id="web" placeholder="https://…" value={webUrl} onChange={(e) => setWebUrl(e.target.value)} /></Field>
+            <Button onClick={() => act(() => call("/api/settings", { method: "PUT", body: { webAppUrl: webUrl || null } }).then(() => s.reload()), "Link salvo.")}>Salvar</Button>
+          </div>
+        </div>}
       </Card>
       <Card><Title>Alterar senha</Title>
         <div className="grid gap-2 sm:grid-cols-3">

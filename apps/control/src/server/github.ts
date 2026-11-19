@@ -31,6 +31,16 @@ async function gh(token: string, path: string, init: RequestInit = {}): Promise<
   throw new GitHubError(r.status >= 500 ? 503 : 502, "GITHUB_ERROR", `GitHub API error HTTP ${r.status}`);
 }
 
+/** Confirms the token can see the repository; returns its canonical "owner/name". */
+export async function repositoryFullName(token: string, repo: string): Promise<string> {
+  try {
+    return ((await (await gh(token, `/repos/${repo}`)).json()) as { full_name: string }).full_name;
+  } catch (e) {
+    if (e instanceof GitHubError && e.status === 404) throw new GitHubError(400, "REPOSITORY_NOT_FOUND", "Repository not found or not visible to the GitHub token");
+    throw e;
+  }
+}
+
 const NAME = /^[A-Za-z0-9][A-Za-z0-9-]{1,98}$/;
 export function assertCodespaceName(name: string) {
   if (!NAME.test(name)) throw new HttpError(400, "INVALID_CODESPACE", "Invalid codespace name");

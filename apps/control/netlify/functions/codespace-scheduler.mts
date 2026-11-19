@@ -14,7 +14,7 @@ export default async () => {
     return new Response(null, { status: 204 });
   } catch (e) {
     // Before /bootstrap has stored the database there is nothing to supervise.
-    if (e instanceof ConfigError && e.code === "DATABASE_NOT_CONFIGURED") return new Response(null, { status: 204 });
+    if (e instanceof ConfigError && ["DATABASE_NOT_CONFIGURED", "SETUP_NOT_CONFIGURED"].includes(e.code)) return new Response(null, { status: 204 });
     console.error("[scheduler] failed", (e as Error).name);
     return new Response(null, { status: 500 });
   }

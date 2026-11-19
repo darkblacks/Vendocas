@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { FakeGitHub, bootstrapOwner, reauth, req, resetDb, sql } from "./helpers";
+import { FakeGitHub, bootstrapOwner, configureRepository, reauth, req, resetDb, sql } from "./helpers";
 
 type H = { GET?: (r: Request, c?: unknown) => Promise<Response>; POST?: (r: Request, c?: unknown) => Promise<Response>; PUT?: (r: Request, c?: unknown) => Promise<Response> };
 const r = (p: string) => import(/* @vite-ignore */ `@/app/api/${p}/route`) as Promise<H>;
@@ -22,6 +22,20 @@ describe("codespace control", () => {
     await reauth(owner);
     const vault = await import("@/app/api/vault/[provider]/route");
     await vault.PUT(req("PUT", "/api/vault/GITHUB", { client: owner, body: { environment: "LIVE", values: { token: "github_pat_" + "b".repeat(40) } } }), { params: Promise.resolve({ provider: "GITHUB" }) });
+    await configureRepository(owner);
+  });
+
+  it("configures the repository in the UI: verified on GitHub, owner only, no environment variable", async () => {
+    const s = await import("@/app/api/settings/route");
+    await reauth(owner);
+    expect((await s.PUT(req("PUT", "/api/settings", { client: owner, body: { githubRepository: "not a repo" } }))).status).toBe(400);
+    const missing = await s.PUT(req("PUT", "/api/settings", { client: owner, body: { githubRepository: "someone/private-thing" } }));
+    expect((await missing.json()).code).toBe("REPOSITORY_NOT_FOUND");
+    const ok = await (await s.PUT(req("PUT", "/api/settings", { client: owner, body: { githubRepository: "DarkBlacks/vendocas", webAppUrl: "https://app.example.com/" } }))).json();
+    expect(ok).toMatchObject({ repository: "darkblacks/Vendocas", webAppUrl: "https://app.example.com" });
+    const got = await (await s.GET(req("GET", "/api/settings", { client: owner }))).json();
+    expect(got).toMatchObject({ repository: "darkblacks/Vendocas", links: { web: "https://app.example.com" } });
+    expect((await s.PUT(req("PUT", "/api/settings", { client: owner, body: { webAppUrl: "javascript:alert(1)" } }))).status).toBe(400);
   });
 
   async function selectMain() {

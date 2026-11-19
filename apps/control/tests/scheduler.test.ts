@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { FakeGitHub, bootstrapOwner, reauth, req, resetDb, sql } from "./helpers";
+import { FakeGitHub, bootstrapOwner, configureRepository, reauth, req, resetDb, sql } from "./helpers";
 import { schedulerTick } from "@/server/codespaces";
 
 const NAME = "vendocas-main-abc123";
@@ -17,6 +17,7 @@ describe("six-hour session scheduler", () => {
     gh.install();
     const v = await import("@/app/api/vault/[provider]/route");
     await v.PUT(req("PUT", "/api/vault/GITHUB", { client: owner, body: { environment: "LIVE", values: { token: "github_pat_" + "c".repeat(40) } } }), { params: Promise.resolve({ provider: "GITHUB" }) });
+    await configureRepository(owner);
     await (await import("@/app/api/codespaces/select/route")).POST(req("POST", "/api/codespaces/select", { client: owner, body: { name: NAME } }));
   });
 

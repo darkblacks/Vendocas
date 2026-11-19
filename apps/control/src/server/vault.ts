@@ -178,7 +178,7 @@ export async function historyFor(providerId: string) {
 
 /**
  * Re-encrypts every vault record and every stored TOTP secret with the active master key version. Run after adding
- * a new key version to CONTROL_MASTER_KEYS and switching CONTROL_ACTIVE_KEY_VERSION; afterwards the old version can be removed.
+ * a new CONTROL_SETUP_KEY (old one kept in CONTROL_SETUP_KEY_PREVIOUS); afterwards the previous key can be removed.
  */
 export async function rotateEncryptionKeys(ctx: AuthContext) {
   const key = activeKey();

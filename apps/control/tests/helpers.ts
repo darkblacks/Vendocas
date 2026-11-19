@@ -37,17 +37,32 @@ export function req(method: string, path: string, opts: { body?: unknown; client
 export const cookieFrom = (res: Response) => res.headers.get("set-cookie")?.split(";")[0] ?? null;
 export const code = (secret: string, offsetSteps = 0) => totp(secret, Math.floor(Date.now() / 30_000) + offsetSteps);
 
-/** Bootstraps the owner end-to-end through the real route handlers and returns an authenticated client. */
+/** Starts an installation session (CONTROL_SETUP_EMAIL + CONTROL_SETUP_KEY) and returns the setup cookie. */
+export async function setupSession(email = process.env.CONTROL_SETUP_EMAIL!, key = process.env.CONTROL_SETUP_KEY!) {
+  const r = await (await import("@/app/api/bootstrap/session/route")).POST(req("POST", "/api/bootstrap/session", { body: { email, key } }));
+  return { res: r, cookie: cookieFrom(r) };
+}
+
+/** Installs end-to-end through the real route handlers (session → owner → MFA) and returns an authenticated client. */
 export async function bootstrapOwner(): Promise<Client & { secret: string; recoveryCodes: string[] }> {
-  const boot = await import("@/app/api/bootstrap/route");
+  const s = await setupSession();
+  if (s.res.status !== 200) throw new Error(`setup session failed ${s.res.status} ${await s.res.text()}`);
+  const owner = await import("@/app/api/bootstrap/owner/route");
   const enroll = await import("@/app/api/auth/enroll/route");
-  const r1 = await boot.POST(req("POST", "/api/bootstrap", { body: { token: process.env.CONTROL_BOOTSTRAP_TOKEN, ...OWNER } }));
-  if (r1.status !== 200) throw new Error(`bootstrap failed ${r1.status} ${await r1.text()}`);
+  const r1 = await owner.POST(req("POST", "/api/bootstrap/owner", { body: { displayName: OWNER.displayName, password: OWNER.password }, client: { cookie: s.cookie, csrf: null } }));
+  if (r1.status !== 200) throw new Error(`owner creation failed ${r1.status} ${await r1.text()}`);
   const ch = (await r1.json()) as { enrollToken: string; secret: string };
   const r2 = await enroll.POST(req("POST", "/api/auth/enroll", { body: { enrollToken: ch.enrollToken, code: code(ch.secret) } }));
   if (r2.status !== 200) throw new Error(`enroll failed ${r2.status} ${await r2.text()}`);
   const body = (await r2.json()) as { csrfToken: string; recoveryCodes: string[] };
   return { cookie: cookieFrom(r2), csrf: body.csrfToken, secret: ch.secret, recoveryCodes: body.recoveryCodes };
+}
+
+/** Repository allowlist is configured in the UI now (OWNER + reauth; needs the GitHub token in the vault first). */
+export async function configureRepository(owner: Client & { secret: string }, repo = "darkblacks/Vendocas") {
+  await reauth(owner);
+  const r = await (await import("@/app/api/settings/route")).PUT(req("PUT", "/api/settings", { client: owner, body: { githubRepository: repo } }));
+  if (r.status !== 200) throw new Error(`repository setup failed ${r.status} ${await r.text()}`);
 }
 
 export async function reauth(client: Client & { secret: string }) {
@@ -97,6 +112,8 @@ export class FakeGitHub {
     if (url.pathname === "/user") return this.json(200, { login: "owner" });
     if (url.pathname === "/user/codespaces") return this.json(200, { codespaces: [...this.codespaces.keys()].map((n) => this.cs(n)) });
     if (url.pathname === "/credentials/revoke") return new Response(null, { status: 202 });
+    const repo = url.pathname.match(/^\/repos\/([^/]+\/[^/]+)$/);
+    if (repo) return repo[1]!.toLowerCase() === "darkblacks/vendocas" ? this.json(200, { full_name: "darkblacks/Vendocas" }) : this.json(404, { message: "Not Found" });
     const m = url.pathname.match(/^\/user\/codespaces\/([^/]+)(\/(start|stop))?$/);
     if (m) {
       const c = this.codespaces.get(m[1]!);

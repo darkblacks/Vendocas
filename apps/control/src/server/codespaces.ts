@@ -2,9 +2,8 @@ import type pg from "pg";
 import { audit, oplog, SYSTEM, type Actor } from "./audit";
 import type { AuthContext } from "./auth";
 import { db, tx } from "./db";
-import { env } from "./env";
 import { HttpError, bad } from "./http";
-import { RUNNING_STATES, STOPPED_STATES, getCodespace, listCodespaces, startCodespace, stopCodespace, type Codespace } from "./github";
+import { RUNNING_STATES, STOPPED_STATES, getCodespace, listCodespaces, repositoryFullName, startCodespace, stopCodespace, type Codespace } from "./github";
 import { reveal } from "./vault";
 
 /**
@@ -29,18 +28,52 @@ export async function githubToken(): Promise<string> {
 
 export async function settings() {
   const p = await db();
-  const s = (await p.query("SELECT selected_codespace, max_session_hours FROM cc_system_state WHERE id = 1")).rows[0];
-  return { selectedCodespace: (s?.selected_codespace as string | null) ?? null, maxSessionHours: Number(s?.max_session_hours ?? 6), repository: env.githubRepository() };
+  const s = (await p.query("SELECT selected_codespace, max_session_hours, github_repository, web_app_url FROM cc_system_state WHERE id = 1")).rows[0];
+  return {
+    selectedCodespace: (s?.selected_codespace as string | null) ?? null,
+    maxSessionHours: Number(s?.max_session_hours ?? 6),
+    repository: (s?.github_repository as string | null) ?? null,
+    webAppUrl: (s?.web_app_url as string | null) ?? null,
+  };
 }
 
-function allowedRepo(): string {
-  const repo = env.githubRepository();
-  if (!repo) throw new HttpError(503, "REPOSITORY_NOT_CONFIGURED", "CONTROL_GITHUB_REPOSITORY is not configured");
+/** Server-side allowlist: only codespaces of the repository the OWNER configured are listed/controlled. */
+async function allowedRepo(): Promise<string> {
+  const repo = (await settings()).repository;
+  if (!repo) throw new HttpError(409, "REPOSITORY_NOT_CONFIGURED", "Set the GitHub repository in Settings first");
   return repo.toLowerCase();
 }
 
+const REPO = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})\/[A-Za-z0-9._-]{1,100}$/;
+
+export async function setRepository(ctx: AuthContext, repo: string) {
+  const r = repo.trim();
+  if (!REPO.test(r)) throw bad("Use the owner/name format, e.g. darkblacks/Vendocas");
+  const canonical = await repositoryFullName(await githubToken(), r); // requires a stored GitHub token
+  const p = await db();
+  // Changing repository invalidates the selected codespace (it belonged to the previous one).
+  await p.query(`UPDATE cc_system_state SET selected_codespace = CASE WHEN lower(coalesce(github_repository,'')) = lower($1) THEN selected_codespace END,
+                 github_repository = $1, updated_at = now() WHERE id = 1`, [canonical]);
+  await audit(ctx.actor, "settings.github_repository", "SUCCESS", canonical);
+  return canonical;
+}
+
+export async function setWebAppUrl(ctx: AuthContext, url: string | null) {
+  let v: string | null = null;
+  if (url && url.trim()) {
+    let u: URL;
+    try { u = new URL(url.trim()); } catch { throw bad("Invalid URL"); }
+    if (u.protocol !== "https:" && !(u.protocol === "http:" && u.hostname === "localhost")) throw bad("Use an https:// URL");
+    v = u.origin + (u.pathname === "/" ? "" : u.pathname);
+  }
+  const p = await db();
+  await p.query("UPDATE cc_system_state SET web_app_url = $1, updated_at = now() WHERE id = 1", [v]);
+  await audit(ctx.actor, "settings.web_app_url", "SUCCESS", v);
+  return v;
+}
+
 export async function available(): Promise<Codespace[]> {
-  const repo = allowedRepo();
+  const repo = await allowedRepo();
   return (await listCodespaces(await githubToken())).filter((c) => c.repository.toLowerCase() === repo);
 }
 
@@ -101,7 +134,7 @@ export async function start(ctx: AuthContext, idempotencyKey: string | null): Pr
     const existing = await openSession(name, c);
     if (existing) return { session: existing, codespace: await getCodespace(token, name), alreadyRunning: true };
     let cs = await getCodespace(token, name);
-    if (cs.repository.toLowerCase() !== allowedRepo()) throw new HttpError(403, "REPOSITORY_MISMATCH", "Selected codespace no longer belongs to the configured repository");
+    if (cs.repository.toLowerCase() !== (await allowedRepo())) throw new HttpError(403, "REPOSITORY_MISMATCH", "Selected codespace no longer belongs to the configured repository");
     if (cs.state === "ShuttingDown") throw new HttpError(409, "CODESPACE_SHUTTING_DOWN", "The codespace is shutting down; start it again once it has stopped");
     const alreadyRunning = RUNNING_STATES.has(cs.state);
     if (!alreadyRunning && cs.state !== "Starting") {

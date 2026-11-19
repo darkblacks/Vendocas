@@ -40,7 +40,7 @@ export default function ServerPage() {
         <Card>
           <Title actions={<Button variant="outline" loading={busy} onClick={async () => { setBusy(true); setError(null); try { setList(await call<Codespace[]>("/api/codespaces/available")); } catch (e) { setError(message(e)); } finally { setBusy(false); } }}>Consultar Codespaces</Button>}>
             Selecionar Codespace do Vendocas</Title>
-          <p className="text-sm text-muted-foreground">Somente Codespaces do repositório configurado no servidor ({ov.data?.settings.repository ?? "CONTROL_GITHUB_REPOSITORY não configurado"}) são listados.</p>
+          <p className="text-sm text-muted-foreground">Somente Codespaces do repositório definido em Configurações ({ov.data?.settings.repository ?? "ainda não definido"}) são listados.</p>
           {error && <div className="mt-2"><Alert tone="bad">{error}</Alert></div>}
           {list && (list.length === 0 ? <div className="mt-2"><Alert tone="warn">Nenhum Codespace encontrado para o repositório. Crie um (docs/codespaces-setup.md).</Alert></div> : (
             <div className="mt-3"><Table head={["Nome", "Estado", "Branch", "Último uso", ""]}>
