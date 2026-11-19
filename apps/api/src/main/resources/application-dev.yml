@@ -1,0 +1,10 @@
+# Local development profile: emails are written to the log instead of being sent.
+app:
+  mail:
+    mode: log
+  security:
+    secure-cookies: false
+logging:
+  structured:
+    format:
+      console: ""

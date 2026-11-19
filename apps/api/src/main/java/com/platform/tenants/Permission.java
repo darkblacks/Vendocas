@@ -1,0 +1,21 @@
+package com.platform.tenants;
+
+public enum Permission {
+    ORG_READ, ORG_MANAGE, MEMBERS_MANAGE,
+    BILLING_READ, BILLING_MANAGE,
+    CONTACTS_READ, CONTACTS_WRITE, CONTACTS_EXPORT, CONSENT_MANAGE,
+    CHANNELS_READ, CHANNELS_MANAGE,
+    AUTOMATIONS_READ, AUTOMATIONS_WRITE, AUTOMATIONS_ACTIVATE,
+    CAMPAIGNS_READ, CAMPAIGNS_WRITE,
+    CONVERSATIONS_READ, CONVERSATIONS_REPLY,
+    CALLS_READ, CALLS_MANAGE,
+    REPORTS_READ, PRIVACY_MANAGE, INTEGRATIONS_MANAGE, AUDIT_READ;
+
+    /** Permissions that require a second factor for OWNER/ADMIN when the organization enforces MFA. */
+    public boolean sensitive() {
+        return switch (this) {
+            case ORG_MANAGE, MEMBERS_MANAGE, BILLING_MANAGE, CHANNELS_MANAGE, PRIVACY_MANAGE, INTEGRATIONS_MANAGE, CONTACTS_EXPORT -> true;
+            default -> false;
+        };
+    }
+}

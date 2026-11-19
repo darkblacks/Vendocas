@@ -1,13 +1,19 @@
 {
-  "name": "erp-financeiro-local",
+  "name": "vendocas",
   "private": true,
+  "description": "Vendocas — multi-tenant SaaS for sales recovery, relationship and communication automations.",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=22" },
   "scripts": {
-    "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "dev": "concurrently -n API,WEB -c blue,green \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
-    "build": "npm run build --prefix frontend",
-    "start": "npm run start --prefix backend"
-  },
-  "devDependencies": {
-    "concurrently": "^9.0.0"
+    "dev:web": "pnpm --filter @vendocas/web dev",
+    "build:web": "pnpm --filter @vendocas/web build",
+    "test:web": "pnpm --filter @vendocas/web test",
+    "e2e": "pnpm --filter @vendocas/web e2e",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "api:test": "cd apps/api && mvn -B verify",
+    "api:run": "cd apps/api && mvn spring-boot:run",
+    "openapi:generate": "pnpm --filter @vendocas/api-client generate",
+    "build:sdk": "pnpm --filter @vendocas/tracking-sdk build"
   }
 }
