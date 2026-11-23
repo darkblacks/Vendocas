@@ -1,8 +1,10 @@
 package com.platform.support;
 
 import com.platform.messaging.providers.MessageProvider;
+import com.platform.taxation.FiscalDocumentProvider;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 import java.util.List;
 import java.util.UUID;
@@ -32,4 +34,27 @@ public class TestProviders {
             }
         };
     }
+
+    /** Fiscal provider double: records every call; never reaches Focus NFe. */
+    public static final class FakeFiscal implements FiscalDocumentProvider {
+        public final List<String> submitted = new CopyOnWriteArrayList<>();
+        public volatile boolean configured = true;
+        public volatile boolean fail = false;
+        public volatile String outcome = "ISSUED";
+        @Override public String name() { return "FOCUS_NFE"; }
+        @Override public boolean configured() { return configured; }
+        @Override public Status submit(NfseRequest r) {
+            if (fail) throw new IllegalStateException("fiscal provider down");
+            submitted.add(r.reference());
+            return new Status(outcome, "ISSUED".equals(outcome) ? "NF-" + submitted.size() : null, null, null, null, null);
+        }
+        @Override public Status query(String reference) { return new Status(outcome, null, null, null, null, null); }
+        public void reset() { submitted.clear(); configured = true; fail = false; outcome = "ISSUED"; }
+    }
+
+    public static final FakeFiscal FISCAL = new FakeFiscal();
+
+    @Bean
+    @Primary
+    FiscalDocumentProvider fakeFiscalProvider() { return FISCAL; }
 }

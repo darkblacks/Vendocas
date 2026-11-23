@@ -1,5 +1,7 @@
 package com.platform.billing;
 
+import com.platform.operations.PlatformSettingsService;
+import com.platform.operations.StripeKeyMode;
 import com.platform.shared.AppProperties;
 import com.platform.shared.api.ApiException;
 import com.platform.shared.api.ErrorCode;
@@ -21,16 +23,34 @@ import java.util.UUID;
 @Component
 public class StripePaymentProvider implements PaymentProvider {
     private final AppProperties props;
+    private final PlatformSettingsService settings;
     private volatile StripeClient client;
 
-    public StripePaymentProvider(AppProperties props) { this.props = props; }
+    public StripePaymentProvider(AppProperties props, PlatformSettingsService settings) {
+        this.props = props;
+        this.settings = settings;
+    }
 
     @Override public String name() { return "STRIPE"; }
 
     @Override public boolean configured() { return props.stripe() != null && props.stripe().configured(); }
 
+    /**
+     * Fail closed before any outgoing Stripe call when the key's mode differs from the selected Stripe mode, so a
+     * live key can never be used while TEST is selected (and vice versa). Incoming webhooks are not affected.
+     */
+    void assertModeMatches() {
+        StripeKeyMode.Mode keyMode = StripeKeyMode.of(props.stripe().secretKey());
+        var selected = settings.current().stripeMode();
+        if (!keyMode.name().equals(selected.name())) {
+            throw new ApiException(ErrorCode.PROVIDER_MODE_MISMATCH, "Stripe key mode (" + keyMode + ") does not match the selected Stripe mode ("
+                    + selected + "); align STRIPE_SECRET_KEY or the platform setting");
+        }
+    }
+
     private StripeClient client() {
         if (!configured()) throw new ApiException(ErrorCode.PROVIDER_NOT_CONFIGURED, "Card/invoice billing is not configured (STRIPE_SECRET_KEY)");
+        assertModeMatches();
         if (client == null) {
             synchronized (this) {
                 if (client == null) client = StripeClient.builder().setApiKey(props.stripe().secretKey()).setMaxNetworkRetries(2).build();

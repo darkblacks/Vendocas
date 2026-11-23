@@ -18,6 +18,8 @@ public enum ErrorCode {
     INSUFFICIENT_BALANCE(HttpStatus.PAYMENT_REQUIRED),
     PROVIDER_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE),
     PROVIDER_ERROR(HttpStatus.BAD_GATEWAY),
+    /** The configured provider credential does not match the selected mode (e.g. live Stripe key while TEST is selected). */
+    PROVIDER_MODE_MISMATCH(HttpStatus.CONFLICT),
     RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS),
     POLICY_BLOCKED(HttpStatus.UNPROCESSABLE_ENTITY),
     UNSUPPORTED_IN_COUNTRY(HttpStatus.UNPROCESSABLE_ENTITY),

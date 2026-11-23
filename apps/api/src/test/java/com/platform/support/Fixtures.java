@@ -56,6 +56,13 @@ public class Fixtures {
 
     public Tenant brazil() { return tenant("BR", "BR_CNPJ", "11222333000181"); }
 
+    /** Platform operator with MFA (token carries the mfa claim and the PLATFORM_ADMIN role). */
+    public String platformAdmin() {
+        Tenant t = tenant("DE", "EU_VAT", "DE123456789");
+        jdbc.update("UPDATE users SET platform_role = 'PLATFORM_ADMIN', mfa_enabled_at = now() WHERE id = ?", t.userId());
+        return jwt.issueAccessToken(t.userId(), "admin-" + t.userId() + "@example.com", true, "PLATFORM_ADMIN");
+    }
+
     /** Marks a paid ACTIVE subscription on a plan (as the Stripe webhook would after invoice.paid). */
     public void activeSubscription(UUID orgId, String planCode) {
         jdbc.update("""

@@ -2,10 +2,11 @@ package com.platform.billing;
 
 import com.platform.audit.AuditService;
 import com.platform.notifications.NotificationService;
+import com.platform.operations.PlatformSettingsService;
 import com.platform.shared.Ids;
 import com.platform.shared.Json;
 import com.platform.shared.crypto.Tokens;
-import com.platform.shared.jobs.JobService;
+import com.platform.shared.outbox.OutboxService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,6 +27,10 @@ import java.util.UUID;
  * invoice.subscription), so a Stripe API version bump does not silently break billing.
  * The whole event is one transaction: on failure nothing (not even the receipt) is committed and
  * Stripe redelivers.
+ *
+ * <p>Billing knows nothing about fiscal documents: it records payments and publishes domain events through the
+ * transactional outbox ({@code billing.invoice.paid}, {@code billing.payment.refunded}). The fiscal module consumes them
+ * independently, so payments, subscriptions and renewals never depend on a fiscal provider.
  */
 @Service
 public class StripeEventProcessor {
@@ -37,11 +42,16 @@ public class StripeEventProcessor {
     private final CreditWalletService wallet;
     private final NotificationService notifications;
     private final AuditService audit;
-    private final JobService jobs;
+    private final OutboxService outbox;
+    private final PlatformSettingsService settings;
     private final Clock clock;
 
+    public static final String EVENT_INVOICE_PAID = "billing.invoice.paid";
+    public static final String EVENT_PAYMENT_REFUNDED = "billing.payment.refunded";
+
     public StripeEventProcessor(JdbcTemplate jdbc, SubscriptionRepository subs, SubscriptionService subscriptions, Catalog catalog,
-                                CreditWalletService wallet, NotificationService notifications, AuditService audit, JobService jobs, Clock clock) {
+                                CreditWalletService wallet, NotificationService notifications, AuditService audit, OutboxService outbox,
+                                PlatformSettingsService settings, Clock clock) {
         this.jdbc = jdbc;
         this.subs = subs;
         this.subscriptions = subscriptions;
@@ -49,7 +59,8 @@ public class StripeEventProcessor {
         this.wallet = wallet;
         this.notifications = notifications;
         this.audit = audit;
-        this.jobs = jobs;
+        this.outbox = outbox;
+        this.settings = settings;
         this.clock = clock;
     }
 
@@ -119,12 +130,18 @@ public class StripeEventProcessor {
         if (invoiceId == null) return "IGNORED";
         UUID orgId = orgByCustomer(text(inv, "customer")).orElseThrow();
         String paymentRef = Optional.ofNullable(text(inv, "payment_intent")).orElse("inv:" + text(inv, "id"));
-        jdbc.update("""
-                INSERT INTO payments (id, organization_id, invoice_id, status, currency, amount_minor, provider, provider_payment_id, settled_at)
-                VALUES (?,?,?,'SUCCEEDED',?,?,'STRIPE',?,?)
-                ON CONFLICT (provider_payment_id) DO UPDATE SET status='SUCCEEDED', settled_at=EXCLUDED.settled_at, updated_at=now()""",
+        Boolean livemode = livemode(inv);
+        String environment = settings.current().environment().name();
+        Instant paidAt = epoch(inv.path("status_transitions").path("paid_at")).orElse(clock.instant());
+        UUID paymentId = jdbc.queryForObject("""
+                INSERT INTO payments (id, organization_id, invoice_id, status, currency, amount_minor, provider, provider_payment_id, settled_at,
+                                      livemode, environment)
+                VALUES (?,?,?,'SUCCEEDED',?,?,'STRIPE',?,?,?,?)
+                ON CONFLICT (provider_payment_id) DO UPDATE SET status='SUCCEEDED', settled_at=EXCLUDED.settled_at,
+                    livemode=COALESCE(payments.livemode, EXCLUDED.livemode), environment=COALESCE(payments.environment, EXCLUDED.environment), updated_at=now()
+                RETURNING id""", UUID.class,
                 Ids.newId(), orgId, invoiceId, text(inv, "currency").toUpperCase(), inv.path("amount_paid").asLong(), paymentRef,
-                Timestamp.from(epoch(inv.path("status_transitions").path("paid_at")).orElse(clock.instant())));
+                Timestamp.from(paidAt), livemode, environment);
         findSubscription(inv).ifPresent(sub -> {
             periodFromInvoice(inv, sub);
             if (sub.getStatus() != SubscriptionStatus.ACTIVE) {
@@ -133,8 +150,17 @@ public class StripeEventProcessor {
                 subscriptions.recordEvent(sub, SubscriptionStatus.ACTIVE, SubscriptionStatus.ACTIVE, null, null, "Renewal paid", "provider:stripe", eventId);
             }
         });
-        // Fiscal document issuance is asynchronous and idempotent per invoice.
-        jobs.schedule("fiscal.issue", "fiscal:" + invoiceId, orgId, Map.of("invoiceId", invoiceId.toString()), clock.instant());
+        // Published in this transaction; consumers (e.g. the fiscal module) react on their own, at most once each.
+        Map<String, Object> event = new java.util.LinkedHashMap<>();
+        event.put("invoiceId", invoiceId.toString());
+        event.put("paymentId", paymentId.toString());
+        event.put("amountMinor", inv.path("amount_paid").asLong());
+        event.put("currency", text(inv, "currency").toUpperCase());
+        event.put("paidAt", paidAt.toString());
+        event.put("livemode", livemode);
+        event.put("environment", environment);
+        event.put("providerEventId", eventId);
+        outbox.publish(orgId, "invoice", invoiceId, EVENT_INVOICE_PAID, event);
         return "PROCESSED";
     }
 
@@ -214,9 +240,27 @@ public class StripeEventProcessor {
         String pi = text(c, "payment_intent");
         long refunded = c.path("amount_refunded").asLong();
         long amount = c.path("amount").asLong();
-        jdbc.update("UPDATE payments SET refunded_minor=?, status=?, updated_at=now() WHERE provider_payment_id=?",
-                refunded, refunded >= amount ? "REFUNDED" : "PARTIALLY_REFUNDED", pi);
-        return "PROCESSED";
+        boolean full = refunded >= amount;
+        var rows = jdbc.queryForList("""
+                UPDATE payments SET refunded_minor=?, status=?, updated_at=now() WHERE provider_payment_id=?
+                RETURNING id, organization_id, invoice_id""", refunded, full ? "REFUNDED" : "PARTIALLY_REFUNDED", pi);
+        for (var r : rows) {
+            Map<String, Object> event = new java.util.LinkedHashMap<>();
+            event.put("paymentId", r.get("id").toString());
+            event.put("invoiceId", r.get("invoice_id") == null ? null : r.get("invoice_id").toString());
+            event.put("refundedMinor", refunded);
+            event.put("amountMinor", amount);
+            event.put("full", full);
+            event.put("livemode", livemode(c));
+            outbox.publish((UUID) r.get("organization_id"), "payment", (UUID) r.get("id"), EVENT_PAYMENT_REFUNDED, event);
+        }
+        return rows.isEmpty() ? "IGNORED" : "PROCESSED";
+    }
+
+    /** Stripe objects carry livemode; null when absent (e.g. hand-written fixtures). */
+    private static Boolean livemode(JsonNode obj) {
+        JsonNode v = obj.path("livemode");
+        return v.isBoolean() ? v.asBoolean() : null;
     }
 
     /** Mirror of a Stripe invoice (billing document — not a fiscal document). Returns local id. */
@@ -242,12 +286,13 @@ public class StripeEventProcessor {
         return jdbc.queryForObject("""
                 INSERT INTO invoices (id, organization_id, subscription_id, kind, status, collection_method, currency, subtotal_minor, tax_minor,
                                       total_minor, amount_paid_minor, amount_due_minor, reverse_charge, due_at, paid_at, period_start, period_end,
-                                      number, provider, provider_invoice_id, hosted_url, pdf_url)
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'STRIPE',?,?,?)
+                                      number, provider, provider_invoice_id, hosted_url, pdf_url, livemode)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'STRIPE',?,?,?,?)
                 ON CONFLICT (provider_invoice_id) DO UPDATE SET status=EXCLUDED.status, tax_minor=EXCLUDED.tax_minor, total_minor=EXCLUDED.total_minor,
                     amount_paid_minor=EXCLUDED.amount_paid_minor, amount_due_minor=EXCLUDED.amount_due_minor, paid_at=COALESCE(EXCLUDED.paid_at, invoices.paid_at),
                     number=COALESCE(EXCLUDED.number, invoices.number), hosted_url=COALESCE(EXCLUDED.hosted_url, invoices.hosted_url),
-                    pdf_url=COALESCE(EXCLUDED.pdf_url, invoices.pdf_url), reverse_charge=EXCLUDED.reverse_charge, due_at=EXCLUDED.due_at, updated_at=now()
+                    pdf_url=COALESCE(EXCLUDED.pdf_url, invoices.pdf_url), reverse_charge=EXCLUDED.reverse_charge, due_at=EXCLUDED.due_at,
+                    livemode=COALESCE(EXCLUDED.livemode, invoices.livemode), updated_at=now()
                 RETURNING id""", UUID.class,
                 id, org.get(), sub.map(Subscription::getId).orElse(null), credits ? "CREDITS" : "SUBSCRIPTION", status,
                 "send_invoice".equals(text(inv, "collection_method")) ? "SEND_INVOICE" : "CHARGE_AUTOMATICALLY",
@@ -255,7 +300,7 @@ public class StripeEventProcessor {
                 inv.path("amount_paid").asLong(), inv.path("amount_due").asLong(), reverseCharge,
                 ts(epoch(inv.path("due_date"))), ts(epoch(inv.path("status_transitions").path("paid_at"))),
                 ts(epoch(line.path("period").path("start"))), ts(epoch(line.path("period").path("end"))),
-                text(inv, "number"), text(inv, "id"), text(inv, "hosted_invoice_url"), text(inv, "invoice_pdf"));
+                text(inv, "number"), text(inv, "id"), text(inv, "hosted_invoice_url"), text(inv, "invoice_pdf"), livemode(inv));
     }
 
     private void periodFromInvoice(JsonNode inv, Subscription sub) {

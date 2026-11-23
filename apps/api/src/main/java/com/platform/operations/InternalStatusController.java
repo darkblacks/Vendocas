@@ -7,6 +7,8 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -32,21 +34,48 @@ public class InternalStatusController {
     private final RedisConnectionFactory redis;
     private final AppProperties props;
     private final byte[] token;
+    private final byte[] adminToken;
+    private final PlatformSettingsService settings;
 
-    public InternalStatusController(JdbcTemplate jdbc, RedisConnectionFactory redis, AppProperties props,
-                                    @Value("${CONTROL_STATUS_TOKEN:}") String token) {
+    public InternalStatusController(JdbcTemplate jdbc, RedisConnectionFactory redis, AppProperties props, PlatformSettingsService settings,
+                                    @Value("${CONTROL_STATUS_TOKEN:}") String token, @Value("${CONTROL_ADMIN_TOKEN:}") String adminToken) {
         this.jdbc = jdbc;
         this.redis = redis;
         this.props = props;
-        this.token = token == null || token.length() < MIN_TOKEN_LENGTH ? null : token.getBytes(StandardCharsets.UTF_8);
+        this.settings = settings;
+        this.token = bytes(token);
+        this.adminToken = bytes(adminToken);
+    }
+
+    private static byte[] bytes(String t) { return t == null || t.length() < MIN_TOKEN_LENGTH ? null : t.getBytes(StandardCharsets.UTF_8); }
+
+    private static boolean matches(byte[] expected, String presented) {
+        return expected != null && presented != null && MessageDigest.isEqual(expected, presented.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public record SettingsChange(PlatformSettings.Environment environment, PlatformSettings.StripeMode stripeMode, Boolean fiscalAutomation,
+                                 PlatformSettings.FiscalProvider fiscalProvider, Integer expectedVersion) {}
+
+    /**
+     * Control Center write path for the platform switches. Needs a SEPARATE secret (CONTROL_ADMIN_TOKEN): the status token
+     * is read-only. 404 when not configured. The Control Center sends the acting administrator in X-Control-Actor (audit).
+     */
+    @PutMapping("/internal/platform-settings")
+    public ResponseEntity<PlatformSettingsService.Status> updateSettings(@RequestHeader(value = "X-Control-Admin-Token", required = false) String presented,
+                                                                         @RequestHeader(value = "X-Control-Actor", required = false) String actor,
+                                                                         @RequestBody SettingsChange c) {
+        if (adminToken == null) return ResponseEntity.notFound().build();
+        if (!matches(adminToken, presented)) return ResponseEntity.status(401).build();
+        String label = "control-center:" + (actor == null ? "unknown" : actor.replaceAll("[^A-Za-z0-9@._+-]", "").substring(0, Math.min(150, actor.replaceAll("[^A-Za-z0-9@._+-]", "").length())));
+        settings.update(new PlatformSettingsService.Update(c.environment(), c.stripeMode(), c.fiscalAutomation(), c.fiscalProvider(), c.expectedVersion()),
+                label, "PLATFORM_ADMIN", null);
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(settings.status());
     }
 
     @GetMapping("/internal/status")
     public ResponseEntity<Map<String, Object>> status(@RequestHeader(value = "X-Control-Token", required = false) String presented) {
         if (token == null) return ResponseEntity.notFound().build();
-        if (presented == null || !MessageDigest.isEqual(token, presented.getBytes(StandardCharsets.UTF_8))) {
-            return ResponseEntity.status(401).build();
-        }
+        if (!matches(token, presented)) return ResponseEntity.status(401).build();
         Map<String, Object> body = new LinkedHashMap<>();
         Map<String, Object> database = database();
         Map<String, Object> redisStatus = redis();
@@ -57,6 +86,10 @@ public class InternalStatusController {
         body.put("redis", redisStatus);
         body.put("workers", Boolean.TRUE.equals(database.get("up")) ? workers() : Map.of("enabled", props.workers().enabled()));
         body.put("recentErrors", Boolean.TRUE.equals(database.get("up")) ? recentErrors() : List.of());
+        if (Boolean.TRUE.equals(database.get("up"))) {
+            try { body.put("platform", settings.status()); } catch (RuntimeException e) { body.put("platform", null); }
+        }
+        body.put("settingsWritable", adminToken != null);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
     }
 
