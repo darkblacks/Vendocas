@@ -1,4 +1,5 @@
 "use client";
+import { STATE_LABEL, TARGET_LABEL, serviceTone, type TargetView } from "@/lib/platform";
 import { usePoll } from "@/lib/use-poll";
 import type { ApiStatus, LogRow, Overview, Session } from "@/lib/types";
 import { CodespaceControl } from "@/components/codespace-control";
@@ -61,6 +62,7 @@ export default function Dashboard() {
           </dl>
         </Card>
       </div>
+      <PaymentsAndFiscal />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <Title>Inicializações recentes</Title>
@@ -78,5 +80,29 @@ export default function Dashboard() {
         </Card>
       </div>
     </div>
+  );
+}
+
+/** Which payment and fiscal services are active on each API (details and changes on the "Pagamentos e fiscal" page). */
+function PaymentsAndFiscal() {
+  const q = usePoll<TargetView[]>("/api/platform", 60_000);
+  const shown = (q.data ?? []).filter((t) => t.configured);
+  if (!q.data || shown.length === 0) return null;
+  return (
+    <Card>
+      <Title actions={<a className="text-sm text-primary" href="/platform">configurar</a>}>Pagamentos e emissão fiscal</Title>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {shown.map((t) => (
+          <div key={t.target}>
+            <div className="mb-2 text-sm font-medium">{TARGET_LABEL[t.target]}</div>
+            {!t.platform ? <p className="text-sm text-muted-foreground">{t.reachable ? "sem informação" : `inacessível (${t.reason})`}</p> : (
+              <ul className="space-y-1 text-sm">{t.platform.services.map((sv) => (
+                <li key={sv.key} className="flex justify-between gap-2"><span>{sv.label}</span><Badge tone={serviceTone(sv.state)}>{STATE_LABEL[sv.state] ?? sv.state}</Badge></li>))}
+                {t.platform.warnings.length > 0 && <li className="pt-1 text-xs text-muted-foreground">{t.platform.warnings.length} aviso(s) — veja a página de configuração</li>}
+              </ul>)}
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

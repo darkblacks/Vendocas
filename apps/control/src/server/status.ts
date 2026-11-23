@@ -15,14 +15,24 @@ export interface ApiStatus {
     status: string; gitCommit: string | null; startedAt: string | null; database: { up: boolean; latencyMs?: number; flywayVersion?: string | null };
     redis: { up: boolean; error?: string }; workers: { enabled: boolean; outboxPending: number; jobsPending: number; jobsDead: number;
     messagesQueued: number; automationDue: number; deadLetters: number }; recentErrors: { at: string; source: string; message: string }[];
+    platform?: PlatformStatus | null; settingsWritable?: boolean;
   };
 }
 
-export async function apiStatus(): Promise<ApiStatus> {
+/** Environment / payments / fiscal switches as reported by the API (never contains keys). */
+export interface PlatformStatus {
+  settings: { environment: "HOMOLOGATION" | "PRODUCTION"; stripeMode: "TEST" | "LIVE"; fiscalAutomation: boolean; fiscalProvider: "NONE" | "FOCUS_NFE"; version: number; updatedBy: string | null; updatedAt: string };
+  stripeKeyMode: string; stripeConfigured: boolean; stripeWebhookConfigured: boolean; stripeModeMatches: boolean; focusConfigured: boolean;
+  focusEnvironment: string | null; fiscalMode: string; fiscalDocuments: Record<string, number>;
+  services: { key: string; label: string; state: string; detail: string | null }[]; warnings: string[];
+}
+
+/** target TEST = homologation API (Codespace), LIVE = production API. */
+export async function apiStatus(target: "TEST" | "LIVE" = "TEST"): Promise<ApiStatus> {
   const checkedAt = new Date().toISOString();
   let cfg: Record<string, string>;
   try {
-    cfg = await reveal("VENDOCAS_API", "TEST");
+    cfg = await reveal("VENDOCAS_API", target);
   } catch (e) {
     return { reachable: false, reason: e instanceof HttpError ? e.code : "NOT_CONFIGURED", checkedAt };
   }

@@ -80,11 +80,14 @@ export const PROVIDERS: ProviderDef[] = [
     revokeHelp: "Also delete the token at github.com → Settings → Developer settings → Personal access tokens.",
   },
   {
-    id: "VENDOCAS_API", name: "Vendocas API (homologation)", description: "Base URL of the API running in the Codespace and the status token it was started with.",
-    docsUrl: "/docs/codespaces-setup.md", environments: ["TEST"],
+    id: "VENDOCAS_API", name: "API Vendocas",
+    description: "Endereço da API e tokens de controle. Teste/homologação = API do Codespace; Produção = API de produção. O token de status só lê; o token de administração (opcional) permite alterar ambiente, Stripe e emissão fiscal pelo Control Center.",
+    docsUrl: "/docs/codespaces-setup.md", environments: ["TEST", "LIVE"],
     fields: [
-      { key: "baseUrl", label: "API base URL", secret: false, required: true, pattern: /^https:\/\/[^\s/]+(:\d+)?$/, placeholder: "https://<codespace>-8080.app.github.dev" },
-      { key: "statusToken", label: "CONTROL_STATUS_TOKEN", secret: true, required: true, help: "Run infrastructure/codespaces/show-status-token.sh in the Codespace terminal (or use your CONTROL_STATUS_TOKEN Codespaces secret)." },
+      { key: "baseUrl", label: "Endereço da API", secret: false, required: true, pattern: /^https:\/\/[^\s/]+(:\d+)?$/, placeholder: "https://<codespace>-8080.app.github.dev" },
+      { key: "statusToken", label: "CONTROL_STATUS_TOKEN (leitura)", secret: true, required: true, help: "No Codespace: bash infrastructure/codespaces/show-status-token.sh" },
+      { key: "adminToken", label: "CONTROL_ADMIN_TOKEN (alterar configurações, opcional)", secret: true, required: false, pattern: /^.{32,}$/,
+        help: "No Codespace: bash infrastructure/codespaces/show-admin-token.sh. Sem ele, as configurações ficam somente leitura aqui." },
     ],
     async test(v) {
       const r = await call(`${v.baseUrl}/internal/status`, { headers: { "X-Control-Token": v.statusToken! } });
