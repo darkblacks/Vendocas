@@ -5,21 +5,35 @@ export type UpstreamProblem = "API_NOT_CONFIGURED" | "API_INVALID_URL" | "API_UN
 
 export const PROBLEM_HINT: Record<UpstreamProblem, string> = {
   API_NOT_CONFIGURED: "API_INTERNAL_URL is not set for this site (Netlify → Site configuration → Environment variables).",
-  API_INVALID_URL: "API_INTERNAL_URL is not a valid http(s) URL.",
+  API_INVALID_URL: "API_INTERNAL_URL is not a valid address. Expected something like https://<codespace>-8080.app.github.dev",
   API_UNREACHABLE: "The API host did not accept the connection (server or Codespace stopped, or wrong address).",
   API_TIMEOUT: "The API did not answer in time (it may be starting).",
   API_PRIVATE_PORT: "The API is a GitHub Codespace port set to private: make port 8080 public or use another host.",
   API_UNHEALTHY: "The API answered but reports itself as not healthy.",
 };
 
-export function apiBase(): { url: string } | { problem: UpstreamProblem } {
-  const raw = process.env.API_INTERNAL_URL?.trim();
-  if (!raw) return process.env.NODE_ENV === "production" ? { problem: "API_NOT_CONFIGURED" } : { url: "http://localhost:8080" };
+/**
+ * Normalizes what people commonly paste into the Netlify field: surrounding quotes/angle brackets/whitespace, a missing
+ * "https://", a trailing slash or a trailing "/api/v1" or "/actuator/health". Returns null when it still is not a URL.
+ */
+export function normalizeApiUrl(raw: string): string | null {
+  let v = raw.trim().replace(/^[\s"'<`]+|[\s"'>`]+$/g, "").trim();
+  if (!v) return null;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = `https://${v}`;
   try {
-    const u = new URL(raw);
-    if (u.protocol !== "http:" && u.protocol !== "https:") return { problem: "API_INVALID_URL" };
-    return { url: u.origin + u.pathname.replace(/\/+$/, "") };
-  } catch { return { problem: "API_INVALID_URL" }; }
+    const u = new URL(v);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+    if (!u.hostname || /\s/.test(u.hostname) || !(u.hostname.includes(".") || u.hostname === "localhost")) return null;
+    const path = u.pathname.replace(/\/+$/, "").replace(/\/(api\/v1|actuator\/health)$/i, "");
+    return u.origin + path;
+  } catch { return null; }
+}
+
+export function apiBase(): { url: string } | { problem: UpstreamProblem } {
+  const raw = process.env.API_INTERNAL_URL;
+  if (!raw?.trim()) return process.env.NODE_ENV === "production" ? { problem: "API_NOT_CONFIGURED" } : { url: "http://localhost:8080" };
+  const url = normalizeApiUrl(raw);
+  return url ? { url } : { problem: "API_INVALID_URL" };
 }
 
 /** A private Codespace port answers with a redirect to the GitHub sign-in page instead of the API. */

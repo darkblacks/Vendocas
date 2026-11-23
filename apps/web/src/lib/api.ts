@@ -28,7 +28,13 @@ export const session = {
 };
 
 export const UNAVAILABLE = "BACKEND_UNAVAILABLE";
-const unavailable = () => new ApiError(503, UNAVAILABLE, "Service temporarily unavailable");
+const UNAVAILABLE_TEXT: Record<string, string> = {
+  pt: "Serviço temporariamente indisponível. Tente novamente em instantes.",
+  es: "Servicio temporalmente no disponible. Inténtalo de nuevo en unos instantes.",
+  en: "Service temporarily unavailable. Please try again shortly.",
+};
+const pageLang = () => (typeof document !== "undefined" ? document.documentElement.lang.slice(0, 2) : "en");
+const unavailable = () => new ApiError(503, UNAVAILABLE, UNAVAILABLE_TEXT[pageLang()] ?? UNAVAILABLE_TEXT.en!);
 
 export async function refreshAccessToken(): Promise<string | null> {
   if (!backendStatus.get().up) return null;

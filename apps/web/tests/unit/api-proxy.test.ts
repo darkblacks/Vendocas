@@ -65,3 +65,17 @@ describe("runtime proxy to the Vendocas API", () => {
     expect(await (await health.GET()).json()).toMatchObject({ reason: "API_INVALID_URL" });
   });
 });
+
+describe("API_INTERNAL_URL normalization", async () => {
+  const { normalizeApiUrl } = await import("@/lib/server/upstream");
+  it("accepts common paste variations", () => {
+    const want = "https://refactored-doodle-vrx6gqpwrqvh6p9q-8080.app.github.dev";
+    for (const v of [want, `${want}/`, ` ${want} `, `"${want}"`, `'${want}'`, `<${want}>`, "refactored-doodle-vrx6gqpwrqvh6p9q-8080.app.github.dev",
+      `${want}/api/v1`, `${want}/api/v1/`, `${want}/actuator/health`]) expect(normalizeApiUrl(v), v).toBe(want);
+    expect(normalizeApiUrl("http://localhost:8080")).toBe("http://localhost:8080");
+    expect(normalizeApiUrl("https://api.example.com/base")).toBe("https://api.example.com/base");
+  });
+  it("still rejects things that are not addresses", () => {
+    for (const v of ["", "   ", "API_INTERNAL_URL", "ftp://x.example.com", "https://", "não sei"]) expect(normalizeApiUrl(v), v).toBeNull();
+  });
+});
