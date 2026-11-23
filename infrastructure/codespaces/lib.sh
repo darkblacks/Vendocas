@@ -31,9 +31,24 @@ mvn_java_flags() {
   if [ "$jv" -lt 25 ]; then log "aviso: Java $jv detectado (o projeto usa 25); compilando com -Djava.version=$jv"; echo "-Djava.version=$jv"; fi
 }
 
+# The Maven cache is a Docker named volume (.devcontainer/docker-compose.yml): Docker creates its mount point owned by
+# root, so the codespace user cannot write to it ("Could not create local repository"). Fix the ownership once.
+ensure_m2_writable() {
+  local m2="${HOME}/.m2"
+  mkdir -p "$m2" 2>/dev/null || true
+  if [ ! -w "$m2" ]; then
+    if command -v sudo >/dev/null && sudo -n true 2>/dev/null; then
+      sudo chown -R "$(id -u):$(id -g)" "$m2" && log "permissões de $m2 corrigidas"
+    else
+      fail "$m2 não é gravável e não há sudo: rode 'sudo chown -R \$(id -u):\$(id -g) $m2'"
+    fi
+  fi
+}
+
 # Runs a Maven build into a log file and, on failure, shows the end of the log right away.
 build_api() {
   local logfile="$1" flags
+  ensure_m2_writable
   flags="$(mvn_java_flags)"
   # shellcheck disable=SC2086
   if ! (cd "$REPO_DIR/apps/api" && mvn -B -q $flags -DskipTests package) >>"$logfile" 2>&1; then
