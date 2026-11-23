@@ -69,7 +69,11 @@ redis-cli -h redis ping | grep -q PONG || fail "Redis indisponível"
 
 STEP=api; status api running "iniciando API"
 PID_FILE="$RUN_DIR/api.pid"
-if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+if [ -f "$PID_FILE" ] && ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+  log "a execução anterior da API não está mais rodando; iniciando de novo"
+  rm -f "$PID_FILE"
+fi
+if [ -f "$PID_FILE" ]; then
   if [ "$(cat "$RUN_DIR/api.running.commit" 2>/dev/null)" = "$COMMIT" ]; then
     log "API já em execução (pid $(cat "$PID_FILE"))"
   else
@@ -87,10 +91,25 @@ if [ ! -f "$PID_FILE" ]; then
 fi
 
 STEP=health; status health running "verificando saúde"
-for _ in $(seq 1 90); do curl -fsS -o /dev/null localhost:8080/actuator/health && break; sleep 2; done
-if ! curl -fsS localhost:8080/actuator/health >/dev/null; then
-  tail -n 40 "$LOG_DIR/api.log" >&2 || true
-  fail "API não ficou saudável em 180s (ver $LOG_DIR/api.log)"
+log "aguardando a API responder (até 3 min; a primeira subida aplica as migrações do banco)…"
+healthy=false
+for i in $(seq 1 90); do
+  if curl -fs -o /dev/null localhost:8080/actuator/health; then healthy=true; break; fi
+  if ! kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+    echo "------ a API encerrou ao iniciar; últimas linhas de $LOG_DIR/api.log ------" >&2
+    tail -n 60 "$LOG_DIR/api.log" >&2 || true
+    echo "----------------------------------------" >&2
+    rm -f "$PID_FILE"
+    fail "a API não conseguiu iniciar (erro acima)"
+  fi
+  [ $((i % 10)) -eq 0 ] && log "ainda iniciando… ($((i * 2)) s)"
+  sleep 2
+done
+if [ "$healthy" != true ]; then
+  echo "------ últimas linhas de $LOG_DIR/api.log ------" >&2
+  tail -n 60 "$LOG_DIR/api.log" >&2 || true
+  echo "----------------------------------------" >&2
+  fail "API não ficou saudável em 180 s"
 fi
 curl -fsS -H "X-Control-Token: $CONTROL_STATUS_TOKEN" localhost:8080/internal/status >"$RUN_DIR/internal-status.json" \
   || log "aviso: /internal/status não respondeu"
