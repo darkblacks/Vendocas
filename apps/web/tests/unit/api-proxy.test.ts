@@ -79,3 +79,18 @@ describe("API_INTERNAL_URL normalization", async () => {
     for (const v of ["", "   ", "API_INTERNAL_URL", "ftp://x.example.com", "https://", "não sei"]) expect(normalizeApiUrl(v), v).toBeNull();
   });
 });
+
+describe("Origin handling (API CORS)", () => {
+  let fetchMock: ReturnType<typeof vi.fn>;
+  beforeEach(() => { fetchMock = vi.fn().mockResolvedValue(new Response("{}")); vi.stubGlobal("fetch", fetchMock); vi.stubEnv("API_INTERNAL_URL", "https://api.example.test"); });
+  afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+
+  it("drops the Origin of the site's own pages (server-to-server from here), so the API CORS filter does not answer 403", async () => {
+    await proxy.POST(new Request("https://vendocas.netlify.app/api/v1/auth/register", { method: "POST", body: "{}", headers: { origin: "https://vendocas.netlify.app" } }), ctx("auth", "register"));
+    expect(fetchMock.mock.calls[0]![1].headers.get("origin")).toBeNull();
+  });
+  it("keeps the Origin of other sites (tracking script on a merchant's store)", async () => {
+    await proxy.POST(new Request("https://vendocas.netlify.app/api/v1/track/events", { method: "POST", body: "{}", headers: { origin: "https://loja.example.com" } }), ctx("track", "events"));
+    expect(fetchMock.mock.calls[0]![1].headers.get("origin")).toBe("https://loja.example.com");
+  });
+});

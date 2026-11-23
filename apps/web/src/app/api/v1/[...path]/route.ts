@@ -18,6 +18,11 @@ async function proxy(req: Request, ctx: { params: Promise<{ path: string[] }> })
 
   const headers = new Headers();
   req.headers.forEach((v, k) => { if (!HOP_BY_HOP.has(k.toLowerCase())) headers.set(k, v); });
+  // A request from this site's own pages is same-origin for the browser and server-to-server from here on: drop its
+  // Origin so the API's CORS filter (allow-list for direct cross-origin calls) does not reject it with 403. Requests
+  // from other sites (e.g. the tracking script on merchants' stores) keep their Origin and get the API's CORS rules.
+  const origin = req.headers.get("origin");
+  if (origin && origin === incoming.origin) headers.delete("origin");
   const ip = req.headers.get("x-nf-client-connection-ip") ?? req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
   if (ip) headers.set("x-forwarded-for", ip);
   headers.set("x-forwarded-host", incoming.host);
