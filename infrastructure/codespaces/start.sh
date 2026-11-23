@@ -56,7 +56,8 @@ fi
 JAR="$(ls apps/api/target/vendocas-api-*.jar 2>/dev/null | head -1 || true)"
 if [ -z "$JAR" ] || [ "$(cat "$RUN_DIR/api.build.commit" 2>/dev/null)" != "$COMMIT" ]; then
   log "compilando API para ${COMMIT:0:7}"
-  (cd apps/api && mvn -B -q -DskipTests package) >>"$LOG_DIR/build.log" 2>&1 || fail "build da API falhou (ver $LOG_DIR/build.log)"
+  : > "$LOG_DIR/build.log"
+  build_api "$LOG_DIR/build.log" || fail "build da API falhou (erro acima; log completo em $LOG_DIR/build.log)"
   echo "$COMMIT" > "$RUN_DIR/api.build.commit"
   JAR="$(ls apps/api/target/vendocas-api-*.jar | head -1)"
 fi

@@ -20,3 +20,26 @@ status() { # status <phase> <ok|error|running> <message>
 }
 
 fail() { log "ERRO: $*"; status "${STEP:-unknown}" error "$*"; exit 1; }
+
+# Maven flags for the installed JDK. The API targets Java 25; with an older JDK (21+) it is compiled at that level,
+# exactly like scripts/dev.sh does for local development (a Codespace created from another image may have Java 21).
+mvn_java_flags() {
+  local jv
+  jv="$(java -version 2>&1 | sed -nE 's/.*version "([0-9]+).*/\1/p' | head -1)"
+  if [ -z "$jv" ]; then echo ""; return; fi
+  if [ "$jv" -lt 21 ]; then fail "Java $jv encontrado; é necessário Java 21 ou mais novo (ideal: 25 — Codespaces: Rebuild Container)"; fi
+  if [ "$jv" -lt 25 ]; then log "aviso: Java $jv detectado (o projeto usa 25); compilando com -Djava.version=$jv"; echo "-Djava.version=$jv"; fi
+}
+
+# Runs a Maven build into a log file and, on failure, shows the end of the log right away.
+build_api() {
+  local logfile="$1" flags
+  flags="$(mvn_java_flags)"
+  # shellcheck disable=SC2086
+  if ! (cd "$REPO_DIR/apps/api" && mvn -B -q $flags -DskipTests package) >>"$logfile" 2>&1; then
+    echo "------ últimas linhas de $logfile ------" >&2
+    tail -n 40 "$logfile" >&2
+    echo "----------------------------------------" >&2
+    return 1
+  fi
+}

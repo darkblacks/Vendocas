@@ -6,7 +6,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 STEP=setup
 
-java -version 2>&1 | grep -q 'version "25' || fail "Java 25 não encontrado"
+mvn_java_flags >/dev/null  # Java 21+ (25 recomendado); falha com mensagem clara se mais antigo
 command -v mvn >/dev/null || fail "Maven não encontrado"
 node -v | grep -q '^v22' || fail "Node 22 não encontrado"
 command -v pnpm >/dev/null || corepack enable
@@ -26,5 +26,5 @@ fi
 
 cd "$REPO_DIR"
 pnpm install --frozen-lockfile
-(cd apps/api && mvn -B -q -DskipTests package) || fail "build inicial da API falhou (veja a saída acima)"
+build_api "$LOG_DIR/build.log" || fail "build inicial da API falhou (erro acima; log em $LOG_DIR/build.log)"
 log "setup concluído"
