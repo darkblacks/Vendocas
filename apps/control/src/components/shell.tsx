@@ -23,6 +23,13 @@ export function Shell({ user, csrfToken, children }: { user: { email: string; na
   const [reauth, setReauth] = useState(false);
   const resolver = useRef<((ok: boolean) => void) | null>(null);
   useEffect(() => { setCsrf(csrfToken); }, [csrfToken]);
+  useScrollLock(open || reauth);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   useEffect(() => {
     onReauthRequired(() => new Promise<boolean>((res) => { resolver.current = res; setReauth(true); }));
     return () => onReauthRequired(null);
@@ -43,7 +50,8 @@ export function Shell({ user, csrfToken, children }: { user: { email: string; na
         <div className="flex h-16 items-center gap-2 px-5 font-semibold"><Activity className="h-5 w-5 text-primary" />Control Center</div>
         {nav}
       </aside>
-      {open && <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setOpen(false)}><aside className="h-full w-72 bg-card" onClick={(e) => e.stopPropagation()}>
+      {open && <div className="fixed inset-0 z-40 overscroll-contain bg-black/40 lg:hidden" onClick={() => setOpen(false)}><aside role="dialog" aria-modal="true" aria-label="Menu"
+        className="h-full w-72 max-w-[85vw] overflow-y-auto overscroll-contain bg-card" onClick={(e) => e.stopPropagation()}>
         <div className="flex h-16 items-center justify-between px-5 font-semibold">Control Center<button aria-label="Fechar" onClick={() => setOpen(false)}><X className="h-5 w-5" /></button></div>{nav}</aside></div>}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 items-center justify-between gap-2 border-b border-border px-4">
@@ -60,13 +68,23 @@ export function Shell({ user, csrfToken, children }: { user: { email: string; na
   );
 }
 
+/** While a drawer/dialog is open the page behind it must not scroll (on iOS it otherwise drifts under the overlay). */
+function useScrollLock(locked: boolean) {
+  useEffect(() => {
+    if (!locked) return;
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = overflow; };
+  }, [locked]);
+}
+
 function ReauthDialog({ onDone }: { onDone: (ok: boolean) => void }) {
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="reauth-title">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="reauth-title">
       <form className="w-full max-w-sm space-y-3 rounded-lg border border-border bg-card p-5" onSubmit={async (e) => {
         e.preventDefault(); setBusy(true); setError(null);
         try { await call("/api/auth/reauth", { body: { password, code } }); onDone(true); } catch (err) { setError(message(err)); } finally { setBusy(false); }

@@ -23,3 +23,13 @@
 html, body { background: var(--background); color: var(--foreground); }
 * { border-color: var(--border); }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* Mobile stability. Unlayered on purpose so it wins over Tailwind's layered utilities (e.g. text-sm on inputs). */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Safety net: nothing may make the whole page slide sideways (wide tables scroll inside their own container). */
+body { overflow-x: clip; }
+/* iOS Safari zooms into any field with a font smaller than 16px and pans the page toward the field's corner,
+   leaving it shifted after the keyboard closes. 16px on phones prevents that without disabling user zoom. */
+@media (max-width: 639px) {
+  input, select, textarea { font-size: 16px; }
+}

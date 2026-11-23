@@ -28,22 +28,18 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-semibold">Configurações</h1>
       {msg && <Alert tone={msg.tone}>{msg.text}</Alert>}
       <Card><Title>Servidor</Title>
-        <dl className="mb-3 space-y-1 text-sm"><div>Repositório controlado: <span className="font-mono">{s.data?.repository ?? "não configurado"}</span></div>
+        <dl className="mb-3 space-y-1 text-sm"><div>Repositório controlado: {s.data?.repository ? <span className="font-mono">{s.data.repository}</span> : <span className="text-muted-foreground">não configurado</span>}</div>
           <div>Codespace selecionado: <span className="font-mono">{s.data?.selectedCodespace ?? "—"}</span></div></dl>
-        {me?.role === "OWNER" && <div className="flex flex-wrap items-end gap-2">
-          <Field label="Limite de sessão (horas, máximo 6)" id="h"><Input id="h" type="number" min="0.5" max="6" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)} className="w-32" /></Field>
-          <Button onClick={() => act(() => call("/api/settings", { method: "PUT", body: { maxSessionHours: Number(hours) } }).then(() => s.reload()), "Limite atualizado (vale para novas sessões).")}>Salvar</Button></div>}
-        {me?.role === "OWNER" && <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          <div className="flex items-end gap-2">
-            <Field label="Repositório GitHub (owner/nome)" id="repo" hint="Só Codespaces deste repositório podem ser controlados. Exige o token GitHub cadastrado em Credenciais.">
-              <Input id="repo" placeholder="darkblacks/Vendocas" value={repo} onChange={(e) => setRepo(e.target.value)} /></Field>
-            <Button onClick={() => act(() => call("/api/settings", { method: "PUT", body: { githubRepository: repo } }).then(() => s.reload()), "Repositório verificado no GitHub e salvo.")}>Salvar</Button>
-          </div>
-          <div className="flex items-end gap-2">
-            <Field label="URL do app web (opcional)" id="web" hint="Link exibido no painel, ex.: https://app.seudominio.com">
-              <Input id="web" placeholder="https://…" value={webUrl} onChange={(e) => setWebUrl(e.target.value)} /></Field>
-            <Button onClick={() => act(() => call("/api/settings", { method: "PUT", body: { webAppUrl: webUrl || null } }).then(() => s.reload()), "Link salvo.")}>Salvar</Button>
-          </div>
+        {me?.role === "OWNER" && <div className="grid gap-4 lg:grid-cols-3">
+          <InlineField label="Limite de sessão (horas, máximo 6)" id="h" hint="Vale para novas sessões."
+            onSave={() => act(() => call("/api/settings", { method: "PUT", body: { maxSessionHours: Number(hours) } }).then(() => s.reload()), "Limite atualizado (vale para novas sessões).")}>
+            <Input id="h" type="number" min="0.5" max="6" step="0.5" value={hours} onChange={(e) => setHours(e.target.value)} /></InlineField>
+          <InlineField label="Repositório GitHub (owner/nome)" id="repo" hint="Só Codespaces deste repositório podem ser controlados. Exige o token GitHub em Credenciais."
+            onSave={() => act(() => call("/api/settings", { method: "PUT", body: { githubRepository: repo } }).then(() => s.reload()), "Repositório verificado no GitHub e salvo.")}>
+            <Input id="repo" placeholder="darkblacks/Vendocas" value={repo} onChange={(e) => setRepo(e.target.value)} /></InlineField>
+          <InlineField label="URL do app web (opcional)" id="web" hint="Link exibido no painel, ex.: https://app.seudominio.com"
+            onSave={() => act(() => call("/api/settings", { method: "PUT", body: { webAppUrl: webUrl || null } }).then(() => s.reload()), "Link salvo.")}>
+            <Input id="web" placeholder="https://…" value={webUrl} onChange={(e) => setWebUrl(e.target.value)} /></InlineField>
         </div>}
       </Card>
       <Card><Title>Alterar senha</Title>
@@ -68,6 +64,17 @@ export default function SettingsPage() {
         </div>}
         {temp && <div className="mt-3"><Alert tone="warn">Senha temporária (exibida uma única vez; entregue por canal seguro — o MFA será exigido no primeiro acesso): <code className="break-all">{temp}</code></Alert></div>}
       </Card>}
+    </div>
+  );
+}
+
+/** Label on top, input and its Save button on the same line, hint below — the button always lines up with the field. */
+function InlineField({ label, id, hint, onSave, children }: { label: string; id: string; hint?: string; onSave: () => void; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0 space-y-1">
+      <label htmlFor={id} className="block text-sm font-medium">{label}</label>
+      <div className="flex gap-2"><div className="min-w-0 flex-1">{children}</div><Button className="shrink-0" onClick={onSave}>Salvar</Button></div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
