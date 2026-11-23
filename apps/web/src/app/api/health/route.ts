@@ -1,14 +1,21 @@
-// Lightweight reachability probe for the Vendocas API (used by the "service unavailable" banner).
-// Returns only up/down — never internal details. Does not start anything.
+import { PROBLEM_HINT, apiBase, isPrivateCodespaceRedirect, type UpstreamProblem } from "@/lib/server/upstream";
+
+// Reachability probe for the Vendocas API (used by the "service unavailable" banner). Reports WHY the API is not
+// reachable (configuration, stopped server, private Codespace port) without exposing the address itself.
 export const dynamic = "force-dynamic";
 
-const API = process.env.API_INTERNAL_URL ?? "http://localhost:8080";
-
 export async function GET() {
-  let up = false;
+  const no = (problem: UpstreamProblem) =>
+    Response.json({ up: false, reason: problem, detail: PROBLEM_HINT[problem] }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  const base = apiBase();
+  if ("problem" in base) return no(base.problem);
+  let r: Response;
   try {
-    const r = await fetch(`${API}/actuator/health`, { signal: AbortSignal.timeout(3000), cache: "no-store" });
-    up = r.ok && ((await r.json()) as { status?: string }).status === "UP";
-  } catch { up = false; }
-  return Response.json({ up }, { status: up ? 200 : 503, headers: { "Cache-Control": "no-store" } });
+    r = await fetch(`${base.url}/actuator/health`, { signal: AbortSignal.timeout(4000), cache: "no-store", redirect: "manual" });
+  } catch (e) {
+    return no((e as Error).name === "TimeoutError" ? "API_TIMEOUT" : "API_UNREACHABLE");
+  }
+  if (isPrivateCodespaceRedirect(r)) return no("API_PRIVATE_PORT");
+  const up = r.ok && ((await r.json().catch(() => ({}))) as { status?: string }).status === "UP";
+  return up ? Response.json({ up: true }, { headers: { "Cache-Control": "no-store" } }) : no("API_UNHEALTHY");
 }

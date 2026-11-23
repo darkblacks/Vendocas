@@ -126,6 +126,7 @@ jobs:
           for i in $(seq 1 60); do curl -fs localhost:8080/actuator/health && break; sleep 2; done
       - run: pnpm install --frozen-lockfile && pnpm --filter @vendocas/tracking-sdk build && pnpm --filter @vendocas/web build
       - run: nohup pnpm --filter @vendocas/web start > web.log 2>&1 &
+        env: { API_INTERNAL_URL: "http://localhost:8080" }
       - run: pnpm --filter @vendocas/web exec playwright install --with-deps chromium
       - run: pnpm --filter @vendocas/web exec playwright test --trace off
         env: { E2E_API_LOG: "${{ github.workspace }}/api.log" }
