@@ -47,6 +47,7 @@ Definidas por `.devcontainer/devcontainer.json` (`DB_URL`, `DB_USER`, `DB_PASSWO
 | Variável | Descrição |
 |---|---|
 | `CONTROL_STATUS_TOKEN` | habilita `GET /internal/status` (≥ 32 caracteres; sem ela o endpoint retorna 404) |
+| `CONTROL_ADMIN_TOKEN` | opcional, ≥ 32 caracteres: permite ao Control Center alterar ambiente/Stripe/emissão fiscal (`PUT /internal/platform-settings`); sem ela, 404 |
 | `VENDOCAS_GIT_COMMIT` | commit em execução (preenchido por `start.sh`) |
 | `WORKERS_ENABLED` | liga/desliga workers dentro da API |
 | `VENDOCAS_AUTO_UPDATE` | `false` desativa o fast-forward automático de `main` no início do Codespace |

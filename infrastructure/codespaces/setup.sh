@@ -19,6 +19,7 @@ if [ ! -f "$SECRETS_FILE" ]; then
     echo "JWT_SECRET=$(openssl rand -base64 48)"
     echo "CREDENTIALS_ENCRYPTION_KEY=$(openssl rand -base64 32)"
     echo "CONTROL_STATUS_TOKEN=$(openssl rand -base64 36 | tr '+/' '-_' | tr -d '=')"
+    echo "CONTROL_ADMIN_TOKEN=$(openssl rand -base64 36 | tr '+/' '-_' | tr -d '=')"
   } > "$SECRETS_FILE"
   log "segredos de homologação gerados em $SECRETS_FILE (não versionado)"
 fi

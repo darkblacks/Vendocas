@@ -7,9 +7,12 @@
   indisponibilidade do VIES resulta em `VERIFICATION_UNAVAILABLE`, nunca em "válido". O reverse charge vem do Stripe Tax
   (`taxability_reason = reverse_charge`) e é exibido na fatura.
 * **EUA**: EIN validado por formato; sales tax pelo Stripe Tax conforme registros do vendedor.
-* **Brasil — NFS-e**: `FiscalDocumentService` (job `fiscal.issue`) emite NFS-e via **Focus NFe** quando o vendedor é
-  brasileiro (`SELLER_COUNTRY=BR`) e o comprador é do Brasil, somente para faturas `PAID` e em BRL. Referência idempotente
-  `vd-<invoiceId>`; consulta assíncrona até `autorizado`. Sem token → `NOT_CONFIGURED` (nunca número fictício).
+* **Brasil — NFS-e**: quando o vendedor é brasileiro (`SELLER_COUNTRY=BR`) e o comprador é do Brasil, toda fatura paga
+  gera uma obrigação em `tax_documents`. A emissão pela **Focus NFe** (job `fiscal.issue`, somente faturas `PAID` em BRL,
+  referência idempotente `vd-<invoiceId>`, consulta assíncrona até `autorizado`) só acontece com a emissão automática
+  ligada e o provedor selecionado e configurado; caso contrário fica `AWAITING_MANUAL` ou `NOT_CONFIGURED` (nunca número
+  fictício). O módulo é acionado por eventos do Billing, não pelo Billing — ver
+  [environments-billing-fiscal.md](environments-billing-fiscal.md).
   CNPJ alfanumérico (IN RFB 2.229/2024) suportado na validação.
 * **UE e-invoicing nacional** (ex.: Itália SDI, França 2026+): **pendente** — registrar provedor por país.
 

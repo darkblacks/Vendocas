@@ -31,6 +31,9 @@ tolerância de 300 s (anti-replay).
 Boleto via Stripe só é possível se a conta vendedora for brasileira. **Pix Automático**: não implementado — exige PSP
 brasileiro compatível; a interface `PaymentProvider` permite um segundo adaptador.
 
+## Ambiente, modo do Stripe e emissão fiscal
+Configurações independentes e separação Billing/Fiscal: [environments-billing-fiscal.md](environments-billing-fiscal.md).
+
 ## Testado
 `WebhookSecurityIT`: assinatura inválida/replay, fatura emitida ≠ pago, idempotência, PAST_DUE→ACTIVE, reverse charge, checkout.
 **Não validado contra o Stripe real** (exige `STRIPE_SECRET_KEY` de teste e `stripe listen`).

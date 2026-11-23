@@ -10,6 +10,7 @@ funciona com o Codespace desligado.
 |---|---|---|
 | Dashboard | estado real do Codespace, Ligar/Desligar, tempo de sessão, contagem regressiva, horário previsto de desligamento, saúde da API/Postgres/Redis/workers, último commit, links, falhas recentes, uso do GitHub | GitHub API + `/internal/status` da API + banco do Control Center |
 | Servidor / Codespaces | listar codespaces do repositório permitido, selecionar, ligar, desligar, portas, limite de sessão | GitHub API |
+| Pagamentos e fiscal | ambiente, modo do Stripe, emissão fiscal automática e provedor fiscal de cada API (homologação e produção); serviços ativos/desativados e avisos | `/internal/status` + `/internal/platform-settings` da API |
 | Credenciais e integrações | cofre: cadastrar, substituir, testar, desativar, revogar, histórico; TEST/LIVE | banco do Control Center (criptografado) |
 | Deploys | execuções do GitHub Actions, commit de `main`, estado dos deploys Netlify (desativados) | GitHub API |
 | Logs | log operacional do agendador e das operações | banco |

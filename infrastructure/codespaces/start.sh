@@ -17,6 +17,13 @@ set -a; # shellcheck disable=SC1090
 source "$SECRETS_FILE"; set +a
 [ -n "$PRESET_STATUS_TOKEN" ] && CONTROL_STATUS_TOKEN="$PRESET_STATUS_TOKEN"
 [ "${#CONTROL_STATUS_TOKEN}" -ge 32 ] || fail "CONTROL_STATUS_TOKEN precisa ter ao menos 32 caracteres"
+# Codespaces created before the admin token existed: add it once (lets the Control Center change platform settings).
+if [ -z "${CONTROL_ADMIN_TOKEN:-}" ]; then
+  CONTROL_ADMIN_TOKEN="$(openssl rand -base64 36 | tr '+/' '-_' | tr -d '=')"
+  (umask 077; echo "CONTROL_ADMIN_TOKEN=$CONTROL_ADMIN_TOKEN" >> "$SECRETS_FILE")
+  export CONTROL_ADMIN_TOKEN
+  log "CONTROL_ADMIN_TOKEN gerado (veja infrastructure/codespaces/show-admin-token.sh)"
+fi
 
 STEP=version
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
