@@ -2,14 +2,39 @@
 
 ## Autenticação
 
-* E-mail + senha (scrypt N=32768, r=8, p=1; mínimo 14 caracteres) **e MFA TOTP obrigatório** para todos os papéis.
-* 10 códigos de recuperação de uso único (armazenados como hash), exibidos uma única vez.
-* Sessão: token opaco aleatório, só o hash no banco; cookie `__Host-vcc_session` (HttpOnly, Secure, SameSite=Strict,
-  Path=/); expiração absoluta 12 h e por inatividade 30 min; logout revoga no servidor.
-* **Reautenticação** (senha + código) para ações sensíveis, válida por 10 min: salvar/revogar credenciais, criar ou
-  desativar usuários, trocar senha, selecionar codespace, alterar limites, rotacionar chave.
-* Bloqueio da conta após 8 falhas (15 min); rate limit por IP e por conta (login, MFA, bootstrap, ligar/desligar).
-* Mensagens de login não revelam se o e-mail existe (hash fictício em tempo constante).
+* **Login: e-mail + senha.** Senha com scrypt (N=32768, r=8, p=1; mínimo de 14 caracteres), nunca guardada em texto.
+* **Segundo fator só em dispositivo novo.** Na primeira vez num navegador, pede-se o código do app autenticador (TOTP)
+  ou um código de recuperação. Com “Lembrar este dispositivo” (padrão), o navegador fica **confiável por 30 dias**
+  (cookie `__Host-vcc_device`, HttpOnly; no banco só o hash) e ali o login passa a ser apenas e-mail e senha. Desmarque
+  em computadores compartilhados. Dispositivos podem ser vistos e esquecidos em Segurança → Seu acesso.
+* **Sessão persistente:** até 30 dias; termina após 7 dias sem uso; logout revoga no servidor. Cookie
+  `__Host-vcc_session`: token opaco aleatório (só o hash no banco), HttpOnly, Secure, `SameSite=Lax`, Path=/. Nada de
+  autenticação fica em `localStorage`/`sessionStorage` nem é legível por JavaScript.
+  * `Lax` (antes `Strict`): abrir o painel a partir de um link em outro site (e-mail, GitHub, Netlify) envia o cookie;
+    com `Strict` parecia logout. Requisições de outro site que alteram dados continuam bloqueadas (ver CSRF).
+* **Renovação segura:** o painel faz um *keep-alive* (`GET /api/auth/me`) ao abrir, ao voltar para a aba, ao reconectar e
+  a cada 10 min. O servidor estende a janela de inatividade e, a cada 12 h de uso, **troca o token** da sessão; o token
+  anterior continua válido por 2 minutos para que outras abas e requisições em andamento não sejam desconectadas.
+* **Falhas temporárias não desconectam:** banco lento/acordando ou falta de rede mostram “temporariamente
+  indisponível” e tentam de novo; só uma resposta definitiva de sessão inválida leva ao login.
+* **Reautenticação** só com a senha (o dispositivo já passou pelo segundo fator), válida por 15 min, para ações
+  sensíveis: salvar/revogar credenciais, criar/desativar usuários, trocar senha, gerar links e códigos, selecionar
+  codespace, alterar limites e configurações de pagamento/fiscal, rotacionar chave.
+* Bloqueio da conta após 8 senhas erradas (15 min); limite de tentativas por IP e por conta (login, segundo fator,
+  reautenticação, redefinição, instalação, ligar/desligar). Mensagens não revelam se o e-mail existe.
+* Trocar a senha encerra as outras sessões e esquece todos os dispositivos confiáveis (o navegador atual é confiado de
+  novo automaticamente). Desativar um usuário, redefinir o MFA ou “Sair de todos os dispositivos” fazem o mesmo.
+
+### Recuperação de acesso (tokens de uso único)
+
+| Situação | Como |
+|---|---|
+| Administrador esqueceu a senha | O OWNER gera em Configurações → Administradores um **link de redefinição** (uso único, 1 hora; o token vai no fragmento `#` da URL, que não chega a servidores nem logs). Gerar outro invalida o anterior. O MFA da pessoa é mantido. |
+| Códigos de recuperação acabando | Segurança → Seu acesso → **Gerar novos códigos de recuperação** (os antigos deixam de valer). |
+| Administrador perdeu o autenticador | OWNER: Configurações → **Redefinir MFA** (nova configuração no próximo login). |
+| OWNER perdeu senha e/ou autenticador | `/recover` com `CONTROL_SETUP_EMAIL` + `CONTROL_SETUP_KEY` → token de uso único (15 min) que redefine senha **e** MFA e desconecta tudo. É o único uso da chave de instalação além da instalação; nunca é pedida no login normal. |
+
+Tokens de redefinição são guardados só como hash, expiram e valem uma vez.
 
 ## Autorização
 
@@ -20,8 +45,8 @@ navegador. O nome do codespace é validado por regex e confrontado com a lista r
 
 ## CSRF
 
-Mutação exige: `Origin` igual à origem do próprio site (ou às URLs automáticas da Netlify `URL`/`DEPLOY_PRIME_URL`) **e**
-cabeçalho `X-CSRF-Token` igual ao token da sessão (comparação em tempo constante). Somado a SameSite=Strict. As etapas
+Com `SameSite=Lax`, o navegador não envia o cookie em POST/PUT/DELETE vindos de outro site. Além disso, toda mutação exige: `Origin` igual à origem do próprio site (ou às URLs automáticas da Netlify `URL`/`DEPLOY_PRIME_URL`) **e**
+cabeçalho `X-CSRF-Token` igual ao token da sessão (comparação em tempo constante). As etapas
 da instalação usam a mesma checagem de `Origin` com o cookie de instalação SameSite=Strict.
 
 ## Chave de instalação

@@ -5,6 +5,7 @@ import { currentSession } from "@/server/auth";
 import { ConfigError } from "@/server/env";
 import { storedDatabaseConfig } from "@/server/database-config";
 import { Shell } from "@/components/shell";
+import { TemporarilyUnavailable } from "@/components/unavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -14,12 +15,16 @@ export default async function ConsoleLayout({ children }: { children: ReactNode 
   const h = await headers();
   let ctx = null;
   let notConfigured = false;
+  let unavailable = false;
   try {
     ctx = await currentSession(new Request("http://control.internal/", { headers: { cookie, "user-agent": h.get("user-agent") ?? "" } }));
   } catch (e) {
-    if (!(e instanceof ConfigError && e.code === "DATABASE_NOT_CONFIGURED")) redirect("/login?error=unavailable");
-    notConfigured = true;
+    // Only "no installation" leaves the page. A slow database (e.g. Neon waking up) or a timeout is NOT a logout:
+    // the session cookie is kept and the page offers to retry.
+    if (e instanceof ConfigError && e.code === "DATABASE_NOT_CONFIGURED") notConfigured = true;
+    else unavailable = true;
   }
+  if (unavailable) return <TemporarilyUnavailable />;
   if (!ctx && !notConfigured) {
     // No session: send a brand-new installation to the setup instead of a login that cannot work yet.
     const stored = process.env.CONTROL_DATABASE_URL?.trim() ? true : await storedDatabaseConfig().then((c) => !!c).catch(() => true);

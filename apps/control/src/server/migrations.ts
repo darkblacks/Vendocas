@@ -165,4 +165,43 @@ CREATE INDEX IF NOT EXISTS ix_cc_oplog ON cc_operation_log(created_at DESC);
     // Repository and links are configured in the UI (no environment variables); the column for the repository exists.
     sql: `ALTER TABLE cc_system_state ADD COLUMN IF NOT EXISTS web_app_url text;`,
   },
+  {
+    id: 3,
+    name: "persistent_sessions_trusted_devices",
+    sql: `
+-- Persistent sessions with secure renewal: the previous token stays valid for a short grace period after rotation so
+-- concurrent requests (several tabs, a refresh during rotation) never log the user out.
+ALTER TABLE cc_sessions ADD COLUMN IF NOT EXISTS remember_device boolean NOT NULL DEFAULT true;
+ALTER TABLE cc_sessions ADD COLUMN IF NOT EXISTS rotated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE cc_sessions ADD COLUMN IF NOT EXISTS prev_token_hash text;
+ALTER TABLE cc_sessions ADD COLUMN IF NOT EXISTS prev_valid_until timestamptz;
+CREATE INDEX IF NOT EXISTS ix_cc_sessions_prev ON cc_sessions(prev_token_hash) WHERE prev_token_hash IS NOT NULL;
+
+-- A browser that completed MFA once is trusted for 30 days: there, sign-in is e-mail + password.
+CREATE TABLE IF NOT EXISTS cc_trusted_devices (
+  id            uuid PRIMARY KEY,
+  user_id       uuid NOT NULL REFERENCES cc_users(id) ON DELETE CASCADE,
+  token_hash    text NOT NULL UNIQUE,
+  label         text,
+  created_at    timestamptz NOT NULL DEFAULT now(),
+  last_used_at  timestamptz NOT NULL DEFAULT now(),
+  expires_at    timestamptz NOT NULL,
+  revoked_at    timestamptz
+);
+CREATE INDEX IF NOT EXISTS ix_cc_trusted_devices_user ON cc_trusted_devices(user_id);
+
+-- Single-use, short-lived access recovery tokens (hashed like every other token).
+ALTER TABLE cc_auth_challenges DROP CONSTRAINT IF EXISTS cc_auth_challenges_purpose_check;
+ALTER TABLE cc_auth_challenges ADD CONSTRAINT cc_auth_challenges_purpose_check CHECK (purpose IN ('MFA_LOGIN','MFA_ENROLL','PASSWORD_RESET'));
+ALTER TABLE cc_auth_challenges ADD COLUMN IF NOT EXISTS reset_mfa boolean NOT NULL DEFAULT false;
+
+-- Keep everyone who is signed in right now signed in under the new lifetime (no forced logout on upgrade). Their
+-- browser cookie still carries the old 12 h Max-Age, so the token is marked for rotation: the panel's first request
+-- after the deploy re-issues the cookie with the new lifetime.
+UPDATE cc_sessions SET expires_at = GREATEST(expires_at, created_at + interval '30 days'),
+                       idle_expires_at = GREATEST(idle_expires_at, now() + interval '7 days'),
+                       rotated_at = now() - interval '1 day'
+WHERE revoked_at IS NULL AND expires_at > now() AND idle_expires_at > now();
+`,
+  },
 ];

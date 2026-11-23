@@ -18,11 +18,17 @@ export async function call<T = unknown>(path: string, init: { method?: string; b
     const me = await fetch("/api/auth/me", { credentials: "same-origin" });
     if (me.ok) csrf = ((await me.json()) as { csrfToken: string }).csrfToken;
   }
-  const res = await fetch(path, {
-    method, credentials: "same-origin",
-    headers: { ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}), ...(method !== "GET" && csrf ? { "X-CSRF-Token": csrf } : {}), ...init.headers },
-    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
-  });
+  let res: Response;
+  try {
+    res = await fetch(path, {
+      method, credentials: "same-origin",
+      headers: { ...(init.body !== undefined ? { "Content-Type": "application/json" } : {}), ...(method !== "GET" && csrf ? { "X-CSRF-Token": csrf } : {}), ...init.headers },
+      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+    });
+  } catch {
+    // Connection hiccup: report it, never treat it as a logout.
+    throw new ApiError(0, "NETWORK", "Sem conexão com o servidor. Tentaremos novamente.");
+  }
   const text = await res.text();
   let data: Record<string, unknown>;
   try { data = text ? JSON.parse(text) : {}; } catch {
@@ -31,7 +37,10 @@ export async function call<T = unknown>(path: string, init: { method?: string; b
       res.status >= 500 ? `O servidor não respondeu corretamente (HTTP ${res.status}). Tente novamente em instantes.` : `Resposta inesperada do servidor (HTTP ${res.status}).`);
   }
   if (res.ok) return data as T;
-  if (res.status === 401 && typeof window !== "undefined" && !path.startsWith("/api/auth") && !path.startsWith("/api/bootstrap")) window.location.href = "/login";
+  // Only a definitive "no valid session" answer leads to the login page.
+  if (res.status === 401 && data.code === "UNAUTHENTICATED" && typeof window !== "undefined" && !path.startsWith("/api/auth") && !path.startsWith("/api/bootstrap")) {
+    window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+  }
   if (res.status === 403 && data.code === "REAUTH_REQUIRED" && !retried && reauthHandler && (await reauthHandler())) return call<T>(path, init, true);
   throw new ApiError(res.status, String(data.code ?? "ERROR"), String(data.message ?? res.statusText), data);
 }

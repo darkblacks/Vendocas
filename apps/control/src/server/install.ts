@@ -116,6 +116,17 @@ async function recordFailure(ip: string, current: number) {
 }
 
 export async function startSetupSession(req: Request, input: { email: string; key: string }): Promise<{ state: InstallState; cookie: string }> {
+  const expectedEmail = await verifyInstallCredentials(req, input);
+  const state = await installState();
+  if (state.stage === "DONE") throw new HttpError(409, "INSTALLATION_COMPLETE", "This installation is already complete; sign in instead");
+  return { state, cookie: setupCookie(signSetup(expectedEmail), SETUP_TTL_SECONDS) };
+}
+
+/**
+ * CONTROL_SETUP_EMAIL + CONTROL_SETUP_KEY check (constant time, rate limited, nothing logged). Used by the installation
+ * and by the owner's emergency access recovery — never by the normal sign-in. Returns the installation e-mail.
+ */
+export async function verifyInstallCredentials(req: Request, input: { email: string; key: string }): Promise<string> {
   const ip = clientIp(req);
   assertSameOrigin(req);
   const key = requireSetupKey();
@@ -135,9 +146,7 @@ export async function startSetupSession(req: Request, input: { email: string; ke
     await new Promise((r) => setTimeout(r, 300));
     throw new HttpError(401, "SETUP_CREDENTIALS_INVALID", "E-mail or installation key is incorrect");
   }
-  const state = await installState();
-  if (state.stage === "DONE") throw new HttpError(409, "INSTALLATION_COMPLETE", "This installation is already complete; sign in instead");
-  return { state, cookie: setupCookie(signSetup(expectedEmail), SETUP_TTL_SECONDS) };
+  return expectedEmail;
 }
 
 // ------------------------------------------------------------------ step 2: database

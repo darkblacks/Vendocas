@@ -48,7 +48,7 @@ describe("bootstrap and authentication", () => {
     const ok = await mfa.POST!(req("POST", "/api/auth/mfa", { body: { challenge: step.challenge, code: code(owner.secret) } }));
     expect(ok.status).toBe(200);
     const cookie = cookieFrom(ok)!;
-    expect(ok.headers.get("set-cookie")).toMatch(/HttpOnly; SameSite=Strict/);
+    expect(ok.headers.get("set-cookie")).toMatch(/HttpOnly; SameSite=Lax/);
     const me = await (await route<H>("auth/me")).GET!(req("GET", "/api/auth/me", { client: { cookie, csrf: null } }));
     expect((await me.json()).user.email).toBe(OWNER.email);
     // challenge cannot be reused

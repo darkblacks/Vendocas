@@ -28,6 +28,13 @@ export function json(data: unknown, status = 200, headers: Record<string, string
   });
 }
 
+/** JSON response that sets several cookies (session + trusted device, rotation, …). */
+export function jsonWithCookies(data: unknown, cookies: string[], status = 200): Response {
+  const headers = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store" });
+  for (const c of cookies) headers.append("Set-Cookie", c);
+  return new Response(JSON.stringify(data), { status, headers });
+}
+
 /** Every API answer must arrive well before the platform's gateway timeout, and always as JSON. */
 export const HANDLER_DEADLINE_MS = 9_500;
 

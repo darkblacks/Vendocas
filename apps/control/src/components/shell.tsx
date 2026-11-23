@@ -25,6 +25,7 @@ export function Shell({ user, csrfToken, children }: { user: { email: string; na
   const resolver = useRef<((ok: boolean) => void) | null>(null);
   useEffect(() => { setCsrf(csrfToken); }, [csrfToken]);
   useScrollLock(open || reauth);
+  useSessionKeepAlive();
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
@@ -69,6 +70,30 @@ export function Shell({ user, csrfToken, children }: { user: { email: string; na
   );
 }
 
+/**
+ * Keeps the persistent session fresh while the panel is open: on load, when the tab becomes visible again, when the
+ * connection comes back and every 10 minutes. The server slides the inactivity window and rotates the token when due
+ * (HttpOnly cookie — nothing is stored in JavaScript). Errors are ignored: a failed ping never logs anyone out.
+ */
+function useSessionKeepAlive() {
+  useEffect(() => {
+    let last = 0;
+    const ping = () => {
+      if (document.visibilityState !== "visible" || Date.now() - last < 60_000) return;
+      last = Date.now();
+      void fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" }).then((r) => {
+        if (r.status === 401) window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+      }).catch(() => undefined);
+    };
+    ping();
+    const id = setInterval(ping, 10 * 60_000);
+    document.addEventListener("visibilitychange", ping);
+    window.addEventListener("online", ping);
+    window.addEventListener("focus", ping);
+    return () => { clearInterval(id); document.removeEventListener("visibilitychange", ping); window.removeEventListener("online", ping); window.removeEventListener("focus", ping); };
+  }, []);
+}
+
 /** While a drawer/dialog is open the page behind it must not scroll (on iOS it otherwise drifts under the overlay). */
 function useScrollLock(locked: boolean) {
   useEffect(() => {
@@ -81,19 +106,17 @@ function useScrollLock(locked: boolean) {
 
 function ReauthDialog({ onDone }: { onDone: (ok: boolean) => void }) {
   const [password, setPassword] = useState("");
-  const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="reauth-title">
       <form className="w-full max-w-sm space-y-3 rounded-lg border border-border bg-card p-5" onSubmit={async (e) => {
         e.preventDefault(); setBusy(true); setError(null);
-        try { await call("/api/auth/reauth", { body: { password, code } }); onDone(true); } catch (err) { setError(message(err)); } finally { setBusy(false); }
+        try { await call("/api/auth/reauth", { body: { password } }); onDone(true); } catch (err) { setError(message(err)); } finally { setBusy(false); }
       }}>
         <h2 id="reauth-title" className="font-semibold">Confirme sua identidade</h2>
-        <p className="text-sm text-muted-foreground">Esta ação é sensível e exige confirmação recente (válida por 10 minutos).</p>
-        <Field label="Senha" id="rp"><Input id="rp" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
-        <Field label="Código MFA" id="rc"><Input id="rc" inputMode="numeric" maxLength={6} required value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} /></Field>
+        <p className="text-sm text-muted-foreground">Esta ação é sensível: confirme sua senha (vale por 15 minutos).</p>
+        <Field label="Senha" id="rp"><Input id="rp" type="password" autoComplete="current-password" required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
         {error && <Alert tone="bad">{error}</Alert>}
         <div className="flex gap-2"><Button type="submit" loading={busy}>Confirmar</Button><Button type="button" variant="outline" onClick={() => onDone(false)}>Cancelar</Button></div>
       </form>

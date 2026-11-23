@@ -18,6 +18,7 @@ export default function SettingsPage() {
   const [pw, setPw] = useState({ currentPassword: "", newPassword: "" });
   const [nu, setNu] = useState({ email: "", displayName: "", role: "ADMIN" });
   const [temp, setTemp] = useState<string | null>(null);
+  const [resetLink, setResetLink] = useState<{ email: string; url: string } | null>(null);
   useEffect(() => {
     if (!s.data) return;
     setHours(String(s.data.maxSessionHours)); setRepo(s.data.repository ?? ""); setWebUrl(s.data.webAppUrl ?? "");
@@ -49,11 +50,14 @@ export default function SettingsPage() {
           <div className="flex items-end"><Button onClick={() => act(() => call("/api/auth/password", { body: pw }), "Senha alterada; outras sessões foram encerradas.")}>Alterar</Button></div>
         </div></Card>
       {users.data && <Card><Title>Administradores autorizados</Title>
+        {resetLink && <div className="mb-3"><Alert tone="warn">Link de redefinição para {resetLink.email} (uso único, válido por 1 hora). Envie por um canal seguro; ele não será exibido de novo:
+          <code className="mt-1 block break-all rounded bg-muted p-2 text-xs">{resetLink.url}</code></Alert></div>}
         <Table head={["Nome", "E-mail", "Papel", "Estado", "MFA", ""]}>
           {users.data.map((u) => <tr key={u.id}><Td>{u.displayName}</Td><Td>{u.email}</Td><Td>{u.role}</Td><Td><Badge tone={stateTone(u.status)}>{u.status}</Badge></Td><Td>{u.mfaEnabledAt ? fmt(u.mfaEnabledAt) : "pendente"}</Td>
             <Td>{me?.role === "OWNER" && u.role !== "OWNER" && <div className="flex gap-1">
               <Button variant="outline" onClick={() => act(() => call(`/api/users/${u.id}`, { body: { action: u.status === "DISABLED" ? "enable" : "disable" } }).then(() => users.reload()), "Atualizado")}>{u.status === "DISABLED" ? "Reativar" : "Desativar"}</Button>
               <Button variant="ghost" onClick={() => act(() => call(`/api/users/${u.id}`, { body: { action: "revoke_sessions" } }), "Sessões encerradas")}>Encerrar sessões</Button>
+              {u.status !== "DISABLED" && u.role !== "OWNER" && <Button variant="ghost" onClick={() => act(async () => { const r = await call<{ url: string }>(`/api/users/${u.id}`, { body: { action: "reset_link" } }); setResetLink({ email: u.email, url: r.url }); }, "Link criado")}>Link de redefinição</Button>}
               {u.status === "ACTIVE" && <Button variant="ghost" onClick={() => confirm(`Redefinir o MFA de ${u.email}? A pessoa terá de cadastrar um novo autenticador no próximo login.`) && act(() => call(`/api/users/${u.id}`, { body: { action: "reset_mfa" } }).then(() => users.reload()), "MFA redefinido")}>Redefinir MFA</Button>}</div>}</Td></tr>)}
         </Table>
         {me?.role === "OWNER" && <div className="mt-4 grid gap-2 sm:grid-cols-4">
