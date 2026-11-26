@@ -89,6 +89,8 @@ public final class TaxIdValidator {
             case "BR" -> type.equals("BR_CNPJ") || type.equals("BR_CPF");
             case "US" -> type.equals("US_EIN") || type.equals("NONE");
             case "EU" -> type.equals("EU_VAT") || type.equals("NONE") || type.equals("OTHER");
+            // LATAM, Canada and the United Kingdom: local identifiers (RFC, CUIT, RUT, BN, UK VAT…) are kept as OTHER for now.
+            case "LATAM", "CA", "UK" -> type.equals("NONE") || type.equals("OTHER");
             default -> false;
         };
     }

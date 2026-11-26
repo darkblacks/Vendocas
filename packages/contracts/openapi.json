@@ -11,6 +11,246 @@
         }
     ],
     "paths": {
+        "/internal/platform-settings": {
+            "put": {
+                "tags": [
+                    "internal-status-controller"
+                ],
+                "operationId": "updateSettings",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Control-Actor",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SettingsChange"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Status"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/commercial/quotas/{market}/{planCode}/{channel}": {
+            "put": {
+                "tags": [
+                    "commercial-controller"
+                ],
+                "operationId": "setQuota",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Control-Actor",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "market",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "planCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QuotaChange"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/commercial/prices/{market}/{planCode}": {
+            "put": {
+                "tags": [
+                    "commercial-controller"
+                ],
+                "operationId": "setPrice",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Control-Actor",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "market",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "planCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PriceChange"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/commercial/markets/{code}": {
+            "put": {
+                "tags": [
+                    "commercial-controller"
+                ],
+                "operationId": "updateMarket",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "X-Control-Actor",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/MarketUpdate"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/templates/{id}": {
             "put": {
                 "tags": [
@@ -41,6 +281,51 @@
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{id}": {
+            "put": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "updateProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -164,7 +449,7 @@
                 "tags": [
                     "organizations"
                 ],
-                "operationId": "updateSettings",
+                "operationId": "updateSettings_1",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -592,6 +877,54 @@
                 }
             }
         },
+        "/api/v1/admin/platform-settings": {
+            "get": {
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "platformSettings",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Status"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "updatePlatformSettings",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SettingsRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Status"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/capabilities": {
             "get": {
                 "tags": [
@@ -813,6 +1146,85 @@
                 }
             }
         },
+        "/api/v1/sales": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "list_2",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "salesChannel",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SaleView"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "register",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SaleInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SaleResult"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/public/unsubscribe/{token}": {
             "get": {
                 "tags": [
@@ -904,12 +1316,86 @@
                 }
             }
         },
+        "/api/v1/products": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "products",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "includeInactive",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProductView"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "createProduct",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ProductInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/privacy/requests": {
             "get": {
                 "tags": [
                     "privacy"
                 ],
-                "operationId": "list_2",
+                "operationId": "list_3",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1184,7 +1670,7 @@
                 "tags": [
                     "media"
                 ],
-                "operationId": "list_3",
+                "operationId": "list_4",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1514,6 +2000,29 @@
                 }
             }
         },
+        "/api/v1/crm/recompute": {
+            "post": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "recompute",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversations/{id}/reply": {
             "post": {
                 "tags": [
@@ -1560,7 +2069,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "list_4",
+                "operationId": "list_5",
                 "parameters": [
                     {
                         "name": "q",
@@ -2027,7 +2536,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "list_5",
+                "operationId": "list_6",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2286,7 +2795,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "list_6",
+                "operationId": "list_7",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2593,7 +3102,7 @@
                 "tags": [
                     "auth"
                 ],
-                "operationId": "register",
+                "operationId": "register_1",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -3013,7 +3522,7 @@
                 "tags": [
                     "admin"
                 ],
-                "operationId": "setPrice",
+                "operationId": "setPrice_1",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -3072,6 +3581,84 @@
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/fiscal/invoices/{invoiceId}/record-external": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "recordExternal",
+                "parameters": [
+                    {
+                        "name": "invoiceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ExternalIssue"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/fiscal/invoices/{invoiceId}/issue": {
+            "post": {
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "issueNow",
+                "parameters": [
+                    {
+                        "name": "invoiceId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -3192,6 +3779,258 @@
                 }
             }
         },
+        "/internal/status": {
+            "get": {
+                "tags": [
+                    "internal-status-controller"
+                ],
+                "operationId": "status",
+                "parameters": [
+                    {
+                        "name": "X-Control-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/merchants": {
+            "get": {
+                "tags": [
+                    "merchants-controller"
+                ],
+                "operationId": "list_8",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "market",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "plan",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/merchants/{id}": {
+            "get": {
+                "tags": [
+                    "merchants-controller"
+                ],
+                "operationId": "detail",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/commercial/pricing": {
+            "get": {
+                "tags": [
+                    "commercial-controller"
+                ],
+                "operationId": "pricing",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/internal/commercial/markets": {
+            "get": {
+                "tags": [
+                    "commercial-controller"
+                ],
+                "operationId": "markets",
+                "parameters": [
+                    {
+                        "name": "X-Control-Admin-Token",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sales/summary": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "summary",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SalesSummary"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/reports/onboarding": {
             "get": {
                 "tags": [
@@ -3237,6 +4076,92 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Dashboard"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/markets": {
+            "get": {
+                "tags": [
+                    "markets"
+                ],
+                "operationId": "list_9",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MarketView"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/markets/{code}/plans": {
+            "get": {
+                "tags": [
+                    "markets"
+                ],
+                "operationId": "plans",
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MarketPlanView"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/public/countries/{countryCode}": {
+            "get": {
+                "tags": [
+                    "markets"
+                ],
+                "operationId": "country",
+                "parameters": [
+                    {
+                        "name": "countryCode",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CountryMarket"
                                 }
                             }
                         }
@@ -3315,7 +4240,7 @@
                 "tags": [
                     "notifications"
                 ],
-                "operationId": "list_7",
+                "operationId": "list_10",
                 "parameters": [
                     {
                         "name": "unread",
@@ -3349,7 +4274,7 @@
                 "tags": [
                     "messages"
                 ],
-                "operationId": "list_8",
+                "operationId": "list_11",
                 "parameters": [
                     {
                         "name": "status",
@@ -3437,6 +4362,184 @@
                                     "items": {
                                         "$ref": "#/components/schemas/MemberView"
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/summary": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "summary_1",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Summary"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/kanban": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "kanban",
+                "parameters": [
+                    {
+                        "name": "perColumn",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/KanbanColumn"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/customers": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "customers",
+                "parameters": [
+                    {
+                        "name": "stage",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "channel",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "tag",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "lastPurchase"
+                        }
+                    },
+                    {
+                        "name": "dir",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 50
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PageCustomerRow"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/customers/{id}": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "customer",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CustomerMetrics"
                                 }
                             }
                         }
@@ -3582,7 +4685,7 @@
                 "tags": [
                     "channels"
                 ],
-                "operationId": "list_9",
+                "operationId": "list_12",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3840,6 +4943,26 @@
                 }
             }
         },
+        "/api/v1/billing/usage": {
+            "get": {
+                "tags": [
+                    "billing"
+                ],
+                "operationId": "usage",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsageView"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/billing/subscription/history": {
             "get": {
                 "tags": [
@@ -3868,7 +4991,7 @@
                 "tags": [
                     "billing"
                 ],
-                "operationId": "plans",
+                "operationId": "plans_1",
                 "parameters": [
                     {
                         "name": "currency",
@@ -3910,6 +5033,29 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/Overview"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/billing/market-plans": {
+            "get": {
+                "tags": [
+                    "billing"
+                ],
+                "operationId": "marketPlans",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MarketPlanView"
+                                    }
                                 }
                             }
                         }
@@ -4095,7 +5241,7 @@
                 "tags": [
                     "audit"
                 ],
-                "operationId": "list_10",
+                "operationId": "list_13",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4193,6 +5339,40 @@
                 }
             }
         },
+        "/api/v1/admin/fiscal/documents": {
+            "get": {
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "fiscalDocuments",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "additionalProperties": {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/admin/dead-letters": {
             "get": {
                 "tags": [
@@ -4207,6 +5387,71 @@
                                 "schema": {
                                     "type": "object",
                                     "additionalProperties": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/billing/payments": {
+            "get": {
+                "tags": [
+                    "admin"
+                ],
+                "operationId": "payments",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "fiscalStatus",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "json"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
                                 }
                             }
                         }
@@ -4323,6 +5568,216 @@
     },
     "components": {
         "schemas": {
+            "SettingsChange": {
+                "type": "object",
+                "properties": {
+                    "environment": {
+                        "type": "string",
+                        "enum": [
+                            "HOMOLOGATION",
+                            "PRODUCTION"
+                        ]
+                    },
+                    "stripeMode": {
+                        "type": "string",
+                        "enum": [
+                            "TEST",
+                            "LIVE"
+                        ]
+                    },
+                    "fiscalAutomation": {
+                        "type": "boolean"
+                    },
+                    "fiscalProvider": {
+                        "type": "string",
+                        "enum": [
+                            "NONE",
+                            "FOCUS_NFE"
+                        ]
+                    },
+                    "expectedVersion": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "PlatformSettings": {
+                "type": "object",
+                "properties": {
+                    "environment": {
+                        "type": "string",
+                        "enum": [
+                            "HOMOLOGATION",
+                            "PRODUCTION"
+                        ]
+                    },
+                    "stripeMode": {
+                        "type": "string",
+                        "enum": [
+                            "TEST",
+                            "LIVE"
+                        ]
+                    },
+                    "fiscalAutomation": {
+                        "type": "boolean"
+                    },
+                    "fiscalProvider": {
+                        "type": "string",
+                        "enum": [
+                            "NONE",
+                            "FOCUS_NFE"
+                        ]
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "updatedBy": {
+                        "type": "string"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ServiceStatus": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "type": "string"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "detail": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Status": {
+                "type": "object",
+                "properties": {
+                    "settings": {
+                        "$ref": "#/components/schemas/PlatformSettings"
+                    },
+                    "stripeKeyMode": {
+                        "type": "string"
+                    },
+                    "stripeConfigured": {
+                        "type": "boolean"
+                    },
+                    "stripeWebhookConfigured": {
+                        "type": "boolean"
+                    },
+                    "stripeModeMatches": {
+                        "type": "boolean"
+                    },
+                    "focusConfigured": {
+                        "type": "boolean"
+                    },
+                    "focusEnvironment": {
+                        "type": "string"
+                    },
+                    "fiscalMode": {
+                        "type": "string"
+                    },
+                    "fiscalDocuments": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    "services": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ServiceStatus"
+                        }
+                    },
+                    "warnings": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "QuotaChange": {
+                "type": "object",
+                "properties": {
+                    "monthlyLimit": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "fairUseNote": {
+                        "type": "string"
+                    },
+                    "remove": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "PriceChange": {
+                "type": "object",
+                "properties": {
+                    "unitAmountMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "stripePriceId": {
+                        "type": "string"
+                    },
+                    "offerText": {
+                        "type": "string"
+                    },
+                    "trialDays": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "MarketUpdate": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "defaultLocale": {
+                        "type": "string"
+                    },
+                    "locales": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "channelOrder": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "sendWindowStart": {
+                        "type": "string",
+                        "format": "time-local"
+                    },
+                    "sendWindowEnd": {
+                        "type": "string",
+                        "format": "time-local"
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "expectedVersion": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
             "TemplateInput": {
                 "type": "object",
                 "properties": {
@@ -4376,6 +5831,43 @@
                     "locale",
                     "name",
                     "purpose"
+                ]
+            },
+            "ProductInput": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 0
+                    },
+                    "sku": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "minLength": 0
+                    },
+                    "priceMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "[A-Z]{3}"
+                    },
+                    "category": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 0
+                    },
+                    "active": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "currency",
+                    "name"
                 ]
             },
             "UpdateOrganizationRequest": {
@@ -4617,6 +6109,11 @@
                     },
                     "requireMfaForAdmins": {
                         "type": "boolean"
+                    },
+                    "alertContact": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 0
                     }
                 },
                 "required": [
@@ -4657,6 +6154,12 @@
                     },
                     "requireMfaForAdmins": {
                         "type": "boolean"
+                    },
+                    "alertContact": {
+                        "type": "string"
+                    },
+                    "marketCode": {
+                        "type": "string"
                     }
                 }
             },
@@ -5419,6 +6922,7 @@
                             "PAGE_ABANDONED",
                             "QUOTE_CREATED",
                             "REPLY_RECEIVED",
+                            "STAGE_CHANGED",
                             "EXTERNAL_EVENT",
                             "CONTACT_INACTIVE",
                             "APPOINTMENT_UPCOMING",
@@ -5519,6 +7023,39 @@
                     "updatedAt": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                }
+            },
+            "SettingsRequest": {
+                "type": "object",
+                "properties": {
+                    "environment": {
+                        "type": "string",
+                        "enum": [
+                            "HOMOLOGATION",
+                            "PRODUCTION"
+                        ]
+                    },
+                    "stripeMode": {
+                        "type": "string",
+                        "enum": [
+                            "TEST",
+                            "LIVE"
+                        ]
+                    },
+                    "fiscalAutomation": {
+                        "type": "boolean"
+                    },
+                    "fiscalProvider": {
+                        "type": "string",
+                        "enum": [
+                            "NONE",
+                            "FOCUS_NFE"
+                        ]
+                    },
+                    "expectedVersion": {
+                        "type": "integer",
+                        "format": "int32"
                     }
                 }
             },
@@ -5673,6 +7210,125 @@
                     "category",
                     "subject"
                 ]
+            },
+            "ItemInput": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 0
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int32",
+                        "maximum": 10000,
+                        "minimum": 1
+                    },
+                    "unitAmountMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                    }
+                }
+            },
+            "NewCustomer": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 250,
+                        "minLength": 0
+                    },
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 30,
+                        "minLength": 0
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254,
+                        "minLength": 0
+                    }
+                }
+            },
+            "SaleInput": {
+                "type": "object",
+                "properties": {
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "customer": {
+                        "$ref": "#/components/schemas/NewCustomer"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ItemInput"
+                        },
+                        "maxItems": 100,
+                        "minItems": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "pattern": "[A-Z]{3}"
+                    },
+                    "paymentMethod": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "salesChannel": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "occurredAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "minLength": 0
+                    },
+                    "alertConsents": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "pattern": "EMAIL|WHATSAPP|SMS"
+                        }
+                    }
+                },
+                "required": [
+                    "items",
+                    "paymentMethod",
+                    "salesChannel"
+                ]
+            },
+            "SaleResult": {
+                "type": "object",
+                "properties": {
+                    "orderId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "totalMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    }
+                }
             },
             "FormSubmission": {
                 "type": "object",
@@ -6841,6 +8497,28 @@
                     "reason"
                 ]
             },
+            "ExternalIssue": {
+                "type": "object",
+                "properties": {
+                    "number": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "minLength": 0
+                    },
+                    "issuedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "number"
+                ]
+            },
             "UpdateRequest": {
                 "type": "object",
                 "properties": {
@@ -6913,6 +8591,98 @@
                     },
                     "rejectionReason": {
                         "type": "string"
+                    }
+                }
+            },
+            "SaleView": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "occurredAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contactName": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "totalMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "salesChannel": {
+                        "type": "string"
+                    },
+                    "paymentMethod": {
+                        "type": "string"
+                    },
+                    "items": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "firstItem": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": "string"
+                    }
+                }
+            },
+            "SalesSummary": {
+                "type": "object",
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "to": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "totalMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "sales": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "averageTicketMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "newCustomers": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "byChannel": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    },
+                    "byPayment": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
                     }
                 }
             },
@@ -7054,6 +8824,151 @@
                         "items": {
                             "$ref": "#/components/schemas/DailyPoint"
                         }
+                    }
+                }
+            },
+            "MarketView": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "defaultLocale": {
+                        "type": "string"
+                    },
+                    "locales": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "channelOrder": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "countries": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "MarketPlanView": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "tier": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "features": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "market": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "monthlyAmountMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "offerText": {
+                        "type": "string"
+                    },
+                    "trialDays": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "quotas": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Quota"
+                        }
+                    },
+                    "purchasable": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "Quota": {
+                "type": "object",
+                "properties": {
+                    "channel": {
+                        "type": "string"
+                    },
+                    "monthlyLimit": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "fairUseNote": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CountryMarket": {
+                "type": "object",
+                "properties": {
+                    "countryCode": {
+                        "type": "string"
+                    },
+                    "market": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "defaultLocale": {
+                        "type": "string"
+                    },
+                    "open": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "ProductView": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "priceMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "active": {
+                        "type": "boolean"
                     }
                 }
             },
@@ -7257,6 +9172,171 @@
                     "createdAt": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                }
+            },
+            "CustomerRow": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "stage": {
+                        "type": "string"
+                    },
+                    "recency": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "frequency": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "monetary": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "orders": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "totalSpentMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "lastPurchaseAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "channels": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "KanbanColumn": {
+                "type": "object",
+                "properties": {
+                    "stage": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "cards": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CustomerRow"
+                        }
+                    }
+                }
+            },
+            "PageCustomerRow": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CustomerRow"
+                        }
+                    },
+                    "total": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "CustomerMetrics": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "stage": {
+                        "type": "string"
+                    },
+                    "recency": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "frequency": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "monetary": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "orders": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "totalSpentMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "spent12mMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "firstPurchaseAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "lastPurchaseAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "avgIntervalDays": {
+                        "type": "number"
+                    },
+                    "averageTicketMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "stageChangedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "favoriteProducts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             },
@@ -7491,36 +9571,19 @@
             "JsonNode": {
                 "type": "object",
                 "properties": {
-                    "nodeType": {
-                        "type": "string",
-                        "enum": [
-                            "ARRAY",
-                            "BINARY",
-                            "BOOLEAN",
-                            "MISSING",
-                            "NULL",
-                            "NUMBER",
-                            "OBJECT",
-                            "POJO",
-                            "STRING"
-                        ]
-                    },
-                    "string": {
+                    "empty": {
                         "type": "boolean"
                     },
-                    "integralNumber": {
+                    "array": {
                         "type": "boolean"
                     },
-                    "missingNode": {
-                        "type": "boolean"
-                    },
-                    "valueNode": {
-                        "type": "boolean"
-                    },
-                    "container": {
+                    "null": {
                         "type": "boolean"
                     },
                     "object": {
+                        "type": "boolean"
+                    },
+                    "float": {
                         "type": "boolean"
                     },
                     "pojo": {
@@ -7557,17 +9620,34 @@
                     "binary": {
                         "type": "boolean"
                     },
-                    "array": {
+                    "string": {
                         "type": "boolean"
                     },
-                    "empty": {
+                    "integralNumber": {
                         "type": "boolean"
                     },
-                    "null": {
+                    "valueNode": {
                         "type": "boolean"
                     },
-                    "float": {
+                    "container": {
                         "type": "boolean"
+                    },
+                    "missingNode": {
+                        "type": "boolean"
+                    },
+                    "nodeType": {
+                        "type": "string",
+                        "enum": [
+                            "ARRAY",
+                            "BINARY",
+                            "BOOLEAN",
+                            "MISSING",
+                            "NULL",
+                            "NUMBER",
+                            "OBJECT",
+                            "POJO",
+                            "STRING"
+                        ]
                     },
                     "number": {
                         "type": "boolean"
@@ -7905,6 +9985,53 @@
                     "createdAt": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                }
+            },
+            "Usage": {
+                "type": "object",
+                "properties": {
+                    "channel": {
+                        "type": "string"
+                    },
+                    "monthlyLimit": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "used": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "unlimited": {
+                        "type": "boolean"
+                    },
+                    "payPerUse": {
+                        "type": "boolean"
+                    },
+                    "periodStart": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "periodEnd": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "UsageView": {
+                "type": "object",
+                "properties": {
+                    "market": {
+                        "type": "string"
+                    },
+                    "planCode": {
+                        "type": "string"
+                    },
+                    "channels": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Usage"
+                        }
                     }
                 }
             },

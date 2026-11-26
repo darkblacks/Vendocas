@@ -91,7 +91,8 @@ public class SubscriptionService {
         }
         Organization org = orgs.get(orgId);
         var plan = catalog.plan(planCode);
-        var price = catalog.price(plan.id(), org.getBillingCurrency()).orElseThrow(() -> ApiException.badRequest("Plan has no price"));
+        var price = catalog.price(plan.id(), org.getMarketCode(), org.getBillingCurrency())
+                .orElseThrow(() -> ApiException.badRequest("Plan is not on sale in this market yet"));
         boolean invoice = "INVOICE".equals(method);
         if (invoice) requireBusinessCustomer(orgId);
         String customerId = ensureCustomer(org);
@@ -137,7 +138,7 @@ public class SubscriptionService {
             return view(s);
         }
         Organization org = orgs.get(orgId);
-        var price = catalog.price(target.id(), catalog.priceById(s.getPriceId()).currency())
+        var price = catalog.price(target.id(), org.getMarketCode(), catalog.priceById(s.getPriceId()).currency())
                 .orElseThrow(() -> ApiException.badRequest("Target plan not available in the subscription currency"));
         if (target.tier() > current.tier()) {
             provider.changePrice(s.getProviderSubscriptionId(), price.stripePriceId(), true, "CHARGE_AUTOMATICALLY".equals(s.getCollectionMethod()));
@@ -164,7 +165,8 @@ public class SubscriptionService {
     public void applyPendingDowngrade(UUID subscriptionId) {
         Subscription s = subs.lockById(subscriptionId).orElseThrow();
         if (s.getPendingPlanId() == null || s.getStatus().isTerminal()) return;
-        var price = catalog.price(s.getPendingPlanId(), catalog.priceById(s.getPriceId()).currency()).orElseThrow();
+        String market = orgs.get(s.getOrganizationId()).getMarketCode();
+        var price = catalog.price(s.getPendingPlanId(), market, catalog.priceById(s.getPriceId()).currency()).orElseThrow();
         provider.changePrice(s.getProviderSubscriptionId(), price.stripePriceId(), false, false);
         UUID from = s.getPlanId();
         s.setPlanId(s.getPendingPlanId());

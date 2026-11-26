@@ -2,6 +2,8 @@ package com.platform.messaging;
 
 import com.platform.billing.CreditWalletService;
 import com.platform.billing.EntitlementService;
+import com.platform.billing.QuotaService;
+import com.platform.markets.AlertFooter;
 import com.platform.billing.UsageRates;
 import com.platform.channels.ChannelService;
 import com.platform.consent.PolicyEngine;
@@ -15,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.sql.Timestamp;
 import java.time.*;
@@ -39,11 +42,12 @@ public class MessageService {
     private final CreditWalletService wallet;
     private final UnsubscribeTokens unsubscribe;
     private final StorageService storage;
+    private final QuotaService quotas;
     private final Clock clock;
 
     public MessageService(JdbcTemplate jdbc, ContactRepository contacts, EntitlementService entitlements, ChannelService channels,
                           PolicyEngine policy, UsageRates rates, CreditWalletService wallet, UnsubscribeTokens unsubscribe,
-                          StorageService storage, Clock clock) {
+                          StorageService storage, QuotaService quotas, Clock clock) {
         this.jdbc = jdbc;
         this.contacts = contacts;
         this.entitlements = entitlements;
@@ -53,6 +57,7 @@ public class MessageService {
         this.wallet = wallet;
         this.unsubscribe = unsubscribe;
         this.storage = storage;
+        this.quotas = quotas;
         this.clock = clock;
     }
 
@@ -103,6 +108,7 @@ public class MessageService {
     /** Everything resolved for a send; blockReason != null means it must not be sent. */
     static final class Prepared {
         String blockReason, provider, from, fromName, replyTo, to, subject, text, html, mediaKey, currency, waTemplate;
+        boolean quotaIncluded;
         Map<String, String> headers = new LinkedHashMap<>();
         List<String> waParams = List.of();
         long cost;
@@ -121,6 +127,11 @@ public class MessageService {
         var ent = entitlements.of(org);
         if (!ent.serviceActive()) return block(p, "SUBSCRIPTION_INACTIVE");
         if (!ent.features().contains(EntitlementService.featureForChannel(r.channel()))) return block(p, "PLAN_EXCLUDES_CHANNEL");
+        // Alert plans: automatic alerts only. Campaigns and conversations belong to the Ilimitado plan.
+        if (ent.alertsOnly() && !r.test()) {
+            if ("CAMPAIGN".equals(r.originType())) return block(p, "PLAN_CAMPAIGNS_REQUIRED");
+            if ("MANUAL".equals(r.originType())) return block(p, "PLAN_INBOX_REQUIRED");
+        }
         var sendable = channels.sendable(org, r.channel());
         if (sendable.isEmpty()) return block(p, "CHANNEL_NOT_ACTIVE");
         p.provider = sendable.get().provider();
@@ -135,7 +146,9 @@ public class MessageService {
 
         // ---- content ----
         Map<String, Object> vars = new HashMap<>(c.variables());
-        var orgRow = jdbc.queryForMap("SELECT trade_name, time_zone FROM organizations WHERE id = ?", org);
+        var orgRow = jdbc.queryForMap("""
+                SELECT o.trade_name, o.time_zone, o.locale, o.market_code, COALESCE(s.alert_contact, o.contact_phone, o.contact_email::text) AS alert_contact
+                FROM organizations o LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE o.id = ?""", org);
         vars.put("business.name", orgRow.get("trade_name"));
         String subject = r.subject(), body = r.body(), html = null;
         String waCategory = null;
@@ -187,6 +200,12 @@ public class MessageService {
 
         p.subject = TemplateRenderer.render(subject, vars, false);
         p.text = TemplateRenderer.render(body, vars, false);
+        String alertFooter = null;
+        if (ent.alertsOnly()) {
+            // WhatsApp templates carry the footer as an approved component (see WhatsAppChannelSetup); free text gets it appended.
+            alertFooter = AlertFooter.text(c.locale() != null ? c.locale() : (String) orgRow.get("locale"), (String) orgRow.get("alert_contact"));
+            if (!"WHATSAPP".equals(r.channel()) || p.waTemplate == null) p.text = p.text + "\n\n" + alertFooter;
+        }
         if ("EMAIL".equals(r.channel())) {
             if (p.subject == null || p.subject.isBlank()) return block(p, "EMPTY_SUBJECT");
             String footer = null;
@@ -197,8 +216,9 @@ public class MessageService {
                 footer = "<a href=\"" + url + "\">Unsubscribe</a>";
                 p.text = p.text + "\n\n—\nUnsubscribe: " + url;
             }
-            p.html = html != null ? TemplateRenderer.render(html, vars, true) + (footer == null ? "" : "<p style=\"font-size:12px\">" + footer + "</p>")
-                    : TemplateRenderer.textToHtml(TemplateRenderer.render(body, vars, false), footer);
+            String alertHtml = alertFooter == null ? "" : "<p style=\"font-size:12px;color:#555\">" + HtmlUtils.htmlEscape(alertFooter) + "</p>";
+            p.html = html != null ? TemplateRenderer.render(html, vars, true) + alertHtml + (footer == null ? "" : "<p style=\"font-size:12px\">" + footer + "</p>")
+                    : TemplateRenderer.textToHtml(TemplateRenderer.render(body, vars, false) + (alertFooter == null ? "" : "\n\n" + alertFooter), footer);
         } else if (("SMS".equals(r.channel()) || "MMS".equals(p.sendChannel)) && PROMOTIONAL.contains(r.purpose())) {
             if (!p.text.toUpperCase(Locale.ROOT).contains("STOP")) p.text = p.text + "\nReply STOP to opt out";
         }
@@ -222,10 +242,16 @@ public class MessageService {
 
         // ---- pricing ----
         String category = "WHATSAPP".equals(r.channel()) ? (waCategory == null ? "SERVICE" : waCategory) : "ANY";
-        var rate = rates.find(p.sendChannel, d.recipientCountry(), category, p.currency);
-        if (rate.isEmpty()) return block(p, "USAGE_RATE_NOT_CONFIGURED");
-        int units = "SMS".equals(p.sendChannel) ? SmsSegments.count(p.text) : 1;
-        p.cost = rate.get().unitPriceMinor() * units;
+        QuotaService.Mode mode = r.test() ? QuotaService.Mode.PAY_PER_USE : quotas.decide(org, ent.planId(), (String) orgRow.get("market_code"), p.sendChannel);
+        if (mode == QuotaService.Mode.INCLUDED) {
+            p.quotaIncluded = true;
+            p.cost = 0;
+        } else {
+            var rate = rates.find(p.sendChannel, d.recipientCountry(), category, p.currency);
+            if (rate.isEmpty()) return block(p, mode == QuotaService.Mode.EXCEEDED ? "PLAN_QUOTA_EXCEEDED" : "USAGE_RATE_NOT_CONFIGURED");
+            int units = "SMS".equals(p.sendChannel) ? SmsSegments.count(p.text) : 1;
+            p.cost = rate.get().unitPriceMinor() * units;
+        }
 
         // ---- quiet hours (in the recipient's zone when known) ----
         if (d.quietHoursEnforced() && !r.test()) {
@@ -259,10 +285,10 @@ public class MessageService {
         jdbc.update("""
                 INSERT INTO messages (id, organization_id, contact_id, direction, channel, purpose, status, status_reason, to_address, from_address,
                     template_id, subject, body, media_object_key, provider, origin_type, origin_id, idempotency_key, is_test, cost_reserved_minor,
-                    cost_currency, queued_at, render_meta)
-                VALUES (?,?,?, 'OUTBOUND', ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?::jsonb)""",
+                    cost_currency, queued_at, render_meta, quota_included)
+                VALUES (?,?,?, 'OUTBOUND', ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?::jsonb, ?)""",
                 id, r.organizationId(), c == null ? null : c.id(), p.sendChannel, r.purpose(), status, reason, p.to, p.from, p.templateId,
                 p.subject, p.text, p.mediaKey, p.provider, r.originType(), r.originId(), r.idempotencyKey(), r.test(), cost, p.currency,
-                queuedAt == null ? null : Timestamp.from(queuedAt), Json.write(meta));
+                queuedAt == null ? null : Timestamp.from(queuedAt), Json.write(meta), p.quotaIncluded && "QUEUED".equals(status));
     }
 }

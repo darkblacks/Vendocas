@@ -1,6 +1,7 @@
 package com.platform.commerce;
 
 import com.platform.contacts.ContactEventService;
+import com.platform.crm.CrmService;
 import com.platform.shared.Ids;
 import com.platform.shared.api.ApiException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,10 +25,12 @@ public class CommerceService {
     static final Set<String> ORDER_STATUSES = Set.of("PENDING", "COMPLETED", "CANCELED", "REFUNDED");
     private final JdbcTemplate jdbc;
     private final ContactEventService events;
+    private final CrmService crm;
 
-    public CommerceService(JdbcTemplate jdbc, ContactEventService events) {
+    public CommerceService(JdbcTemplate jdbc, ContactEventService events, CrmService crm) {
         this.jdbc = jdbc;
         this.events = events;
+        this.crm = crm;
     }
 
     public record OrderInput(String externalId, UUID contactId, String status, long amountMinor, String currency, Instant occurredAt) {}
@@ -58,6 +61,10 @@ public class CommerceService {
             attribute(org, id, o.contactId(), o.amountMinor(), o.currency(), at);
         }
         if (("CANCELED".equals(o.status()) || "REFUNDED".equals(o.status()))) jdbc.update("DELETE FROM conversion_events WHERE order_id = ?", id);
+        boolean statusChanged = prev.isEmpty() || !o.status().equals(prev.getFirst());
+        UUID contactId = o.contactId() != null ? o.contactId()
+                : jdbc.queryForObject("SELECT contact_id FROM orders WHERE id = ?", UUID.class, id);
+        if (statusChanged && contactId != null) crm.recompute(org, contactId); // stage / RFM follow every purchase
         return id;
     }
 

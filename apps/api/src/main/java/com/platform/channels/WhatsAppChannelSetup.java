@@ -142,7 +142,18 @@ public class WhatsAppChannelSetup {
             bodyComp.put("example", Map.of("body_text", List.of(examples)));
         }
         components.add(bodyComp);
-        if (Set.of("MARKETING", "REACTIVATION").contains((String) t.get("purpose"))) components.add(Map.of("type", "FOOTER", "text", "Reply STOP to opt out"));
+        Boolean alertsOnly = jdbc.queryForObject("""
+                SELECT EXISTS (SELECT 1 FROM subscriptions s JOIN plan_features f ON f.plan_id = s.plan_id AND f.feature = 'ALERTS_ONLY'
+                               WHERE s.organization_id = ? AND s.status NOT IN ('CANCELED','EXPIRED'))""", Boolean.class, orgId);
+        if (Boolean.TRUE.equals(alertsOnly)) {
+            // Alert plans: the approved template itself carries "only an alert — contact the store" (Meta footers allow no variables).
+            String contact = jdbc.queryForObject("""
+                    SELECT COALESCE(s.alert_contact, o.contact_phone, o.contact_email::text) FROM organizations o
+                    LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE o.id = ?""", String.class, orgId);
+            components.add(Map.of("type", "FOOTER", "text", com.platform.markets.AlertFooter.whatsapp((String) t.get("locale"), contact)));
+        } else if (Set.of("MARKETING", "REACTIVATION").contains((String) t.get("purpose"))) {
+            components.add(Map.of("type", "FOOTER", "text", "Reply STOP to opt out"));
+        }
         String token = channels.secrets(c.id()).get("ACCESS_TOKEN");
         try {
             JsonNode res = http.post().uri(graph("/" + c.externalAccountId() + "/message_templates")).header(HttpHeaders.AUTHORIZATION, "Bearer " + token)

@@ -51,13 +51,15 @@ public final class TenantDtos {
 
     public record SettingsView(LocalTime quietHoursStart, LocalTime quietHoursEnd, int defaultFrequencyCap,
                                long dailySpendLimitMinor, long monthlySpendLimitMinor, long lowBalanceThresholdMinor,
-                               int dataRetentionDays, boolean requireMfaForAdmins) {}
+                               int dataRetentionDays, boolean requireMfaForAdmins, String alertContact, String marketCode) {}
 
     public record UpdateSettingsRequest(@NotNull LocalTime quietHoursStart, @NotNull LocalTime quietHoursEnd,
                                         @Min(1) @Max(50) int defaultFrequencyCap,
                                         @Min(0) long dailySpendLimitMinor, @Min(0) long monthlySpendLimitMinor,
                                         @Min(0) long lowBalanceThresholdMinor, @Min(30) @Max(3650) int dataRetentionDays,
-                                        boolean requireMfaForAdmins) {}
+                                        boolean requireMfaForAdmins,
+                                        // Contact shown in the alert footer; null = keep, blank = use the organization's phone/e-mail.
+                                        @jakarta.validation.constraints.Size(max = 200) String alertContact) {}
 
     public record MemberView(UUID userId, String email, String fullName, String role, String status, boolean mfaEnabled) {}
 

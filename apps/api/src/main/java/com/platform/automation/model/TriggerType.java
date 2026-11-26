@@ -15,6 +15,8 @@ public enum TriggerType {
     PAGE_ABANDONED(Kind.EVENT, "PAGE_ABANDONED"),
     QUOTE_CREATED(Kind.EVENT, "QUOTE_CREATED"),
     REPLY_RECEIVED(Kind.EVENT, "REPLY_RECEIVED"),
+    /** Customer stage changed (CRM). Optional {@code eventType} = target stage, e.g. AT_RISK for "Recompra / feedback". */
+    STAGE_CHANGED(Kind.EVENT, "STAGE_CHANGED"),
     EXTERNAL_EVENT(Kind.EVENT, null),
     CONTACT_INACTIVE(Kind.SWEEP, null),
     APPOINTMENT_UPCOMING(Kind.SWEEP, null),

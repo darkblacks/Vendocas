@@ -46,7 +46,7 @@ public class Fixtures {
             u.setCreatedAt(Instant.now());
             u.setUpdatedAt(Instant.now());
             users.saveAndFlush(u);
-            String zone = switch (country) { case "BR" -> "America/Sao_Paulo"; case "US" -> "America/New_York"; default -> "Europe/Lisbon"; };
+            String zone = switch (country) { case "BR" -> "America/Sao_Paulo"; case "US", "CA" -> "America/New_York"; case "MX" -> "America/Mexico_City"; default -> "Europe/Lisbon"; };
             var org = orgs.create(u.getId(), new TenantDtos.CreateOrganizationRequest("Legal " + country, "Shop " + country, country, null, "en", zone,
                     "shop@example.com", null, null, "Street 1", null, "City", null, "00000",
                     new TenantDtos.TaxIdInput(taxType, taxId, "BUSINESS", null, null), true));
@@ -68,7 +68,7 @@ public class Fixtures {
         jdbc.update("""
                 INSERT INTO subscriptions (id, organization_id, plan_id, price_id, status, collection_method, current_period_start, current_period_end)
                 SELECT ?, ?, p.id, pr.id, 'ACTIVE', 'CHARGE_AUTOMATICALLY', now(), now() + interval '1 month'
-                FROM plans p JOIN prices pr ON pr.plan_id = p.id AND pr.currency = 'USD' AND pr.active WHERE p.code = ?""", Ids.newId(), orgId, planCode);
+                FROM plans p JOIN prices pr ON pr.plan_id = p.id AND pr.currency = 'USD' AND pr.active WHERE p.code = ? LIMIT 1""", Ids.newId(), orgId, planCode);
     }
 
     /** Active email channel on the test provider. */

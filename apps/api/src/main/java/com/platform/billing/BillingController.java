@@ -33,9 +33,11 @@ public class BillingController {
     private final OrganizationService orgs;
     private final JdbcTemplate jdbc;
     private final AppProperties props;
+    private final QuotaService quotas;
 
     public BillingController(Catalog catalog, SubscriptionService subscriptions, CreditWalletService wallet, PaymentProvider provider,
-                             EntitlementService entitlements, OrganizationService orgs, JdbcTemplate jdbc, AppProperties props) {
+                             EntitlementService entitlements, OrganizationService orgs, JdbcTemplate jdbc, AppProperties props, QuotaService quotas) {
+        this.quotas = quotas;
         this.catalog = catalog;
         this.subscriptions = subscriptions;
         this.wallet = wallet;
@@ -71,6 +73,23 @@ public class BillingController {
         var e = entitlements.of(TenantContext.current().orgId());
         return new EntitlementView(e.status() == null ? null : e.status().name(), e.planCode(), List.copyOf(e.features()));
     }
+
+    public record UsageView(String market, String planCode, List<QuotaService.Usage> channels) {}
+
+    /** Included-message usage of the current billing period (quota bars on the home screen). */
+    @GetMapping("/usage")
+    @RequiresPermission(Permission.ORG_READ)
+    public UsageView usage() {
+        UUID org = TenantContext.current().orgId();
+        var e = entitlements.of(org);
+        String market = orgs.get(org).getMarketCode();
+        return new UsageView(market, e.planCode(), quotas.usage(org, e.planId(), market));
+    }
+
+    /** Plans on sale in the caller's own market (prices in the market currency). */
+    @GetMapping("/market-plans")
+    @RequiresPermission(Permission.ORG_READ)
+    public List<Catalog.MarketPlanView> marketPlans() { return catalog.marketPlans(orgs.get(TenantContext.current().orgId()).getMarketCode()); }
 
     public record StartRequest(@NotBlank String planCode, @NotBlank @Pattern(regexp = "CARD|INVOICE") String method) {}
 

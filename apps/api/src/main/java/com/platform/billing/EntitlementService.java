@@ -15,13 +15,18 @@ import java.util.UUID;
 public class EntitlementService {
     public static final String CHANNEL_EMAIL = "CHANNEL_EMAIL", CHANNEL_WHATSAPP = "CHANNEL_WHATSAPP", CHANNEL_SMS = "CHANNEL_SMS",
             CHANNEL_VOICE = "CHANNEL_VOICE", CAMPAIGNS_DAILY = "CAMPAIGNS_DAILY", AUTOMATIONS = "AUTOMATIONS", REPORTS = "REPORTS";
+    /** Plans Alerta / Alerta + Vendas: automatic alerts only — no campaigns, no conversations, fixed alert footer. */
+    public static final String ALERTS = "ALERTS", ALERTS_ONLY = "ALERTS_ONLY", CRM = "CRM", SALES_REGISTRY = "SALES_REGISTRY",
+            CAMPAIGNS = "CAMPAIGNS", CUSTOM_SEGMENTS = "CUSTOM_SEGMENTS", INBOX = "INBOX";
     private final JdbcTemplate jdbc;
 
     public EntitlementService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-    public record Entitlements(SubscriptionStatus status, String planCode, Set<String> features) {
+    public record Entitlements(SubscriptionStatus status, String planCode, Set<String> features, UUID planId) {
+        public Entitlements(SubscriptionStatus status, String planCode, Set<String> features) { this(status, planCode, features, null); }
         public boolean serviceActive() { return status != null && status.entitlesService(); }
         public boolean has(String feature) { return serviceActive() && features.contains(feature); }
+        public boolean alertsOnly() { return features.contains(ALERTS_ONLY); }
     }
 
     public Entitlements of(UUID orgId) {
@@ -31,7 +36,7 @@ public class EntitlementService {
         if (rows.isEmpty()) return new Entitlements(null, null, Set.of());
         Map<String, Object> r = rows.getFirst();
         Set<String> features = new HashSet<>(jdbc.queryForList("SELECT feature FROM plan_features WHERE plan_id = ?", String.class, r.get("id")));
-        return new Entitlements(SubscriptionStatus.valueOf((String) r.get("status")), (String) r.get("code"), features);
+        return new Entitlements(SubscriptionStatus.valueOf((String) r.get("status")), (String) r.get("code"), features, (UUID) r.get("id"));
     }
 
     public void require(UUID orgId, String feature) {

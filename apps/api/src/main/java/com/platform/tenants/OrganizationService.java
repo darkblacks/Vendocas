@@ -47,11 +47,11 @@ public class OrganizationService {
         this.clock = clock;
     }
 
-    public record CountryInfo(String region, String defaultCurrency) {}
+    public record CountryInfo(String region, String defaultCurrency, String market) {}
 
     public CountryInfo country(String code) {
-        var rows = jdbc.query("SELECT region, default_currency FROM supported_countries WHERE country_code = ?",
-                (rs, i) -> new CountryInfo(rs.getString(1), rs.getString(2)), code);
+        var rows = jdbc.query("SELECT region, default_currency, market_code FROM supported_countries WHERE country_code = ?",
+                (rs, i) -> new CountryInfo(rs.getString(1), rs.getString(2), rs.getString(3)), code);
         if (rows.isEmpty()) throw new ApiException(ErrorCode.UNSUPPORTED_IN_COUNTRY, "Country not supported: " + code);
         return rows.getFirst();
     }
@@ -64,6 +64,10 @@ public class OrganizationService {
         CountryInfo incorporation = country(req.countryCode());
         CountryInfo billing = country(billingCountry);
         validateZone(req.timeZone());
+        Boolean marketOpen = jdbc.queryForObject("SELECT enabled FROM markets WHERE code = ?", Boolean.class, billing.market());
+        if (!Boolean.TRUE.equals(marketOpen)) {
+            throw new ApiException(ErrorCode.UNSUPPORTED_IN_COUNTRY, "Vendocas is not open in this market yet", Map.of("market", billing.market()));
+        }
         TaxIdInput tax = req.taxId();
         if (!TaxIdValidator.typeAllowedFor(billing.region(), tax.type())) {
             throw ApiException.badRequest("Tax identifier type " + tax.type() + " is not valid for " + billingCountry);
@@ -81,9 +85,10 @@ public class OrganizationService {
         o.setCountryCode(req.countryCode());
         o.setBillingCountryCode(billingCountry);
         o.setBillingCurrency(billing.defaultCurrency());
+        o.setMarketCode(billing.market());
         o.setLocale(req.locale());
         o.setTimeZone(req.timeZone());
-        o.setDataRegion(switch (incorporation.region()) { case "EU" -> "eu"; case "BR" -> "br"; default -> "us"; });
+        o.setDataRegion(switch (incorporation.region()) { case "EU", "UK" -> "eu"; case "BR" -> "br"; default -> "us"; });
         o.setContactEmail(req.contactEmail());
         o.setFinanceEmail(req.financeEmail());
         o.setContactPhone(req.contactPhone());
@@ -178,10 +183,11 @@ public class OrganizationService {
 
     public SettingsView settings(UUID orgId) {
         return jdbc.queryForObject("""
-                SELECT quiet_hours_start, quiet_hours_end, default_frequency_cap, daily_spend_limit_minor, monthly_spend_limit_minor,
-                       low_balance_threshold_minor, data_retention_days, require_mfa_for_admins FROM organization_settings WHERE organization_id = ?""",
+                SELECT s.quiet_hours_start, s.quiet_hours_end, s.default_frequency_cap, s.daily_spend_limit_minor, s.monthly_spend_limit_minor,
+                       s.low_balance_threshold_minor, s.data_retention_days, s.require_mfa_for_admins, s.alert_contact, o.market_code
+                FROM organization_settings s JOIN organizations o ON o.id = s.organization_id WHERE s.organization_id = ?""",
                 (rs, i) -> new SettingsView(rs.getTime(1).toLocalTime(), rs.getTime(2).toLocalTime(), rs.getInt(3), rs.getLong(4),
-                        rs.getLong(5), rs.getLong(6), rs.getInt(7), rs.getBoolean(8)), orgId);
+                        rs.getLong(5), rs.getLong(6), rs.getInt(7), rs.getBoolean(8), rs.getString(9), rs.getString(10)), orgId);
     }
 
     @Transactional
@@ -191,6 +197,10 @@ public class OrganizationService {
                   monthly_spend_limit_minor=?, low_balance_threshold_minor=?, data_retention_days=?, require_mfa_for_admins=?, updated_at=now()
                 WHERE organization_id=?""", r.quietHoursStart(), r.quietHoursEnd(), r.defaultFrequencyCap(), r.dailySpendLimitMinor(),
                 r.monthlySpendLimitMinor(), r.lowBalanceThresholdMinor(), r.dataRetentionDays(), r.requireMfaForAdmins(), orgId);
+        if (r.alertContact() != null) {
+            jdbc.update("UPDATE organization_settings SET alert_contact = ? WHERE organization_id = ?",
+                    r.alertContact().isBlank() ? null : r.alertContact().trim(), orgId);
+        }
         audit.user(orgId, userId, "settings.updated", "organization", orgId, Map.of());
         return settings(orgId);
     }

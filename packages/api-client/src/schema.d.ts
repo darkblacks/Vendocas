@@ -4,6 +4,70 @@
  */
 
 export interface paths {
+    "/internal/platform-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/commercial/quotas/{market}/{planCode}/{channel}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setQuota"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/commercial/prices/{market}/{planCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setPrice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/commercial/markets/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateMarket"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/templates/{id}": {
         parameters: {
             query?: never;
@@ -13,6 +77,22 @@ export interface paths {
         };
         get?: never;
         put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateProduct"];
         post?: never;
         delete?: never;
         options?: never;
@@ -60,7 +140,7 @@ export interface paths {
             cookie?: never;
         };
         get: operations["settings"];
-        put: operations["updateSettings"];
+        put: operations["updateSettings_1"];
         post?: never;
         delete?: never;
         options?: never;
@@ -180,6 +260,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/platform-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["platformSettings"];
+        put: operations["updatePlatformSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/capabilities": {
         parameters: {
             query?: never;
@@ -260,6 +356,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put?: never;
+        post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/unsubscribe/{token}": {
         parameters: {
             query?: never;
@@ -292,6 +404,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["products"];
+        put?: never;
+        post: operations["createProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/privacy/requests": {
         parameters: {
             query?: never;
@@ -299,7 +427,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_2"];
+        get: operations["list_3"];
         put?: never;
         post: operations["create_1"];
         delete?: never;
@@ -443,7 +571,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_3"];
+        get: operations["list_4"];
         put?: never;
         post: operations["upload"];
         delete?: never;
@@ -548,6 +676,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/crm/recompute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recompute"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations/{id}/reply": {
         parameters: {
             query?: never;
@@ -571,7 +715,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_4"];
+        get: operations["list_5"];
         put?: never;
         post: operations["create_3"];
         delete?: never;
@@ -747,7 +891,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
         post: operations["create_4"];
         delete?: never;
@@ -891,7 +1035,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
         post: operations["create_5"];
         delete?: never;
@@ -1037,7 +1181,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["register"];
+        post: operations["register_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1245,7 +1389,7 @@ export interface paths {
         };
         get: operations["prices"];
         put?: never;
-        post: operations["setPrice"];
+        post: operations["setPrice_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1262,6 +1406,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["suspend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fiscal/invoices/{invoiceId}/record-external": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["recordExternal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fiscal/invoices/{invoiceId}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["issueNow"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1332,6 +1508,102 @@ export interface paths {
         patch: operations["updateTask"];
         trace?: never;
     };
+    "/internal/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/merchants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_8"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/merchants/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/commercial/pricing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["pricing"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/commercial/markets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["markets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/onboarding": {
         parameters: {
             query?: never;
@@ -1356,6 +1628,54 @@ export interface paths {
             cookie?: never;
         };
         get: operations["dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/markets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_9"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/markets/{code}/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["plans"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/public/countries/{countryCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["country"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1403,7 +1723,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1419,7 +1739,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1436,6 +1756,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/kanban": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["kanban"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["customers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["customer"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1515,7 +1899,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1652,6 +2036,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/billing/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/billing/subscription/history": {
         parameters: {
             query?: never;
@@ -1675,7 +2075,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["plans"];
+        get: operations["plans_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1692,6 +2092,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/billing/market-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["marketPlans"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1803,7 +2219,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1860,6 +2276,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/fiscal/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["fiscalDocuments"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/dead-letters": {
         parameters: {
             query?: never;
@@ -1868,6 +2300,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["deadLetters"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/billing/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["payments"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1944,6 +2392,79 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        SettingsChange: {
+            /** @enum {string} */
+            environment?: "HOMOLOGATION" | "PRODUCTION";
+            /** @enum {string} */
+            stripeMode?: "TEST" | "LIVE";
+            fiscalAutomation?: boolean;
+            /** @enum {string} */
+            fiscalProvider?: "NONE" | "FOCUS_NFE";
+            /** Format: int32 */
+            expectedVersion?: number;
+        };
+        PlatformSettings: {
+            /** @enum {string} */
+            environment?: "HOMOLOGATION" | "PRODUCTION";
+            /** @enum {string} */
+            stripeMode?: "TEST" | "LIVE";
+            fiscalAutomation?: boolean;
+            /** @enum {string} */
+            fiscalProvider?: "NONE" | "FOCUS_NFE";
+            /** Format: int32 */
+            version?: number;
+            updatedBy?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        ServiceStatus: {
+            key?: string;
+            label?: string;
+            state?: string;
+            detail?: string;
+        };
+        Status: {
+            settings?: components["schemas"]["PlatformSettings"];
+            stripeKeyMode?: string;
+            stripeConfigured?: boolean;
+            stripeWebhookConfigured?: boolean;
+            stripeModeMatches?: boolean;
+            focusConfigured?: boolean;
+            focusEnvironment?: string;
+            fiscalMode?: string;
+            fiscalDocuments?: {
+                [key: string]: number;
+            };
+            services?: components["schemas"]["ServiceStatus"][];
+            warnings?: string[];
+        };
+        QuotaChange: {
+            /** Format: int64 */
+            monthlyLimit?: number;
+            fairUseNote?: string;
+            remove?: boolean;
+        };
+        PriceChange: {
+            /** Format: int64 */
+            unitAmountMinor?: number;
+            stripePriceId?: string;
+            offerText?: string;
+            /** Format: int32 */
+            trialDays?: number;
+        };
+        MarketUpdate: {
+            name?: string;
+            defaultLocale?: string;
+            locales?: string[];
+            channelOrder?: string[];
+            /** Format: time-local */
+            sendWindowStart?: string;
+            /** Format: time-local */
+            sendWindowEnd?: string;
+            enabled?: boolean;
+            /** Format: int64 */
+            expectedVersion?: number;
+        };
         TemplateInput: {
             channel: string;
             name: string;
@@ -1955,6 +2476,15 @@ export interface components {
             htmlBody?: string;
             /** Format: uuid */
             mediaAssetId?: string;
+        };
+        ProductInput: {
+            name: string;
+            sku?: string;
+            /** Format: int64 */
+            priceMinor?: number;
+            currency: string;
+            category?: string;
+            active?: boolean;
         };
         UpdateOrganizationRequest: {
             legalName: string;
@@ -2030,6 +2560,7 @@ export interface components {
             /** Format: int32 */
             dataRetentionDays?: number;
             requireMfaForAdmins?: boolean;
+            alertContact?: string;
         };
         SettingsView: {
             /** Format: time-local */
@@ -2047,6 +2578,8 @@ export interface components {
             /** Format: int32 */
             dataRetentionDays?: number;
             requireMfaForAdmins?: boolean;
+            alertContact?: string;
+            marketCode?: string;
         };
         ChangeRoleRequest: {
             role: string;
@@ -2292,7 +2825,7 @@ export interface components {
         };
         Trigger: {
             /** @enum {string} */
-            type?: "CONTACT_CREATED" | "CONTACT_UPDATED" | "PURCHASE_COMPLETED" | "SERVICE_COMPLETED" | "APPOINTMENT_CREATED" | "APPOINTMENT_CANCELED" | "MISSED_CALL" | "FORM_SUBMITTED" | "CHECKOUT_STARTED" | "CHECKOUT_ABANDONED" | "PAGE_ABANDONED" | "QUOTE_CREATED" | "REPLY_RECEIVED" | "EXTERNAL_EVENT" | "CONTACT_INACTIVE" | "APPOINTMENT_UPCOMING" | "BIRTHDAY" | "DATE_FIELD" | "RECURRING";
+            type?: "CONTACT_CREATED" | "CONTACT_UPDATED" | "PURCHASE_COMPLETED" | "SERVICE_COMPLETED" | "APPOINTMENT_CREATED" | "APPOINTMENT_CANCELED" | "MISSED_CALL" | "FORM_SUBMITTED" | "CHECKOUT_STARTED" | "CHECKOUT_ABANDONED" | "PAGE_ABANDONED" | "QUOTE_CREATED" | "REPLY_RECEIVED" | "STAGE_CHANGED" | "EXTERNAL_EVENT" | "CONTACT_INACTIVE" | "APPOINTMENT_UPCOMING" | "BIRTHDAY" | "DATE_FIELD" | "RECURRING";
             eventType?: string;
             period?: components["schemas"]["Period"];
             basis?: string;
@@ -2330,6 +2863,17 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        SettingsRequest: {
+            /** @enum {string} */
+            environment?: "HOMOLOGATION" | "PRODUCTION";
+            /** @enum {string} */
+            stripeMode?: "TEST" | "LIVE";
+            fiscalAutomation?: boolean;
+            /** @enum {string} */
+            fiscalProvider?: "NONE" | "FOCUS_NFE";
+            /** Format: int32 */
+            expectedVersion?: number;
+        };
         CapabilityInput: {
             countryCode: string;
             channel: string;
@@ -2366,6 +2910,43 @@ export interface components {
             subject: string;
             body: string;
             category: string;
+        };
+        ItemInput: {
+            /** Format: uuid */
+            productId?: string;
+            description?: string;
+            /** Format: int32 */
+            quantity?: number;
+            /** Format: int64 */
+            unitAmountMinor?: number;
+        };
+        NewCustomer: {
+            name?: string;
+            phone?: string;
+            /** Format: email */
+            email?: string;
+        };
+        SaleInput: {
+            /** Format: uuid */
+            contactId?: string;
+            customer?: components["schemas"]["NewCustomer"];
+            items: components["schemas"]["ItemInput"][];
+            currency?: string;
+            paymentMethod: string;
+            salesChannel: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            notes?: string;
+            alertConsents?: string[];
+        };
+        SaleResult: {
+            /** Format: uuid */
+            orderId?: string;
+            /** Format: uuid */
+            contactId?: string;
+            /** Format: int64 */
+            totalMinor?: number;
+            currency?: string;
         };
         FormSubmission: {
             publicKey: string;
@@ -2725,6 +3306,12 @@ export interface components {
             reason: string;
             suspend?: boolean;
         };
+        ExternalIssue: {
+            number: string;
+            /** Format: date-time */
+            issuedAt?: string;
+            notes?: string;
+        };
         UpdateRequest: {
             status?: string;
             /** Format: uuid */
@@ -2752,6 +3339,46 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
             rejectionReason?: string;
+        };
+        SaleView: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            contactId?: string;
+            contactName?: string;
+            status?: string;
+            /** Format: int64 */
+            totalMinor?: number;
+            currency?: string;
+            salesChannel?: string;
+            paymentMethod?: string;
+            /** Format: int32 */
+            items?: number;
+            firstItem?: string;
+            notes?: string;
+        };
+        SalesSummary: {
+            /** Format: date-time */
+            from?: string;
+            /** Format: date-time */
+            to?: string;
+            currency?: string;
+            /** Format: int64 */
+            totalMinor?: number;
+            /** Format: int64 */
+            sales?: number;
+            /** Format: int64 */
+            averageTicketMinor?: number;
+            /** Format: int64 */
+            newCustomers?: number;
+            byChannel?: {
+                [key: string]: number;
+            };
+            byPayment?: {
+                [key: string]: number;
+            };
         };
         Onboarding: {
             organization?: boolean;
@@ -2813,6 +3440,55 @@ export interface components {
             /** Format: int32 */
             days?: number;
             series?: components["schemas"]["DailyPoint"][];
+        };
+        MarketView: {
+            code?: string;
+            name?: string;
+            currency?: string;
+            defaultLocale?: string;
+            locales?: string[];
+            channelOrder?: string[];
+            countries?: string[];
+        };
+        MarketPlanView: {
+            code?: string;
+            name?: string;
+            /** Format: int32 */
+            tier?: number;
+            features?: string[];
+            market?: string;
+            currency?: string;
+            /** Format: int64 */
+            monthlyAmountMinor?: number;
+            offerText?: string;
+            /** Format: int32 */
+            trialDays?: number;
+            quotas?: components["schemas"]["Quota"][];
+            purchasable?: boolean;
+        };
+        Quota: {
+            channel?: string;
+            /** Format: int64 */
+            monthlyLimit?: number;
+            fairUseNote?: string;
+        };
+        CountryMarket: {
+            countryCode?: string;
+            market?: string;
+            currency?: string;
+            defaultLocale?: string;
+            open?: boolean;
+        };
+        ProductView: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            sku?: string;
+            /** Format: int64 */
+            priceMinor?: number;
+            currency?: string;
+            category?: string;
+            active?: boolean;
         };
         RequestView: {
             /** Format: uuid */
@@ -2895,6 +3571,72 @@ export interface components {
             lastUsedAt?: string;
             /** Format: date-time */
             createdAt?: string;
+        };
+        CustomerRow: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            email?: string;
+            phone?: string;
+            stage?: string;
+            /** Format: int32 */
+            recency?: number;
+            /** Format: int32 */
+            frequency?: number;
+            /** Format: int32 */
+            monetary?: number;
+            /** Format: int32 */
+            orders?: number;
+            /** Format: int64 */
+            totalSpentMinor?: number;
+            currency?: string;
+            /** Format: date-time */
+            lastPurchaseAt?: string;
+            channels?: string[];
+            tags?: string[];
+        };
+        KanbanColumn: {
+            stage?: string;
+            /** Format: int64 */
+            count?: number;
+            cards?: components["schemas"]["CustomerRow"][];
+        };
+        PageCustomerRow: {
+            items?: components["schemas"]["CustomerRow"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        CustomerMetrics: {
+            /** Format: uuid */
+            id?: string;
+            stage?: string;
+            /** Format: int32 */
+            recency?: number;
+            /** Format: int32 */
+            frequency?: number;
+            /** Format: int32 */
+            monetary?: number;
+            /** Format: int32 */
+            orders?: number;
+            /** Format: int64 */
+            totalSpentMinor?: number;
+            /** Format: int64 */
+            spent12mMinor?: number;
+            currency?: string;
+            /** Format: date-time */
+            firstPurchaseAt?: string;
+            /** Format: date-time */
+            lastPurchaseAt?: string;
+            avgIntervalDays?: number;
+            /** Format: int64 */
+            averageTicketMinor?: number;
+            /** Format: date-time */
+            stageChangedAt?: string;
+            favoriteProducts?: string[];
         };
         ConversationView: {
             /** Format: uuid */
@@ -2987,14 +3729,11 @@ export interface components {
             capabilities?: components["schemas"]["Capability"][];
         };
         JsonNode: {
-            /** @enum {string} */
-            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            string?: boolean;
-            integralNumber?: boolean;
-            missingNode?: boolean;
-            valueNode?: boolean;
-            container?: boolean;
+            empty?: boolean;
+            array?: boolean;
+            null?: boolean;
             object?: boolean;
+            float?: boolean;
             pojo?: boolean;
             floatingPointNumber?: boolean;
             short?: boolean;
@@ -3007,10 +3746,13 @@ export interface components {
             textual?: boolean;
             boolean?: boolean;
             binary?: boolean;
-            array?: boolean;
-            empty?: boolean;
-            null?: boolean;
-            float?: boolean;
+            string?: boolean;
+            integralNumber?: boolean;
+            valueNode?: boolean;
+            container?: boolean;
+            missingNode?: boolean;
+            /** @enum {string} */
+            nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
             number?: boolean;
             embeddedValue?: boolean;
         };
@@ -3148,6 +3890,24 @@ export interface components {
             description?: string;
             /** Format: date-time */
             createdAt?: string;
+        };
+        Usage: {
+            channel?: string;
+            /** Format: int64 */
+            monthlyLimit?: number;
+            /** Format: int64 */
+            used?: number;
+            unlimited?: boolean;
+            payPerUse?: boolean;
+            /** Format: date-time */
+            periodStart?: string;
+            /** Format: date-time */
+            periodEnd?: string;
+        };
+        UsageView: {
+            market?: string;
+            planCode?: string;
+            channels?: components["schemas"]["Usage"][];
         };
         EventView: {
             fromStatus?: string;
@@ -3296,6 +4056,123 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    updateSettings: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+                "X-Control-Actor"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    setQuota: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+                "X-Control-Actor"?: string;
+            };
+            path: {
+                market: string;
+                planCode: string;
+                channel: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuotaChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    setPrice: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+                "X-Control-Actor"?: string;
+            };
+            path: {
+                market: string;
+                planCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PriceChange"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    updateMarket: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+                "X-Control-Actor"?: string;
+            };
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarketUpdate"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
     update: {
         parameters: {
             query?: never;
@@ -3317,6 +4194,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    updateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
             };
         };
     };
@@ -3428,7 +4333,7 @@ export interface operations {
             };
         };
     };
-    updateSettings: {
+    updateSettings_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -3734,6 +4639,50 @@ export interface operations {
             };
         };
     };
+    platformSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
+    updatePlatformSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Status"];
+                };
+            };
+        };
+    };
     capabilities: {
         parameters: {
             query?: never;
@@ -3920,6 +4869,54 @@ export interface operations {
             };
         };
     };
+    list_2: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                salesChannel?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleView"][];
+                };
+            };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaleInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SaleResult"];
+                };
+            };
+        };
+    };
     unsubscribePage: {
         parameters: {
             query?: never;
@@ -3990,7 +4987,56 @@ export interface operations {
             };
         };
     };
-    list_2: {
+    products: {
+        parameters: {
+            query?: {
+                q?: string;
+                includeInactive?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ProductView"][];
+                };
+            };
+        };
+    };
+    createProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    list_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -4220,7 +5266,7 @@ export interface operations {
             };
         };
     };
-    list_3: {
+    list_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4453,6 +5499,28 @@ export interface operations {
             };
         };
     };
+    recompute: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+        };
+    };
     reply: {
         parameters: {
             query?: never;
@@ -4479,7 +5547,7 @@ export interface operations {
             };
         };
     };
-    list_4: {
+    list_5: {
         parameters: {
             query?: {
                 q?: string;
@@ -4813,7 +5881,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -5035,7 +6103,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -5269,7 +6337,7 @@ export interface operations {
             };
         };
     };
-    register: {
+    register_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5631,7 +6699,7 @@ export interface operations {
             };
         };
     };
-    setPrice: {
+    setPrice_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5678,6 +6746,58 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    recordExternal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExternalIssue"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    issueNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
             };
         };
     };
@@ -5769,6 +6889,150 @@ export interface operations {
             };
         };
     };
+    status: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    list_8: {
+        parameters: {
+            query?: {
+                q?: string;
+                market?: string;
+                plan?: string;
+                status?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: {
+                "X-Control-Admin-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    pricing: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    markets: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Control-Admin-Token"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["SalesSummary"];
+                };
+            };
+        };
+    };
     onboarding: {
         parameters: {
             query?: never;
@@ -5807,6 +7071,70 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Dashboard"];
+                };
+            };
+        };
+    };
+    list_9: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MarketView"][];
+                };
+            };
+        };
+    };
+    plans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MarketPlanView"][];
+                };
+            };
+        };
+    };
+    country: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                countryCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CountryMarket"];
                 };
             };
         };
@@ -5857,7 +7185,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_10: {
         parameters: {
             query?: {
                 unread?: boolean;
@@ -5879,7 +7207,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_11: {
         parameters: {
             query?: {
                 status?: string;
@@ -5922,6 +7250,99 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["MemberView"][];
+                };
+            };
+        };
+    };
+    summary_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Summary"];
+                };
+            };
+        };
+    };
+    kanban: {
+        parameters: {
+            query?: {
+                perColumn?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["KanbanColumn"][];
+                };
+            };
+        };
+    };
+    customers: {
+        parameters: {
+            query?: {
+                stage?: string;
+                q?: string;
+                channel?: string;
+                tag?: string;
+                sort?: string;
+                dir?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["PageCustomerRow"];
+                };
+            };
+        };
+    };
+    customer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["CustomerMetrics"];
                 };
             };
         };
@@ -6014,7 +7435,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_12: {
         parameters: {
             query?: never;
             header?: never;
@@ -6205,6 +7626,26 @@ export interface operations {
             };
         };
     };
+    usage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["UsageView"];
+                };
+            };
+        };
+    };
     history: {
         parameters: {
             query?: never;
@@ -6225,7 +7666,7 @@ export interface operations {
             };
         };
     };
-    plans: {
+    plans_1: {
         parameters: {
             query?: {
                 currency?: string;
@@ -6263,6 +7704,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["Overview"];
+                };
+            };
+        };
+    };
+    marketPlans: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["MarketPlanView"][];
                 };
             };
         };
@@ -6395,7 +7856,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -6485,6 +7946,30 @@ export interface operations {
             };
         };
     };
+    fiscalDocuments: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+        };
+    };
     deadLetters: {
         parameters: {
             query?: never;
@@ -6503,6 +7988,32 @@ export interface operations {
                     "*/*": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    payments: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                status?: string;
+                fiscalStatus?: string;
+                format?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": Record<string, never>;
                 };
             };
         };

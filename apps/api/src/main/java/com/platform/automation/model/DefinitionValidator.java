@@ -27,6 +27,9 @@ public final class DefinitionValidator {
                 if (t.period() == null || t.period().amount() <= 0) errors.add("Inactivity period is required");
                 if (t.basis() != null && !Set.of("LAST_PURCHASE", "LAST_INTERACTION", "LAST_VISIT").contains(t.basis())) errors.add("Invalid inactivity basis");
             }
+            case STAGE_CHANGED -> {
+                if (t.eventType() != null && !com.platform.crm.CrmService.STAGES.contains(t.eventType())) errors.add("Unknown customer stage: " + t.eventType());
+            }
             case EXTERNAL_EVENT -> { if (t.eventType() == null || !t.eventType().matches("^[A-Za-z0-9_.:-]{1,60}$")) errors.add("External event name is required"); }
             case APPOINTMENT_UPCOMING -> { if (t.leadMinutes() == null || t.leadMinutes() < 15) errors.add("Lead time must be at least 15 minutes"); }
             case DATE_FIELD -> { if (t.dateField() == null) errors.add("Date field is required"); }

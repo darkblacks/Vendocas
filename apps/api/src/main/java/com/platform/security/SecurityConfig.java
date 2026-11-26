@@ -54,6 +54,7 @@ public class SecurityConfig {
                 // Control Center status: authenticated by its own shared secret in the controller (404 when not configured).
                 .requestMatchers(HttpMethod.GET, "/internal/status").permitAll()
                 .requestMatchers(HttpMethod.PUT, "/internal/platform-settings").permitAll() // CONTROL_ADMIN_TOKEN checked in the controller
+                .requestMatchers("/internal/commercial/**", "/internal/merchants", "/internal/merchants/**").permitAll() // CONTROL_ADMIN_TOKEN checked in ControlAuth
                 .requestMatchers("/internal/**").denyAll()
                 .anyRequest().authenticated())
             .oauth2ResourceServer(o -> o.jwt(j -> {}));

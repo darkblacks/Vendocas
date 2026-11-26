@@ -60,7 +60,8 @@ public class TriggerMatcher implements OutboxHandler {
         for (var a : active) {
             TriggerType tt = TriggerType.valueOf((String) a.get("trigger_type"));
             boolean matches = tt.kind() == TriggerType.Kind.EVENT &&
-                    (tt == TriggerType.EXTERNAL_EVENT ? type.equals(a.get("event_type")) : type.equals(tt.eventType()));
+                    (tt == TriggerType.EXTERNAL_EVENT ? type.equals(a.get("event_type")) : type.equals(tt.eventType()))
+                    && (tt != TriggerType.STAGE_CHANGED || a.get("event_type") == null || a.get("event_type").equals(e.payload().path("to").asString(null)));
             if (!matches) continue;
             UUID versionId = (UUID) a.get("active_version_id");
             AutomationDefinition def = versions.get(versionId);

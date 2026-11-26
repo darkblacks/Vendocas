@@ -23,6 +23,7 @@ public class Organization {
     private String countryCode;
     private String billingCountryCode;
     private String billingCurrency;
+    private String marketCode;
     private String locale;
     private String timeZone;
     private String dataRegion;
