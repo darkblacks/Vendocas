@@ -34,7 +34,10 @@ public class ContactService {
     public Contact create(UUID orgId, ContactInput in, String source, UUID actorId) {
         Contact c = build(orgId, Ids.newId(), in, source, null);
         if (c.email() == null && c.phoneE164() == null) throw ApiException.badRequest("A contact needs an email or a phone number");
-        repo.findByEmail(orgId, nullSafe(c.email())).or(() -> repo.findByPhone(orgId, nullSafe(c.phoneE164())))
+        // Only look up the identifiers the contact has: PostgreSQL rejects the NUL character the old placeholder used.
+        Optional.<Contact>empty()
+                .or(() -> c.email() == null ? Optional.empty() : repo.findByEmail(orgId, c.email()))
+                .or(() -> c.phoneE164() == null ? Optional.empty() : repo.findByPhone(orgId, c.phoneE164()))
                 .ifPresent(existing -> { throw new ApiException(ErrorCode.CONFLICT, "A contact with this email or phone already exists",
                         Map.of("existingContactId", existing.id())); });
         repo.insert(c);
@@ -185,8 +188,6 @@ public class ContactService {
     static String normalizeEmail(String e) { return e == null || e.isBlank() ? null : e.trim().toLowerCase(); }
 
     private static String trim(String s) { return s == null ? null : s.trim(); }
-
-    private static String nullSafe(String s) { return s == null ? "\u0000" : s; }
 
     private static <T> T coalesce(T a, T b) { return a != null ? a : b; }
 

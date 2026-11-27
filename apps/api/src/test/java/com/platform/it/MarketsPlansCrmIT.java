@@ -299,6 +299,19 @@ class MarketsPlansCrmIT extends IntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].items").value(3)).andExpect(jsonPath("$[0].contactName").value("Ana Ribeiro"));
     }
 
+    @Test
+    void contactsCanBeCreatedWithOnlyPhoneOrOnlyEmail() throws Exception {
+        var t = fx.brazil();
+        String auth = "Bearer " + t.token(), org = t.orgId().toString();
+        mvc.perform(post("/api/v1/contacts").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Só telefone\",\"phone\":\"+5511977770002\"}")).andExpect(status().isCreated());
+        mvc.perform(post("/api/v1/contacts").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Só e-mail\",\"email\":\"so-email@example.com\"}")).andExpect(status().isCreated());
+        mvc.perform(post("/api/v1/contacts").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Duplicado\",\"phone\":\"+5511977770002\"}")).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.existingContactId").isNotEmpty());
+    }
+
     // ------------------------------------------------------------------ Control: merchants
 
     @Test

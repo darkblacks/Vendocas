@@ -6,6 +6,7 @@ import { api, errorMessage } from "@/lib/api";
 import { date, dateTime, money } from "@/lib/format";
 import { useCan } from "@/lib/auth";
 import { PricingTable } from "@/features/marketing/pricing-table";
+import { QuotaBars } from "@/features/crm/quota-bars";
 import { Alert, Button, Card, CardTitle, PageHeader, Spinner, Stat, StatusBadge, Table, Td } from "@/components/ui";
 
 interface Overview {
@@ -78,10 +79,18 @@ export default function BillingPage() {
           )}
           {!live && method === "INVOICE" && <p className="mt-2 text-xs text-muted-foreground">{t("invoiceHelp")}</p>}
           {live && <p className="mt-2 text-xs text-muted-foreground">{t("upgradeNote")}</p>}
-          <PricingTable onChoose={(code) => act(async () => {
+          <PricingTable currentPlan={live ? s.planCode : null} onChoose={(code) => act(async () => {
             if (live) await api("/billing/subscription/change-plan", { body: { planCode: code } });
             else { const r = await api<{ checkoutUrl?: string }>("/billing/subscription", { body: { planCode: code, method } }); if (r.checkoutUrl) window.location.href = r.checkoutUrl; }
           })} />
+        </Card>
+      )}
+
+      {live && (
+        <Card>
+          <CardTitle>{t("usage")}</CardTitle>
+          <p className="mt-1 text-sm text-muted-foreground">{t("usageHelp")}</p>
+          <QuotaBars className="mt-4 max-w-xl" />
         </Card>
       )}
 

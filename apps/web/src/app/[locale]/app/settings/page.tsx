@@ -92,6 +92,9 @@ function LimitsTab() {
       <Field label={t("quietEnd")} htmlFor="qe"><Input id="qe" type="time" value={String(f.quietHoursEnd).slice(0, 5)} onChange={(e) => setF({ ...f, quietHoursEnd: e.target.value })} /></Field>
       {num("defaultFrequencyCap", t("frequencyCap"))}{num("dataRetentionDays", t("retention"))}
       {num("dailySpendLimitMinor", t("dailyLimit"), "minor units")}{num("monthlySpendLimitMinor", t("monthlyLimit"), "minor units")}{num("lowBalanceThresholdMinor", t("lowBalance"), "minor units")}
+      <div className="sm:col-span-2"><Field label={t("alertContact")} htmlFor="alertContact" hint={t("alertContactHint")}>
+        <Input id="alertContact" maxLength={200} value={String(f.alertContact ?? "")} onChange={(e) => setF({ ...f, alertContact: e.target.value })} />
+      </Field></div>
       <label className="flex items-center gap-3 text-sm"><Switch checked={!!f.requireMfaForAdmins} onCheckedChange={(v) => setF({ ...f, requireMfaForAdmins: v })} />{t("requireMfa")}</label>
       <div className="sm:col-span-2"><Button onClick={() => act(() => api("/organizations/current/settings", { method: "PUT", body: f }))}>Save</Button></div>
       <div className="sm:col-span-2">{view}</div>

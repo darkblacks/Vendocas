@@ -1,67 +1,91 @@
 "use client";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "@/lib/api";
 import { money } from "@/lib/format";
-import { Alert, Card, CardTitle, PageHeader, Select, Spinner, Stat } from "@/components/ui";
+import { useAuth } from "@/lib/auth";
+import { Link } from "@/i18n/navigation";
+import { Alert, Button, Card, CardTitle, PageHeader, Spinner, Stat, cn } from "@/components/ui";
 import { OnboardingChecklist } from "@/features/onboarding/checklist";
+import { QuotaBars } from "@/features/crm/quota-bars";
+import { MARKET_CURRENCY, type Entitlements, type UsageView } from "@/features/markets";
 
-interface Dashboard {
-  activeAutomations: number; messagesSubmitted: number; messagesDelivered: number; messagesFailed: number; messagesBlocked: number; replies: number;
-  missedCalls: number; callbacksDone: number; appointments: number; confirmedSales: number; confirmedRevenueByCurrency: Record<string, number>;
-  attributedRevenueByCurrency: Record<string, number>; communicationCostMinor: number; walletCurrency: string; walletAvailableMinor: number;
-  openTasks: number; openConversations: number; series: { day: string; sent: number; delivered: number; failed: number; replies: number }[];
+interface Summary {
+  currency?: string | null; recoveredMinor: number; recoveredSales: number; messagesSent: number; messagesEngaged: number;
+  sentByChannel: Record<string, number>; atRisk: number; activeCustomers: number; newThisMonth: number; stages: Record<string, number>;
+  byAlert: { automationId: string; name: string; revenueMinor: number; sales: number; sent: number }[];
 }
 
-export default function DashboardPage() {
-  const t = useTranslations("dashboard");
+/** Início: what the alerts brought in this month, quota usage, customers at risk and results per alert. */
+export default function HomePage() {
+  const t = useTranslations("home");
   const locale = useLocale();
-  const [days, setDays] = useState(30);
-  const q = useQuery({ queryKey: ["dashboard", days], queryFn: () => api<Dashboard>(`/reports/dashboard?days=${days}`) });
-  const d = q.data;
-  const sumMoney = (m?: Record<string, number>) => (m && Object.keys(m).length ? Object.entries(m).map(([c, v]) => money(v, c, locale)).join(" · ") : "—");
+  const { me, membership } = useAuth();
+  const s = useQuery({ queryKey: ["crm-summary"], queryFn: () => api<Summary>("/crm/summary") });
+  const ent = useQuery({ queryKey: ["entitlements"], queryFn: () => api<Entitlements>("/billing/entitlements") });
+  const canSell = ent.data?.features.includes("SALES_REGISTRY");
+  const usage = useQuery({ queryKey: ["usage"], queryFn: () => api<UsageView>("/billing/usage") });
+  const d = s.data;
+  const currency = d?.currency ?? (usage.data ? MARKET_CURRENCY[usage.data.market] : "USD");
+  const firstName = me?.fullName?.split(" ")[0];
+  const engagedPct = d && d.messagesSent > 0 ? Math.round((d.messagesEngaged / d.messagesSent) * 100) : null;
   return (
-    <div>
-      <PageHeader title={t("title")} description={t("subtitle", { days })}
-        actions={<Select aria-label="Period" value={days} onChange={(e) => setDays(Number(e.target.value))} className="w-36">
-          {[7, 30, 90].map((n) => <option key={n} value={n}>{n}d</option>)}</Select>} />
+    <div className="space-y-6">
+      <PageHeader title={firstName ? t("greeting", { name: firstName }) : t("title")}
+        description={[membership?.organizationName, ent.data?.planCode ? (t.has(`plan.${ent.data.planCode}`) ? t(`plan.${ent.data.planCode}`) : ent.data.planCode) : null].filter(Boolean).join(" · ")}
+        actions={canSell && <Button asChild><Link href="/app/sales">{t("registerSale")}</Link></Button>} />
       <OnboardingChecklist compact />
-      {q.isLoading && <Spinner />}
-      {q.error && <Alert tone="danger" title={String(q.error)} />}
+      {s.isLoading && <Spinner />}
+      {s.error && <Alert tone="danger" title={String(s.error)} />}
       {d && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Stat label={t("activeAutomations")} value={d.activeAutomations} />
-            <Stat label={t("sent")} value={d.messagesSubmitted} />
-            <Stat label={t("delivered")} value={d.messagesDelivered} />
-            <Stat label={t("failed")} value={d.messagesFailed} hint={`${t("blocked")}: ${d.messagesBlocked}`} />
-            <Stat label={t("replies")} value={d.replies} />
-            <Stat label={t("missedCalls")} value={d.missedCalls} hint={`${t("callbacks")}: ${d.callbacksDone}`} />
-            <Stat label={t("sales")} value={d.confirmedSales} hint={`${t("appointments")}: ${d.appointments}`} />
-            <Stat label={t("revenue")} value={<span className="text-lg">{sumMoney(d.confirmedRevenueByCurrency)}</span>} />
-            <Stat label={t("attributed")} value={<span className="text-lg">{sumMoney(d.attributedRevenueByCurrency)}</span>} hint={t("attributedHint")} />
-            <Stat label={t("cost")} value={money(d.communicationCostMinor, d.walletCurrency, locale)} />
-            <Stat label={t("balance")} value={money(d.walletAvailableMinor, d.walletCurrency, locale)} />
-            <Stat label={t("pending")} value={d.openTasks + d.openConversations} hint={`${d.openTasks} ${t("openTasks")} · ${d.openConversations} ${t("openConversations")}`} />
+            <Card className="bg-primary text-primary-foreground">
+              <p className="text-sm opacity-90">{t("recovered")}</p>
+              <p className="mt-1 text-3xl font-bold tabular-nums">{money(d.recoveredMinor, currency, locale)}</p>
+              <p className="text-sm opacity-90">{t("recoveredSales", { n: d.recoveredSales })}</p>
+            </Card>
+            <Stat label={t("sent")} value={d.messagesSent.toLocaleString(locale)} hint={engagedPct == null ? undefined : t("engaged", { pct: engagedPct })} />
+            <Card>
+              <p className="text-sm text-muted-foreground">{t("atRisk")}</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums">{d.atRisk.toLocaleString(locale)}</p>
+              <Link href="/app/contacts?stage=AT_RISK" className="text-sm text-primary">{t("viewList")}</Link>
+            </Card>
+            <Stat label={t("active")} value={d.activeCustomers.toLocaleString(locale)} hint={t("newThisMonth", { n: d.newThisMonth })} />
           </div>
-          <Card className="mt-6">
-            <CardTitle>{t("chart")}</CardTitle>
-            <div className="mt-4 h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={d.series}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="day" fontSize={12} stroke="var(--muted-foreground)" />
-                  <YAxis allowDecimals={false} fontSize={12} stroke="var(--muted-foreground)" />
-                  <Tooltip contentStyle={{ background: "var(--card)", border: "1px solid var(--border)" }} />
-                  <Legend />
-                  <Line type="monotone" dataKey="sent" stroke="var(--primary)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="delivered" stroke="var(--success)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="failed" stroke="var(--danger)" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="replies" stroke="var(--warning)" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card>
+              <CardTitle>{t("quota")}</CardTitle>
+              <QuotaBars className="mt-4" />
+            </Card>
+            <Card className="lg:col-span-2">
+              <CardTitle>{t("byAlert")}</CardTitle>
+              {d.byAlert.length === 0
+                ? <p className="mt-3 text-sm text-muted-foreground">{t("noAlerts")} <Link href="/app/automations" className="text-primary">{t("setupAlerts")}</Link></p>
+                : (
+                  <ul className="mt-3 divide-y divide-border text-sm">
+                    {d.byAlert.map((a) => (
+                      <li key={a.automationId} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
+                        <Link href={`/app/automations/${a.automationId}`} className="font-medium hover:text-primary">{a.name}</Link>
+                        <span className="tabular-nums text-muted-foreground">
+                          <b className={cn("text-foreground", a.revenueMinor === 0 && "font-normal")}>{money(a.revenueMinor, currency, locale)}</b>
+                          {" · "}{t("sales", { n: a.sales })}{" · "}{t("sentCount", { n: a.sent })}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+            </Card>
+          </div>
+          <Card>
+            <CardTitle>{t("stagesTitle")}</CardTitle>
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+              {Object.entries(d.stages).map(([stage, n]) => (
+                <Link key={stage} href={`/app/contacts?stage=${stage}`} className="rounded-lg border border-border p-3 hover:bg-muted">
+                  <p className="text-xs text-muted-foreground">{t(`stages.${stage}`)}</p>
+                  <p className="text-xl font-semibold tabular-nums">{n.toLocaleString(locale)}</p>
+                </Link>
+              ))}
             </div>
           </Card>
         </>

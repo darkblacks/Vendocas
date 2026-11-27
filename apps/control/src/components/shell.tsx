@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, FileClock, GitBranch, KeyRound, LayoutDashboard, Menu, ScrollText, Server, Settings, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
+import { Activity, FileClock, GitBranch, KeyRound, LayoutDashboard, Menu, ScrollText, Server, Settings, ShieldCheck, SlidersHorizontal, X, Globe, Store } from "lucide-react";
 import { call, message, onReauthRequired, setCsrf } from "@/lib/client";
 import { Alert, Button, Field, Input, cn } from "./ui";
 
@@ -10,6 +10,8 @@ const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/server", label: "Servidor / Codespaces", icon: Server },
   { href: "/credentials", label: "Credenciais e Integrações", icon: KeyRound },
+  { href: "/merchants", label: "Lojistas", icon: Store },
+  { href: "/pricing", label: "Mercados e preços", icon: Globe },
   { href: "/platform", label: "Pagamentos e fiscal", icon: SlidersHorizontal },
   { href: "/deploys", label: "Deploys", icon: GitBranch },
   { href: "/logs", label: "Logs", icon: ScrollText },

@@ -7,6 +7,7 @@ import { api, errorMessage } from "@/lib/api";
 import { dateTime, money } from "@/lib/format";
 import { useCan } from "@/lib/auth";
 import { BASES, CHANNELS, PURPOSES, type Contact } from "@/features/types";
+import { CustomerMetrics } from "@/features/crm/customer-metrics";
 import { Alert, Badge, Button, Card, CardTitle, Field, Input, PageHeader, Select, Spinner, StatusBadge, Table, Td, Textarea } from "@/components/ui";
 
 interface Consent { channel: string; purpose: string; status: string; legalBasis: string; grantedAt?: string; withdrawnAt?: string }
@@ -35,7 +36,8 @@ export default function ContactDetail({ params }: { params: Promise<{ id: string
           }}>{t("contacts.export")}</Button>
           <Button variant="danger" onClick={async () => { if (confirm(t("contacts.eraseConfirm"))) { await api(`/contacts/${id}`, { method: "DELETE" }); router.replace("/app/contacts"); } }}>{t("contacts.erase")}</Button>
         </>)} />
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CustomerMetrics contactId={id} />
         <Card>
           <CardTitle>{t("common.details")}</CardTitle>
           <dl className="mt-3 space-y-2 text-sm">

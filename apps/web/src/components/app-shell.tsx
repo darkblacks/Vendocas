@@ -2,25 +2,27 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, Bell, Bot, CreditCard, Megaphone, MessagesSquare, Phone, Plug, Rocket, Settings, Shield, Users, Menu } from "lucide-react";
+import { BarChart3, Bell, Bot, CreditCard, Lock, Megaphone, MessagesSquare, Phone, Plug, Receipt, Rocket, Settings, Shield, Users, Menu } from "lucide-react";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { LocaleSwitcher, ThemeToggle } from "@/components/site-controls";
 import { Button, Spinner, cn } from "@/components/ui";
 
-const NAV = [
+/** `feature`: plan feature the screen needs; without it the item stays visible with a lock (never hidden). */
+const NAV: readonly { href: string; key: string; icon: typeof BarChart3; feature?: string }[] = [
   { href: "/app", key: "dashboard", icon: BarChart3 },
   { href: "/app/onboarding", key: "onboarding", icon: Rocket },
-  { href: "/app/contacts", key: "contacts", icon: Users },
-  { href: "/app/automations", key: "automations", icon: Bot },
-  { href: "/app/campaigns", key: "campaigns", icon: Megaphone },
-  { href: "/app/conversations", key: "conversations", icon: MessagesSquare },
+  { href: "/app/contacts", key: "customers", icon: Users },
+  { href: "/app/automations", key: "alerts", icon: Bot },
+  { href: "/app/sales", key: "sales", icon: Receipt, feature: "SALES_REGISTRY" },
+  { href: "/app/campaigns", key: "campaigns", icon: Megaphone, feature: "CAMPAIGNS" },
+  { href: "/app/conversations", key: "conversations", icon: MessagesSquare, feature: "INBOX" },
   { href: "/app/calls", key: "calls", icon: Phone },
   { href: "/app/channels", key: "channels", icon: Plug },
   { href: "/app/billing", key: "billing", icon: CreditCard },
   { href: "/app/settings", key: "settings", icon: Settings },
-] as const;
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations();
@@ -34,6 +36,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     else if (status === "authenticated" && me && me.memberships.length === 0 && pathname !== "/app/setup") router.replace("/app/setup");
   }, [status, me, pathname, router]);
 
+  const entitlements = useQuery({
+    queryKey: ["entitlements"], enabled: !!orgId,
+    queryFn: () => api<{ planCode?: string | null; features: string[] }>("/billing/entitlements"),
+  });
+  // Legacy plans (before the Alerta/Ilimitado catalogue) have no ALERTS flag: never lock their screens.
+  const locked = (feature?: string) => {
+    const f = entitlements.data?.features;
+    return !!feature && !!f && f.includes("ALERTS") && !f.includes(feature);
+  };
   const notifications = useQuery({
     queryKey: ["notifications", orgId], enabled: !!orgId,
     queryFn: () => api<{ id: string; title: string; body: string; severity: string; read: boolean }[]>("/notifications?unread=true"),
@@ -45,12 +56,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const nav = (
     <nav className="flex flex-col gap-1 p-3">
-      {NAV.map(({ href, key, icon: Icon }) => {
+      {NAV.map(({ href, key, icon: Icon, feature }) => {
         const active = href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+        const isLocked = locked(feature);
         return (
-          <Link key={href} href={href} onClick={() => setOpen(false)}
+          <Link key={href} href={isLocked ? "/app/billing" : href} onClick={() => setOpen(false)} title={isLocked ? t("nav.lockedHint") : undefined}
             className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sm", active ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-muted")}>
             <Icon className="h-4 w-4" aria-hidden />{t(`nav.${key}`)}
+            {isLocked && <span className="ml-auto inline-flex items-center gap-1 text-xs"><Lock className="h-3 w-3" aria-hidden /><span className="sr-only">{t("nav.lockedHint")}</span></span>}
           </Link>
         );
       })}
