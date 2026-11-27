@@ -67,8 +67,8 @@
   },
   "landing": {
     "heroTitle": "Bring customers back automatically — with your own email, WhatsApp, SMS and phone",
-    "heroSubtitle": "You decide the trigger, the wait, the conditions and the message. Vendocas runs it every day, respecting consent, opt-outs and your budget.",
-    "heroCta": "Create your account",
+    "heroSubtitle": "vendocas. reminds customers who went quiet, thanks those who bought and brings them back — through your own store's WhatsApp and e-mail.",
+    "heroCta": "Get started",
     "heroSecondary": "See pricing",
     "howTitle": "How it works",
     "how1": "When something happens",
@@ -683,5 +683,10 @@
       "PHONE": "Phone",
       "OTHER": "Other"
     }
+  },
+  "brand": {
+    "slogan": "Every sale is the start of the next one.",
+    "highlight": "next one.",
+    "tagline": "Relationship CRM for stores"
   }
 }

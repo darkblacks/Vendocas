@@ -40,7 +40,7 @@ export default function HomePage() {
       {d && (
         <>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-primary text-primary-foreground">
+            <Card className="brand-gradient border-0 shadow-glow">
               <p className="text-sm opacity-90">{t("recovered")}</p>
               <p className="mt-1 text-3xl font-bold tabular-nums">{money(d.recoveredMinor, currency, locale)}</p>
               <p className="text-sm opacity-90">{t("recoveredSales", { n: d.recoveredSales })}</p>

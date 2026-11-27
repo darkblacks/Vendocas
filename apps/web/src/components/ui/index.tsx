@@ -18,7 +18,7 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:opacity-90",
         outline: "border border-border bg-card hover:bg-muted",
         ghost: "hover:bg-muted",
-        danger: "bg-danger text-white hover:opacity-90",
+        danger: "bg-danger text-background hover:opacity-90",
         secondary: "bg-accent text-accent-foreground hover:opacity-90",
       },
       size: { sm: "h-8 px-3", md: "h-10 px-4", lg: "h-12 px-6 text-base", icon: "h-9 w-9" },

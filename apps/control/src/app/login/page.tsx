@@ -50,7 +50,7 @@ export default function Login() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm space-y-4">
-        <div><h1 className="text-lg font-semibold">Vendocas Control Center</h1><p className="text-sm text-muted-foreground">Acesso restrito a administradores autorizados.</p></div>
+        <div>{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/brand/vendocas-simbolo-64.png" alt="" width={40} height={40} className="mb-3" /><h1 className="text-lg font-semibold">Vendocas Control Center</h1><p className="text-sm text-muted-foreground">Acesso restrito a administradores autorizados.</p></div>
         {setupPending && <Alert tone="info">A instalação ainda não foi concluída. <a className="underline" href="/bootstrap">Abrir a instalação</a></Alert>}
         {enroll ? <EnrollMfa enroll={enroll} /> : !challenge ? (
           <form onSubmit={step1} className="space-y-3">

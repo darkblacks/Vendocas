@@ -2,11 +2,13 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Bell, CalendarClock, Filter, Send, ShieldCheck, Image as ImageIcon, PhoneMissed, Mail, MessageCircle, Smartphone } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { PricingTable } from "@/features/marketing/pricing-table";
+import { Slogan } from "@/components/brand";
 
 export default async function Landing({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("landing");
+  const tb = await getTranslations("brand");
   const steps = [
     { icon: Bell, title: t("how1"), text: t("how1d") },
     { icon: CalendarClock, title: t("how2"), text: t("how2d") },
@@ -16,18 +18,25 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
   const faqs = [1, 2, 3, 4, 5] as const;
   return (
     <>
-      <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:pt-24">
-        <div className="max-w-3xl">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">{t("heroTitle")}</h1>
-          <p className="mt-5 text-lg text-muted-foreground">{t("heroSubtitle")}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/register" className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground">{t("heroCta")}</Link>
-            <a href="#pricing" className="rounded-lg border border-border px-6 py-3 font-medium">{t("heroSecondary")}</a>
+      <section className="brand-glow">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-8 px-4 pb-20 pt-16 sm:pt-24 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl">
+            <p className="text-sm font-semibold uppercase tracking-[.18em] text-[var(--brand-blue-light)]">{tb("tagline")}</p>
+            <h1 className="mt-4 text-4xl font-bold leading-[1.08] tracking-tight sm:text-6xl">
+              <Slogan text={tb("slogan")} highlight={tb("highlight")} className="not-italic" onDark />
+            </h1>
+            <p className="mt-6 max-w-xl text-lg text-[#C9D2EA]">{t("heroSubtitle")}</p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/register" className="brand-gradient inline-flex min-h-12 items-center rounded-xl px-6 font-semibold shadow-[0_10px_40px_-12px_rgba(251,98,3,.7)]">{t("heroCta")}</Link>
+              <a href="#pricing" className="inline-flex min-h-12 items-center rounded-xl border border-white/25 px-6 font-medium text-white hover:bg-white/10">{t("heroSecondary")}</a>
+            </div>
           </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/vendocas-simbolo-512.png" alt="" width={320} height={320} className="hidden w-64 drop-shadow-[0_20px_60px_rgba(251,98,3,.35)] lg:block xl:w-80" />
         </div>
-        <div aria-hidden className="mt-12 grid gap-3 rounded-lg border border-border bg-card p-4 text-sm sm:grid-cols-4">
+        <div aria-hidden className="mx-auto mb-12 grid max-w-6xl gap-3 px-4 text-sm sm:grid-cols-4">
           {[t("flow1"), t("flow2"), t("flow3"), t("flow4")].map((s) => (
-            <div key={s} className="rounded-md bg-accent px-3 py-2 font-mono text-xs text-accent-foreground">{s}</div>
+            <div key={s} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-xs text-[#C9D2EA] backdrop-blur">{s}</div>
           ))}
         </div>
       </section>
@@ -100,7 +109,7 @@ export default async function Landing({ params }: { params: Promise<{ locale: st
       <section className="border-t border-border py-16 text-center">
         <h2 className="text-3xl font-semibold">{t("ctaTitle")}</h2>
         <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{t("ctaText")}</p>
-        <Link href="/register" className="mt-6 inline-block rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground">{t("heroCta")}</Link>
+        <Link href="/register" className="brand-gradient mt-6 inline-flex min-h-12 items-center rounded-xl px-6 font-semibold">{t("heroCta")}</Link>
       </section>
     </>
   );

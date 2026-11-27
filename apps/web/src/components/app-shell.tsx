@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { LocaleSwitcher, ThemeToggle } from "@/components/site-controls";
 import { Button, Spinner, cn } from "@/components/ui";
+import { Logo } from "@/components/brand";
 
 /** `feature`: plan feature the screen needs; without it the item stays visible with a lock (never hidden). */
 const NAV: readonly { href: string; key: string; icon: typeof BarChart3; feature?: string }[] = [
@@ -76,7 +77,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-60 shrink-0 border-r border-border bg-card md:block">
-        <div className="flex h-16 items-center px-5 text-lg font-bold">Vendocas</div>
+        <div className="flex h-16 items-center px-5"><Logo size={28} /></div>
         {nav}
       </aside>
       {open && <div className="fixed inset-0 z-40 bg-black/40 md:hidden" onClick={() => setOpen(false)}><aside className="h-full w-64 bg-card" onClick={(e) => e.stopPropagation()}>{nav}</aside></div>}

@@ -67,8 +67,8 @@
   },
   "landing": {
     "heroTitle": "Traga clientes de volta automaticamente — com o seu e-mail, WhatsApp, SMS e telefone",
-    "heroSubtitle": "Você decide o gatilho, o prazo, as condições e a mensagem. A Vendocas executa todos os dias, respeitando consentimentos, descadastros e o seu orçamento.",
-    "heroCta": "Criar minha conta",
+    "heroSubtitle": "O vendocas. lembra quem sumiu, agradece quem comprou e traz o cliente de volta — pelo WhatsApp e pelo e-mail da sua própria loja.",
+    "heroCta": "Começar agora",
     "heroSecondary": "Ver preços",
     "howTitle": "Como funciona",
     "how1": "Quando algo acontece",
@@ -683,5 +683,10 @@
       "PHONE": "Telefone",
       "OTHER": "Outro"
     }
+  },
+  "brand": {
+    "slogan": "Toda venda é o começo da próxima.",
+    "highlight": "próxima.",
+    "tagline": "CRM de relacionamento para lojas"
   }
 }

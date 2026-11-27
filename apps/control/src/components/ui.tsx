@@ -8,7 +8,7 @@ export { cn };
 export function Button({ variant = "primary", loading, className, children, disabled, ...p }:
   React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "outline" | "danger" | "ghost"; loading?: boolean }) {
   const v = { primary: "bg-primary text-primary-foreground hover:opacity-90", outline: "border border-border bg-card hover:bg-muted",
-    danger: "bg-danger text-white hover:opacity-90", ghost: "hover:bg-muted" }[variant];
+    danger: "bg-danger text-background hover:opacity-90", ghost: "hover:bg-muted" }[variant];
   return (
     <button className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium disabled:opacity-50", v, className)}
       disabled={disabled || loading} {...p}>{loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}{children}</button>

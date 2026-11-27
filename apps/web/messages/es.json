@@ -67,8 +67,8 @@
   },
   "landing": {
     "heroTitle": "Recupera clientes automáticamente — con tu propio correo, WhatsApp, SMS y teléfono",
-    "heroSubtitle": "Tú decides el disparador, la espera, las condiciones y el mensaje. Vendocas lo ejecuta cada día, respetando consentimientos, bajas y tu presupuesto.",
-    "heroCta": "Crear mi cuenta",
+    "heroSubtitle": "vendocas. recuerda a quien se fue, agradece a quien compró y trae al cliente de vuelta — por el WhatsApp y el correo de tu propia tienda.",
+    "heroCta": "Empezar ahora",
     "heroSecondary": "Ver precios",
     "howTitle": "Cómo funciona",
     "how1": "Cuando algo sucede",
@@ -683,5 +683,10 @@
       "PHONE": "Teléfono",
       "OTHER": "Otro"
     }
+  },
+  "brand": {
+    "slogan": "Cada venta es el comienzo de la próxima.",
+    "highlight": "próxima.",
+    "tagline": "CRM de relación para tiendas"
   }
 }

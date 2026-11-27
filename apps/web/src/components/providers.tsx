@@ -13,7 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     retry: (count, e) => !(e instanceof ApiError && e.code === UNAVAILABLE) && count < 1,
   } } }));
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <QueryClientProvider client={client}>
         <BackendBanner />
         <AuthProvider>{children}</AuthProvider>

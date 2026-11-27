@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, FileClock, GitBranch, KeyRound, LayoutDashboard, Menu, ScrollText, Server, Settings, ShieldCheck, SlidersHorizontal, X, Globe, Store } from "lucide-react";
+import { FileClock, GitBranch, KeyRound, LayoutDashboard, Menu, ScrollText, Server, Settings, ShieldCheck, SlidersHorizontal, X, Globe, Store } from "lucide-react";
 import { call, message, onReauthRequired, setCsrf } from "@/lib/client";
 import { Alert, Button, Field, Input, cn } from "./ui";
 
@@ -51,12 +51,12 @@ export function Shell({ user, csrfToken, children }: { user: { email: string; na
   return (
     <div className="flex min-h-screen">
       <aside className="hidden w-64 shrink-0 border-r border-border bg-card lg:block">
-        <div className="flex h-16 items-center gap-2 px-5 font-semibold"><Activity className="h-5 w-5 text-primary" />Control Center</div>
+        <div className="flex h-16 items-center gap-2 px-5"><span className="flex items-center gap-2"><img src="/brand/vendocas-simbolo-64.png" alt="" width={26} height={26} /><span className="font-bold lowercase">vendocas<span className="text-primary">.</span></span><span className="text-sm font-medium text-muted-foreground">control</span></span></div>
         {nav}
       </aside>
       {open && <div className="fixed inset-0 z-40 overscroll-contain bg-black/40 lg:hidden" onClick={() => setOpen(false)}><aside role="dialog" aria-modal="true" aria-label="Menu"
         className="h-full w-72 max-w-[85vw] overflow-y-auto overscroll-contain bg-card" onClick={(e) => e.stopPropagation()}>
-        <div className="flex h-16 items-center justify-between px-5 font-semibold">Control Center<button aria-label="Fechar" onClick={() => setOpen(false)}><X className="h-5 w-5" /></button></div>{nav}</aside></div>}
+        <div className="flex h-16 items-center justify-between px-5"><span className="flex items-center gap-2"><img src="/brand/vendocas-simbolo-64.png" alt="" width={26} height={26} /><span className="font-bold lowercase">vendocas<span className="text-primary">.</span></span><span className="text-sm font-medium text-muted-foreground">control</span></span><button aria-label="Fechar" onClick={() => setOpen(false)}><X className="h-5 w-5" /></button></div>{nav}</aside></div>}
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-16 items-center justify-between gap-2 border-b border-border px-4">
           <button className="rounded p-2 hover:bg-muted lg:hidden" aria-label="Menu" onClick={() => setOpen(true)}><Menu className="h-5 w-5" /></button>

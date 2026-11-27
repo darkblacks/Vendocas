@@ -22,9 +22,42 @@
   --color-danger: var(--danger);
   --color-ring: var(--ring);
   --radius-lg: var(--radius);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 html, body { background: var(--background); color: var(--foreground); }
 * { border-color: var(--border); }
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* ---------- Vendocas brand helpers (see packages/design-system/brand/README.md) ---------- */
+/* Midnight background with the two light arcs of the brand: blue top-left, orange bottom-right. */
+.brand-glow {
+  position: relative;
+  isolation: isolate;
+  background-color: var(--brand-midnight);
+  color: #F5F7FF;
+  overflow: hidden;
+}
+.brand-glow::before, .brand-glow::after {
+  content: ""; position: absolute; z-index: -1; pointer-events: none; border-radius: 50%;
+}
+.brand-glow::before { /* blue arc */
+  width: 120%; height: 160%; left: -55%; top: -95%;
+  border-bottom: 2px solid rgba(1, 125, 246, .85);
+  box-shadow: 0 18px 60px -10px rgba(1, 125, 246, .55), inset 0 -40px 120px -40px rgba(1, 77, 216, .45);
+}
+.brand-glow::after { /* orange arc */
+  width: 120%; height: 160%; right: -55%; bottom: -95%;
+  border-top: 2px solid rgba(251, 98, 3, .9);
+  box-shadow: 0 -18px 60px -10px rgba(251, 98, 3, .5), inset 0 40px 120px -40px rgba(253, 148, 1, .35);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .brand-glow::before { animation: brand-drift 14s ease-in-out infinite alternate; }
+  .brand-glow::after { animation: brand-drift 14s ease-in-out infinite alternate-reverse; }
+}
+@keyframes brand-drift { from { transform: translate(0, 0); } to { transform: translate(3%, 2%); } }
+
+/* Orange gradient surface: always midnight text on it (white on bright orange fails contrast). */
+.brand-gradient { background-image: var(--brand-gradient); color: var(--brand-midnight); }
+.brand-text-gradient { background-image: var(--brand-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shadow-glow { box-shadow: var(--glow); }
