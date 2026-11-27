@@ -4,13 +4,33 @@ Implementa no `apps/api` as regras de [`projeto-vendocas.md`](projeto-vendocas.m
 Testes: `MarketsPlansCrmIT` (10 cenários, Postgres real).
 
 ## Mercados
-| Mercado | Países | Moeda | Idioma padrão | Ordem dos canais |
+| Mercado | Países | Moeda | Idioma | Ordem dos canais |
 |---|---|---|---|---|
-| `BR` | Brasil | BRL | pt-BR | WhatsApp → e-mail → SMS |
-| `LATAM` | MX, GT, SV, HN, NI, CR, PA, CU, DO, PR, CO, VE, EC, PE, BO, CL, AR, UY, PY | USD | es-419 | WhatsApp → e-mail → SMS |
-| `US` | Estados Unidos | USD | en-US | e-mail → SMS → WhatsApp |
-| `CA` | Canadá | USD (CAD possível depois) | en-CA, fr-CA | e-mail → SMS → WhatsApp |
-| `EU` | UE-27 + Reino Unido + **Guiana Francesa** | EUR | en-GB (es-ES, pt-PT, fr-FR, en-IE, it-IT, de-DE) | e-mail → WhatsApp → SMS |
+| `BR` | Brasil | BRL | pt | WhatsApp → e-mail → SMS |
+| `LATAM` | MX, GT, SV, HN, NI, CR, PA, CU, DO, PR, CO, VE, EC, PE, BO, CL, AR, UY, PY | USD | es | WhatsApp → e-mail → SMS |
+| `US` | Estados Unidos | USD | en | e-mail → SMS → WhatsApp |
+| `CA` | Canadá | USD (CAD possível depois) | en | e-mail → SMS → WhatsApp |
+| `EU` | UE-27 + Reino Unido + **Guiana Francesa** | EUR | pelo país (abaixo) | e-mail → WhatsApp → SMS |
+
+### Idiomas (V14)
+A plataforma fala **seis idiomas, sem variantes regionais**: português, inglês, espanhol, francês, alemão e italiano.
+Regra única país → idioma (`Languages.java` na API, `src/i18n/languages.ts` no web):
+
+| Idioma | Países |
+|---|---|
+| `pt` | Brasil, Portugal |
+| `es` | Espanha e toda a América Latina hispânica |
+| `fr` | França (e Guiana Francesa, Mônaco) |
+| `de` | Alemanha, Áustria |
+| `it` | Itália |
+| `en` | Estados Unidos, Canadá, Reino Unido, Irlanda e todos os outros países |
+
+- **Mensagens da loja** (alertas, rodapé, e-mails da plataforma, aviso de voz) saem no idioma do país de cobrança da
+  loja (`organizations.locale`); se o cliente tiver idioma próprio cadastrado (entre os seis), vale o dele.
+- **Site e app**: na primeira visita, o idioma vem do país do visitante (cabeçalho de geolocalização da hospedagem);
+  a escolha no seletor de idioma fica salva e tem prioridade.
+- Modelos de WhatsApp em português vão à Meta como `pt_BR` (a Meta não tem `pt` puro).
+- O Control só aceita esses seis códigos nos mercados.
 
 - O lojista entra no mercado do **país de cobrança** no cadastro (`organizations.market_code`).
 - Mercado desligado no Control → cadastro recusado ("not open in this market yet") e vitrine some (404).

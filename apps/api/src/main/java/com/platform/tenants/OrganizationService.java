@@ -86,7 +86,8 @@ public class OrganizationService {
         o.setBillingCountryCode(billingCountry);
         o.setBillingCurrency(billing.defaultCurrency());
         o.setMarketCode(billing.market());
-        o.setLocale(req.locale());
+        // Language of the store's messages follows the billing country (Canada → en, Spain → es, Italy → it...).
+        o.setLocale(com.platform.shared.i18n.Languages.forCountry(billingCountry));
         o.setTimeZone(req.timeZone());
         o.setDataRegion(switch (incorporation.region()) { case "EU", "UK" -> "eu"; case "BR" -> "br"; default -> "us"; });
         o.setContactEmail(req.contactEmail());
@@ -128,7 +129,7 @@ public class OrganizationService {
         validateZone(req.timeZone());
         o.setLegalName(req.legalName());
         o.setTradeName(req.tradeName());
-        o.setLocale(req.locale());
+        o.setLocale(com.platform.shared.i18n.Languages.resolve(o.getBillingCountryCode(), req.locale()));
         o.setTimeZone(req.timeZone());
         o.setContactEmail(req.contactEmail());
         o.setFinanceEmail(req.financeEmail());

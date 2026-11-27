@@ -156,7 +156,7 @@ public class WhatsAppChannelSetup {
         String token = channels.secrets(c.id()).get("ACCESS_TOKEN");
         try {
             JsonNode res = http.post().uri(graph("/" + c.externalAccountId() + "/message_templates")).header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .body(Map.of("name", name, "language", ((String) t.get("locale")).replace('-', '_'), "category", t.get("wa_category"),
+                    .body(Map.of("name", name, "language", com.platform.shared.i18n.Languages.whatsappCode((String) t.get("locale")), "category", t.get("wa_category"),
                             "components", components)).retrieve().body(JsonNode.class);
             jdbc.update("UPDATE message_templates SET status = 'SUBMITTED', updated_at = now() WHERE id = ?", templateId);
             jdbc.update("INSERT INTO template_approvals (id, organization_id, template_id, provider, provider_template_id, status) VALUES (?,?,?,?,?,?)",

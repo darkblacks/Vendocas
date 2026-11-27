@@ -80,7 +80,7 @@ function MarketCard({ target, m, canEdit, onSaved }: { target: Target; m: Market
       <Title actions={<Badge tone={mk.enabled ? "ok" : "warn"}>{mk.enabled ? "À venda" : "Fechado"}</Badge>}>{mk.name} · {mk.currency}</Title>
       <p className="mb-3 text-sm text-muted-foreground">{m.merchants} lojista(s) · países: {m.countries.map((c) => c.countryCode).join(", ")}</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Field id="loc" label="Idiomas"><Input id="loc" disabled={!canEdit} value={f.locales} onChange={(e) => setF({ ...f, locales: e.target.value })} /></Field>
+        <Field id="loc" label="Idiomas" hint="pt, en, es, fr, de, it"><Input id="loc" disabled={!canEdit} value={f.locales} onChange={(e) => setF({ ...f, locales: e.target.value })} /></Field>
         <Field id="dloc" label="Idioma padrão"><Input id="dloc" disabled={!canEdit} value={f.defaultLocale} onChange={(e) => setF({ ...f, defaultLocale: e.target.value })} /></Field>
         <Field id="ord" label="Ordem dos canais" hint="WHATSAPP, EMAIL, SMS"><Input id="ord" disabled={!canEdit} value={f.order} onChange={(e) => setF({ ...f, order: e.target.value })} /></Field>
         <Field id="ws" label="Envios a partir de"><Input id="ws" type="time" disabled={!canEdit} value={f.start} onChange={(e) => setF({ ...f, start: e.target.value })} /></Field>

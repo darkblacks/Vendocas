@@ -66,7 +66,7 @@ class MarketsPlansCrmIT extends IntegrationTest {
     @Test
     void publicStorefrontShowsEachMarketsPrices() throws Exception {
         mvc.perform(get("/api/v1/public/markets")).andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.code == 'LATAM')].defaultLocale").value("es-419"))
+                .andExpect(jsonPath("$[?(@.code == 'LATAM')].defaultLocale").value("es"))
                 .andExpect(jsonPath("$[?(@.code == 'EU')].countries[*]").value(org.hamcrest.Matchers.hasItems("GB", "GF", "ES", "PT", "FR", "IE", "IT", "DE")));
         mvc.perform(get("/api/v1/public/markets/LATAM/plans")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].code").value("ALERTA")).andExpect(jsonPath("$[0].monthlyAmountMinor").value(1900))

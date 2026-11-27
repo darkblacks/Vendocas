@@ -4,9 +4,9 @@ import { useLocale } from "next-intl";
 import { Moon, Sun, Languages } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { LANGUAGE_NAMES, type Language } from "@/i18n/languages";
 import { Button } from "@/components/ui";
 
-const NAMES: Record<string, string> = { en: "English", pt: "Português", es: "Español", fr: "Français", de: "Deutsch" };
 
 export function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -26,7 +26,7 @@ export function LocaleSwitcher() {
       <Languages className="h-4 w-4 text-muted-foreground" aria-hidden />
       <span className="sr-only">Language</span>
       <select className="bg-transparent text-sm" value={locale} onChange={(e) => router.replace(pathname, { locale: e.target.value })}>
-        {routing.locales.map((l) => <option key={l} value={l}>{NAMES[l]}</option>)}
+        {routing.locales.map((l) => <option key={l} value={l}>{LANGUAGE_NAMES[l as Language]}</option>)}
       </select>
     </label>
   );

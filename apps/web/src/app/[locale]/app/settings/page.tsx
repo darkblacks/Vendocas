@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
 import { api, errorMessage } from "@/lib/api";
 import { dateTime } from "@/lib/format";
+import { LANGUAGES, LANGUAGE_NAMES, languageOf } from "@/i18n/languages";
 import { useAuth, useCan } from "@/lib/auth";
 import { Alert, Badge, Button, Card, CardTitle, Field, Input, Select, StatusBadge, Switch, Table, Tabs, TabsContent, TabsList, TabsTrigger, Td, Textarea, PageHeader } from "@/components/ui";
 
@@ -60,7 +61,8 @@ function OrgTab() {
         <CardTitle>{t("settings.organization")} <Badge>{f.countryCode} · {f.billingCurrency} · region {f.dataRegion}</Badge></CardTitle>
         {field("legalName", t("setup.legalName"))}{field("tradeName", t("setup.tradeName"))}{field("contactEmail", t("setup.contactEmail"))}{field("financeEmail", t("setup.financeEmail"))}
         {field("contactPhone", t("common.phone"))}{field("addressLine1", t("setup.address"))}{field("city", t("setup.city"))}{field("region", t("setup.region"))}{field("postalCode", t("setup.postalCode"))}
-        {field("timeZone", t("common.timeZone"))}{field("locale", t("common.language"))}
+        {field("timeZone", t("common.timeZone"))}<Field label={t("common.language")} htmlFor="locale"><Select id="locale" value={languageOf(f.locale) ?? "en"} onChange={(e) => setF({ ...f, locale: e.target.value })}>
+          {LANGUAGES.map((l) => <option key={l} value={l}>{LANGUAGE_NAMES[l]}</option>)}</Select></Field>
         <Button onClick={() => act(() => api("/organizations/current", { method: "PUT", body: f }))}>{t("common.save")}</Button>
         {view}
       </Card>

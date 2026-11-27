@@ -1,5 +1,6 @@
 package com.platform.markets;
 
+import com.platform.shared.i18n.Languages;
 import com.platform.shared.api.ApiException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -70,6 +71,12 @@ public class MarketService {
         if (u.expectedVersion() != null && u.expectedVersion() != cur.version()) throw ApiException.conflict("Market was changed by someone else");
         List<String> locales = u.locales() == null ? cur.locales() : u.locales();
         String defaultLocale = u.defaultLocale() == null ? cur.defaultLocale() : u.defaultLocale();
+        // The platform speaks six languages with no regional variants: "pt-BR" is stored as "pt".
+        if (locales.stream().anyMatch(l -> !Languages.isSupported(l)) || !Languages.isSupported(defaultLocale)) {
+            throw ApiException.badRequest("Languages must be among " + Languages.SUPPORTED);
+        }
+        locales = locales.stream().map(Languages::of).distinct().toList();
+        defaultLocale = Languages.of(defaultLocale);
         List<String> order = u.channelOrder() == null ? cur.channelOrder() : u.channelOrder();
         if (locales.isEmpty() || locales.stream().anyMatch(l -> !l.matches("^[a-z]{2}(-[A-Za-z0-9]{2,4})?$"))) throw ApiException.badRequest("Invalid locales");
         if (!locales.contains(defaultLocale)) throw ApiException.badRequest("defaultLocale must be one of locales");

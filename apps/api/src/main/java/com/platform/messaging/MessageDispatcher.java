@@ -138,7 +138,7 @@ public class MessageDispatcher {
             List<String> params = new ArrayList<>();
             m.meta().path("waParams").forEach(n -> params.add(n.asString()));
             String lang = jdbc.queryForObject("SELECT t.locale FROM messages x JOIN message_templates t ON t.id = x.template_id WHERE x.id = ?", String.class, m.id());
-            template = new MessageProvider.Template(m.meta().path("waTemplate").asString(), lang.replace('-', '_'), params, mediaUrl);
+            template = new MessageProvider.Template(m.meta().path("waTemplate").asString(), com.platform.shared.i18n.Languages.whatsappCode(lang), params, mediaUrl);
         }
         Map<String, String> headers = new LinkedHashMap<>();
         m.meta().path("headers").properties().forEach(e -> headers.put(e.getKey(), e.getValue().asString()));

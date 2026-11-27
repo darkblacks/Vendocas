@@ -112,14 +112,19 @@ public class TwilioVoiceWebhookController {
     private static String twiml(String inner) { return "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Response>" + inner + "</Response>"; }
 
     private static String sayLang(String locale) {
-        String l = locale == null ? "en" : locale.toLowerCase(Locale.ROOT);
-        return l.startsWith("pt") ? "pt-BR" : l.startsWith("es") ? "es-ES" : l.startsWith("fr") ? "fr-FR" : l.startsWith("de") ? "de-DE" : "en-US";
+        return switch (com.platform.shared.i18n.Languages.resolve(null, locale)) {
+            case "pt" -> "pt-BR"; case "es" -> "es-ES"; case "fr" -> "fr-FR"; case "de" -> "de-DE"; case "it" -> "it-IT"; default -> "en-US";
+        };
     }
 
     private static String sorry(String locale) {
-        String l = locale == null ? "en" : locale.toLowerCase(Locale.ROOT);
-        if (l.startsWith("pt")) return "Não conseguimos atender agora. Retornaremos sua ligação em breve.";
-        if (l.startsWith("es")) return "No podemos atender ahora. Le devolveremos la llamada pronto.";
-        return "We could not answer right now. We will call you back soon.";
+        return switch (com.platform.shared.i18n.Languages.resolve(null, locale)) {
+            case "pt" -> "Não conseguimos atender agora. Retornaremos sua ligação em breve.";
+            case "es" -> "No podemos atender ahora. Le devolveremos la llamada pronto.";
+            case "fr" -> "Nous ne pouvons pas répondre pour le moment. Nous vous rappellerons très vite.";
+            case "de" -> "Wir können gerade nicht rangehen. Wir rufen Sie bald zurück.";
+            case "it" -> "Non possiamo rispondere ora. La richiameremo presto.";
+            default -> "We could not answer right now. We will call you back soon.";
+        };
     }
 }

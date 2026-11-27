@@ -202,7 +202,7 @@ public class MessageService {
         String alertFooter = null;
         if (ent.alertsOnly()) {
             // WhatsApp templates carry the footer as an approved component (see WhatsAppChannelSetup); free text gets it appended.
-            String footerLocale = c.locale() != null ? c.locale() : (String) orgRow.get("locale");
+            String footerLocale = com.platform.shared.i18n.Languages.resolve(null, c.locale(), (String) orgRow.get("locale"));
             var footerContact = AlertFooter.Contact.of(orgRow);
             alertFooter = AlertFooter.text(footerLocale, footerContact);
             String inText = "SMS".equals(r.channel()) || "MMS".equals(p.sendChannel) ? AlertFooter.sms(footerLocale, footerContact) : alertFooter;

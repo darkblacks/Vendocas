@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { LANGUAGES, LANGUAGE_NAMES, languageOf } from "@/i18n/languages";
 import { api, errorMessage } from "@/lib/api";
 import { useCan } from "@/lib/auth";
 import { Alert, Badge, Button, Card, CardTitle, Field, Input, PageHeader, Select, StatusBadge, Table, Td, Textarea } from "@/components/ui";
@@ -165,9 +166,10 @@ function SmsSetup({ c, onChange }: { c: ChannelView; onChange: () => void }) {
 }
 
 function Templates() {
+  const uiLocale = useLocale();
   const t = useTranslations("channels");
   const q = useQuery({ queryKey: ["templates-all"], queryFn: () => api<{ id: string; channel: string; name: string; locale: string; purpose: string; waCategory?: string; status: string; rejectionReason?: string }[]>("/templates") });
-  const [f, setF] = useState({ channel: "EMAIL", name: "", locale: "pt-BR", purpose: "MARKETING", waCategory: "MARKETING", subject: "", body: "" });
+  const [f, setF] = useState({ channel: "EMAIL", name: "", locale: (languageOf(uiLocale) ?? "en") as string, purpose: "MARKETING", waCategory: "MARKETING", subject: "", body: "" });
   const [error, setError] = useState<string | null>(null);
   return (
     <Card>
@@ -184,7 +186,7 @@ function Templates() {
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         <Select aria-label="channel" value={f.channel} onChange={(e) => setF({ ...f, channel: e.target.value })}><option>EMAIL</option><option>WHATSAPP</option><option>SMS</option></Select>
         <Input aria-label="name" placeholder="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-        <Input aria-label="locale" value={f.locale} onChange={(e) => setF({ ...f, locale: e.target.value })} />
+        <Select aria-label="locale" value={f.locale} onChange={(e) => setF({ ...f, locale: e.target.value })}>{LANGUAGES.map((l) => <option key={l} value={l}>{LANGUAGE_NAMES[l]}</option>)}</Select>
         <Select aria-label="purpose" value={f.purpose} onChange={(e) => setF({ ...f, purpose: e.target.value })}>{["TRANSACTIONAL", "SERVICE_REMINDER", "CUSTOMER_CARE", "MARKETING", "REACTIVATION"].map((p) => <option key={p}>{p}</option>)}</Select>
         {f.channel === "WHATSAPP" && <Select aria-label={t("category")} value={f.waCategory} onChange={(e) => setF({ ...f, waCategory: e.target.value })}><option>MARKETING</option><option>UTILITY</option></Select>}
         {f.channel === "EMAIL" && <Input aria-label="subject" placeholder="subject" value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} />}

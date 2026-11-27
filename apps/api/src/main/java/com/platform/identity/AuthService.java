@@ -71,7 +71,7 @@ public class AuthService {
         u.setEmail(email);
         u.setFullName(req.fullName().trim());
         u.setPasswordHash(encoder.encode(req.password()));
-        u.setLocale(req.locale() == null || req.locale().isBlank() ? "en" : req.locale());
+        u.setLocale(com.platform.shared.i18n.Languages.resolve(null, req.locale()));
         u.setTimeZone(validZone(req.timeZone()));
         u.setCreatedAt(now());
         u.setUpdatedAt(now());
