@@ -16,26 +16,30 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Automatic customer stage and RFM scores (docs/produto/projeto-vendocas.md §6.3).
+ * Automatic B2C pipeline stage, RFM scores and purchase metrics (docs/produto/backend-mercados-planos-crm.md).
  *
+ * <p>Every customer has a <b>window</b>: the interval in which they usually come back — their own average gap between
+ * purchases, or the store's typical gap while they have bought only once. With {@code days} = time since the last purchase:
  * <ul>
- *   <li>VISITOR — never bought; NEW — one purchase; RECURRING — two or more;</li>
- *   <li>VIP — top 10% by spend in the last 12 months (only once the store has at least {@value #VIP_MIN_BUYERS} buyers);</li>
- *   <li>AT_RISK — more than 1.5× the store's typical repurchase interval without buying;</li>
- *   <li>INACTIVE — more than 3× that interval, capped at 180 days.</li>
+ *   <li>VISITOR — never bought (not on the B2C board);</li>
+ *   <li>FIRST_SALE — one purchase, still inside the window;</li>
+ *   <li>RECURRING — two or more purchases and bought recently (first half of their window);</li>
+ *   <li>IN_WINDOW — second half of their window: the moment they usually come back;</li>
+ *   <li>CHURN_RISK — past their window;</li>
+ *   <li>CHURNED — past {@value #CHURN_FACTOR}× their window (or a year).</li>
  * </ul>
- * The typical interval is the median of each repeat buyer's average gap ({@value #DEFAULT_REPURCHASE_DAYS} days until the
- * store has {@value #MIN_REPEATERS} repeat buyers), bounded to 7–365 days. Recency, frequency and monetary scores are
- * quintiles (1–5) among the store's buyers.
+ * VIP is a flag, not a stage: top 10% by spend in the last 12 months, once the store has {@value #VIP_MIN_BUYERS}+ buyers.
+ * The store's typical gap is the median of repeat buyers' gaps ({@value #DEFAULT_REPURCHASE_DAYS} days until there are
+ * {@value #MIN_REPEATERS}), bounded to 7–365 days.
  *
- * <p>Runs for a whole organization daily and for one contact on every purchase. A stage change after the first
- * classification records a {@code STAGE_CHANGED} contact event, which automations can use as a trigger
- * (e.g. "Recompra / feedback" when a customer becomes AT_RISK).
+ * <p>Recomputed for one customer on every purchase (PDV, integrations, API) and for the whole store daily. A stage change
+ * after the first classification records a {@code STAGE_CHANGED} contact event that automations can trigger on.
  */
 @Service
 public class CrmService {
-    public static final Set<String> STAGES = Set.of("VISITOR", "NEW", "RECURRING", "VIP", "AT_RISK", "INACTIVE");
-    static final int VIP_MIN_BUYERS = 10, MIN_REPEATERS = 3, DEFAULT_REPURCHASE_DAYS = 30, INACTIVE_CAP_DAYS = 180;
+    public static final java.util.List<String> BOARD = java.util.List.of("FIRST_SALE", "RECURRING", "IN_WINDOW", "CHURN_RISK", "CHURNED");
+    public static final Set<String> STAGES = Set.of("VISITOR", "FIRST_SALE", "RECURRING", "IN_WINDOW", "CHURN_RISK", "CHURNED");
+    static final int VIP_MIN_BUYERS = 10, MIN_REPEATERS = 3, DEFAULT_REPURCHASE_DAYS = 30, CHURN_FACTOR = 3, CHURN_CAP_DAYS = 365;
     private final NamedParameterJdbcTemplate named;
     private final ContactEventService events;
     private final Clock clock;
@@ -104,40 +108,43 @@ public class CrmService {
                 ON CONFLICT (organization_id) DO UPDATE SET repurchase_days = EXCLUDED.repurchase_days, vip_threshold_minor = EXCLUDED.vip_threshold_minor,
                   buyers = EXCLUDED.buyers, computed_at = now()""",
                 new MapSqlParameterSource("org", org).addValue("days", s.repurchaseDays()).addValue("vip", s.vipThresholdMinor()).addValue("buyers", s.buyers()));
-        double days = s.repurchaseDays().doubleValue();
-        long riskSecs = Math.round(days * 1.5 * 86400);
-        long inactiveSecs = Math.round(Math.min(days * 3, INACTIVE_CAP_DAYS) * 86400);
-        if (inactiveSecs <= riskSecs) inactiveSecs = riskSecs + 86400;
         var params = new MapSqlParameterSource("org", org).addValue("contact", contactId, java.sql.Types.OTHER)
-                .addValue("riskSecs", riskSecs).addValue("inactiveSecs", inactiveSecs).addValue("vip", s.vipThresholdMinor(), java.sql.Types.BIGINT);
+                .addValue("storeDays", s.repurchaseDays()).addValue("churnFactor", CHURN_FACTOR).addValue("churnCap", CHURN_CAP_DAYS)
+                .addValue("vip", s.vipThresholdMinor(), java.sql.Types.BIGINT);
         List<StageChange> changes = named.query(BUYERS + """
                 , scored AS (
                   SELECT b.*, ntile(5) OVER (ORDER BY last_at) AS r, ntile(5) OVER (ORDER BY n, total) AS f, ntile(5) OVER (ORDER BY total) AS m FROM buyers b
                 ), everyone AS (
-                  SELECT c.id AS contact_id, s.n, s.total, s.spent12, s.first_at, s.last_at, s.currency, s.avg_int, s.r, s.f, s.m
+                  SELECT c.id AS contact_id, s.n, s.total, s.spent12, s.first_at, s.last_at, s.currency, s.avg_int, s.r, s.f, s.m,
+                         GREATEST(1, COALESCE(CASE WHEN s.n >= 2 THEN s.avg_int END, CAST(:storeDays AS numeric))) AS win,
+                         extract(epoch FROM now() - s.last_at) / 86400.0 AS days
                   FROM contacts c LEFT JOIN scored s ON s.contact_id = c.id
                   WHERE c.organization_id = :org AND c.status = 'ACTIVE' AND (CAST(:contact AS uuid) IS NULL OR c.id = CAST(:contact AS uuid))
                 ), classified AS (
                   SELECT e.*, CASE
                       WHEN e.n IS NULL THEN 'VISITOR'
-                      WHEN now() - e.last_at > make_interval(secs => :inactiveSecs) THEN 'INACTIVE'
-                      WHEN now() - e.last_at > make_interval(secs => :riskSecs) THEN 'AT_RISK'
-                      WHEN CAST(:vip AS bigint) IS NOT NULL AND e.spent12 >= CAST(:vip AS bigint) THEN 'VIP'
-                      WHEN e.n >= 2 THEN 'RECURRING'
-                      ELSE 'NEW' END AS stage
+                      WHEN e.days > LEAST(e.win * :churnFactor, :churnCap) THEN 'CHURNED'
+                      WHEN e.days > e.win THEN 'CHURN_RISK'
+                      WHEN e.n = 1 THEN 'FIRST_SALE'
+                      WHEN e.days > e.win / 2 THEN 'IN_WINDOW'
+                      ELSE 'RECURRING' END AS stage,
+                    (CAST(:vip AS bigint) IS NOT NULL AND e.spent12 >= CAST(:vip AS bigint)) AS is_vip
                   FROM everyone e
                 ), previous AS (
                   SELECT contact_id, stage FROM contact_metrics WHERE organization_id = :org
                 ), up AS (
-                  INSERT INTO contact_metrics (contact_id, organization_id, stage, recency_score, frequency_score, monetary_score, orders_count,
-                      total_spent_minor, spent_12m_minor, currency, first_purchase_at, last_purchase_at, avg_interval_days, stage_changed_at, updated_at)
-                  SELECT contact_id, :org, stage, r, f, m, COALESCE(n, 0), COALESCE(total, 0), COALESCE(spent12, 0), currency, first_at, last_at,
-                         round(avg_int, 2), now(), now() FROM classified
-                  ON CONFLICT (contact_id) DO UPDATE SET stage = EXCLUDED.stage, recency_score = EXCLUDED.recency_score,
+                  INSERT INTO contact_metrics (contact_id, organization_id, stage, vip, recency_score, frequency_score, monetary_score, orders_count,
+                      total_spent_minor, spent_12m_minor, currency, first_purchase_at, last_purchase_at, avg_interval_days, window_days, next_expected_at,
+                      stage_changed_at, updated_at)
+                  SELECT contact_id, :org, stage, is_vip, r, f, m, COALESCE(n, 0), COALESCE(total, 0), COALESCE(spent12, 0), currency, first_at, last_at,
+                         round(avg_int, 2), CASE WHEN n IS NULL THEN NULL ELSE round(win, 2) END,
+                         CASE WHEN last_at IS NULL THEN NULL ELSE last_at + make_interval(secs => win * 86400) END, now(), now() FROM classified
+                  ON CONFLICT (contact_id) DO UPDATE SET stage = EXCLUDED.stage, vip = EXCLUDED.vip, recency_score = EXCLUDED.recency_score,
                       frequency_score = EXCLUDED.frequency_score, monetary_score = EXCLUDED.monetary_score, orders_count = EXCLUDED.orders_count,
                       total_spent_minor = EXCLUDED.total_spent_minor, spent_12m_minor = EXCLUDED.spent_12m_minor, currency = EXCLUDED.currency,
                       first_purchase_at = EXCLUDED.first_purchase_at, last_purchase_at = EXCLUDED.last_purchase_at,
-                      avg_interval_days = EXCLUDED.avg_interval_days, updated_at = now(),
+                      avg_interval_days = EXCLUDED.avg_interval_days, window_days = EXCLUDED.window_days, next_expected_at = EXCLUDED.next_expected_at,
+                      updated_at = now(),
                       stage_changed_at = CASE WHEN contact_metrics.stage <> EXCLUDED.stage THEN now() ELSE contact_metrics.stage_changed_at END
                   RETURNING contact_id, stage
                 )

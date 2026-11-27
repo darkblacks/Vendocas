@@ -148,6 +148,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/onboarding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get"];
+        put: operations["save"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/members/{userId}/role": {
         parameters: {
             query?: never;
@@ -164,6 +180,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/crm/personas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_2"];
+        post?: never;
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/deals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_3"];
+        post?: never;
+        delete: operations["delete_1"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/customers/{id}/whatsapp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["setWhatsapp"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/contacts/{id}": {
         parameters: {
             query?: never;
@@ -171,8 +235,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get"];
-        put: operations["update_2"];
+        get: operations["get_1"];
+        put: operations["update_4"];
         post?: never;
         delete: operations["erase"];
         options?: never;
@@ -220,7 +284,7 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put: operations["update_3"];
+        put: operations["update_5"];
         post?: never;
         delete?: never;
         options?: never;
@@ -251,8 +315,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["get_1"];
-        put: operations["save"];
+        get: operations["get_2"];
+        put: operations["save_1"];
         post?: never;
         delete: operations["archive"];
         options?: never;
@@ -516,6 +580,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/onboarding/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notifications/{id}/read": {
         parameters: {
             query?: never;
@@ -692,6 +772,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/crm/personas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_5"];
+        put?: never;
+        post: operations["create_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/personas/{id}/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["assign"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/deals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["board"];
+        put?: never;
+        post: operations["create_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/deals/{id}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["move"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/conversations/{id}/reply": {
         parameters: {
             query?: never;
@@ -715,9 +859,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_5"];
+        get: operations["list_6"];
         put?: never;
-        post: operations["create_3"];
+        post: operations["create_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -891,9 +1035,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_6"];
+        get: operations["list_7"];
         put?: never;
-        post: operations["create_4"];
+        post: operations["create_6"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1035,9 +1179,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_7"];
+        get: operations["list_8"];
         put?: never;
-        post: operations["create_5"];
+        post: operations["create_7"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1489,7 +1633,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["update_4"];
+        patch: operations["update_6"];
         trace?: never;
     };
     "/api/v1/calls/tasks/{id}": {
@@ -1531,7 +1675,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_8"];
+        get: operations["list_9"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1643,7 +1787,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_9"];
+        get: operations["list_10"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1723,7 +1867,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_10"];
+        get: operations["list_11"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1739,7 +1883,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_11"];
+        get: operations["list_12"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1899,7 +2043,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_12"];
+        get: operations["list_13"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2219,7 +2363,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_13"];
+        get: operations["list_14"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2367,6 +2511,22 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/personas/{id}/customers/{contactId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["unassign"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2581,8 +2741,98 @@ export interface components {
             alertContact?: string;
             marketCode?: string;
         };
+        Update: {
+            storeName?: string;
+            businessSegment?: string;
+            alertContact?: string;
+            whatsappChoice?: string;
+            emailChoice?: string;
+            /** Format: email */
+            emailAddress?: string;
+        };
+        State: {
+            completed?: boolean;
+            /** Format: date-time */
+            completedAt?: string;
+            storeName?: string;
+            businessSegment?: string;
+            alertContact?: string;
+            whatsappChoice?: string;
+            emailChoice?: string;
+            emailAddress?: string;
+            whatsappChannelStatus?: string;
+            emailChannelStatus?: string;
+        };
         ChangeRoleRequest: {
             role: string;
+        };
+        PersonaInput: {
+            name: string;
+            description?: string;
+            color?: string;
+            productIds?: string[];
+        };
+        Persona: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+            description?: string;
+            color?: string;
+            products?: components["schemas"]["ProductRef"][];
+            /** Format: int64 */
+            customers?: number;
+            /** Format: int64 */
+            averageTicketMinor?: number;
+            currency?: string;
+            /** Format: int64 */
+            purchases?: number;
+            topWeekday?: string;
+            topProducts?: string[];
+        };
+        ProductRef: {
+            /** Format: uuid */
+            id?: string;
+            name?: string;
+        };
+        DealInput: {
+            /** Format: uuid */
+            contactId?: string;
+            companyName?: string;
+            title: string;
+            /** Format: int64 */
+            valueMinor?: number;
+            currency?: string;
+            /** Format: date */
+            expectedCloseOn?: string;
+            notes?: string;
+        };
+        Deal: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            contactId?: string;
+            contactName?: string;
+            companyName?: string;
+            title?: string;
+            stage?: string;
+            /** Format: double */
+            position?: number;
+            /** Format: int64 */
+            valueMinor?: number;
+            currency?: string;
+            /** Format: date */
+            expectedCloseOn?: string;
+            notes?: string;
+            lostReason?: string;
+            /** Format: date-time */
+            closedAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        WhatsappStatus: {
+            status?: string;
         };
         ContactInput: {
             externalId?: string;
@@ -2930,7 +3180,9 @@ export interface components {
             /** Format: uuid */
             contactId?: string;
             customer?: components["schemas"]["NewCustomer"];
-            items: components["schemas"]["ItemInput"][];
+            items?: components["schemas"]["ItemInput"][];
+            /** Format: int64 */
+            amountMinor?: number;
             currency?: string;
             paymentMethod: string;
             salesChannel: string;
@@ -3087,6 +3339,15 @@ export interface components {
             /** Format: uuid */
             id?: string;
             key?: string;
+        };
+        Assign: {
+            contactIds?: string[];
+        };
+        Move: {
+            stage: string;
+            /** Format: int32 */
+            index?: number;
+            lostReason?: string;
         };
         ReplyRequest: {
             body: string;
@@ -3594,12 +3855,25 @@ export interface components {
             lastPurchaseAt?: string;
             channels?: string[];
             tags?: string[];
+            vip?: boolean;
+            whatsappStatus?: string;
+            /** Format: date-time */
+            nextExpectedAt?: string;
+            personas?: string[];
         };
         KanbanColumn: {
             stage?: string;
             /** Format: int64 */
             count?: number;
             cards?: components["schemas"]["CustomerRow"][];
+        };
+        Column: {
+            stage?: string;
+            /** Format: int64 */
+            count?: number;
+            /** Format: int64 */
+            valueMinor?: number;
+            deals?: components["schemas"]["Deal"][];
         };
         PageCustomerRow: {
             items?: components["schemas"]["CustomerRow"][];
@@ -3637,6 +3911,10 @@ export interface components {
             /** Format: date-time */
             stageChangedAt?: string;
             favoriteProducts?: string[];
+            vip?: boolean;
+            windowDays?: number;
+            /** Format: date-time */
+            nextExpectedAt?: string;
         };
         ConversationView: {
             /** Format: uuid */
@@ -4357,6 +4635,50 @@ export interface operations {
             };
         };
     };
+    get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["State"];
+                };
+            };
+        };
+    };
+    save: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Update"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["State"];
+                };
+            };
+        };
+    };
     changeRole: {
         parameters: {
             query?: never;
@@ -4381,7 +4703,127 @@ export interface operations {
             };
         };
     };
-    get: {
+    update_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Persona"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DealInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Deal"];
+                };
+            };
+        };
+    };
+    delete_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    setWhatsapp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WhatsappStatus"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: string;
+                    };
+                };
+            };
+        };
+    };
+    get_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -4403,7 +4845,7 @@ export interface operations {
             };
         };
     };
-    update_2: {
+    update_4: {
         parameters: {
             query?: never;
             header?: never;
@@ -4523,7 +4965,7 @@ export interface operations {
             };
         };
     };
-    update_3: {
+    update_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -4571,7 +5013,7 @@ export interface operations {
             };
         };
     };
-    get_1: {
+    get_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -4593,7 +5035,7 @@ export interface operations {
             };
         };
     };
-    save: {
+    save_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -5196,6 +5638,26 @@ export interface operations {
             };
         };
     };
+    complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["State"];
+                };
+            };
+        };
+    };
     read: {
         parameters: {
             query?: never;
@@ -5521,6 +5983,148 @@ export interface operations {
             };
         };
     };
+    list_5: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Persona"][];
+                };
+            };
+        };
+    };
+    create_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonaInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Persona"];
+                };
+            };
+        };
+    };
+    assign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Assign"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": {
+                        [key: string]: number;
+                    };
+                };
+            };
+        };
+    };
+    board: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Column"][];
+                };
+            };
+        };
+    };
+    create_4: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DealInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Deal"];
+                };
+            };
+        };
+    };
+    move: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Move"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Deal"];
+                };
+            };
+        };
+    };
     reply: {
         parameters: {
             query?: never;
@@ -5547,7 +6151,7 @@ export interface operations {
             };
         };
     };
-    list_5: {
+    list_6: {
         parameters: {
             query?: {
                 q?: string;
@@ -5576,7 +6180,7 @@ export interface operations {
             };
         };
     };
-    create_3: {
+    create_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -5881,7 +6485,7 @@ export interface operations {
             };
         };
     };
-    list_6: {
+    list_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -5901,7 +6505,7 @@ export interface operations {
             };
         };
     };
-    create_4: {
+    create_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6103,7 +6707,7 @@ export interface operations {
             };
         };
     };
-    list_7: {
+    list_8: {
         parameters: {
             query?: never;
             header?: never;
@@ -6123,7 +6727,7 @@ export interface operations {
             };
         };
     };
-    create_5: {
+    create_7: {
         parameters: {
             query?: never;
             header?: never;
@@ -6841,7 +7445,7 @@ export interface operations {
             };
         };
     };
-    update_4: {
+    update_6: {
         parameters: {
             query?: never;
             header?: never;
@@ -6913,7 +7517,7 @@ export interface operations {
             };
         };
     };
-    list_8: {
+    list_9: {
         parameters: {
             query?: {
                 q?: string;
@@ -7075,7 +7679,7 @@ export interface operations {
             };
         };
     };
-    list_9: {
+    list_10: {
         parameters: {
             query?: never;
             header?: never;
@@ -7185,7 +7789,7 @@ export interface operations {
             };
         };
     };
-    list_10: {
+    list_11: {
         parameters: {
             query?: {
                 unread?: boolean;
@@ -7207,7 +7811,7 @@ export interface operations {
             };
         };
     };
-    list_11: {
+    list_12: {
         parameters: {
             query?: {
                 status?: string;
@@ -7303,6 +7907,9 @@ export interface operations {
                 q?: string;
                 channel?: string;
                 tag?: string;
+                whatsapp?: string;
+                persona?: string;
+                vipOnly?: boolean;
                 sort?: string;
                 dir?: string;
                 page?: number;
@@ -7435,7 +8042,7 @@ export interface operations {
             };
         };
     };
-    list_12: {
+    list_13: {
         parameters: {
             query?: never;
             header?: never;
@@ -7856,7 +8463,7 @@ export interface operations {
             };
         };
     };
-    list_13: {
+    list_14: {
         parameters: {
             query?: never;
             header?: never;
@@ -8075,6 +8682,27 @@ export interface operations {
         responses: {
             /** @description No Content */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    unassign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                contactId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

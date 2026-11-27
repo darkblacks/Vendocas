@@ -1,6 +1,6 @@
 /** Types and labels for the commercial screens (markets, prices, quotas, merchants). Shapes mirror the API's /internal endpoints. */
 export type Target = "TEST" | "LIVE";
-export type MarketCode = "BR" | "LATAM" | "NA" | "EU";
+export type MarketCode = "BR" | "LATAM" | "US" | "CA" | "EU";
 export type Channel = "EMAIL" | "WHATSAPP" | "SMS";
 
 export interface Market {
@@ -28,7 +28,7 @@ export interface MerchantDetail {
   quotas: QuotaUsage[]; blockedLast7Days: Record<string, number>; contacts: number; recoveredMinorThisMonth: number; recoveredSalesThisMonth: number;
 }
 
-export const MARKET_LABEL: Record<MarketCode, string> = { BR: "Brasil", LATAM: "LATAM", NA: "EUA / Canadá", EU: "Europa" };
+export const MARKET_LABEL: Record<MarketCode, string> = { BR: "Brasil", LATAM: "LATAM", US: "Estados Unidos", CA: "Canadá", EU: "Europa" };
 export const PLAN_LABEL: Record<string, string> = { ALERTA: "Alerta", ALERTA_VENDAS: "Alerta + Vendas", ILIMITADO: "Ilimitado" };
 export const CHANNEL_LABEL: Record<string, string> = { EMAIL: "E-mail", WHATSAPP: "WhatsApp", SMS: "SMS", VOICE: "Voz" };
 export const STATUS_LABEL: Record<string, string> = {

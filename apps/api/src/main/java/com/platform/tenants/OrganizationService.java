@@ -110,6 +110,7 @@ public class OrganizationService {
         jdbc.update("INSERT INTO organization_members (id, organization_id, user_id, role, status) VALUES (?,?,?,'OWNER','ACTIVE')",
                 Ids.newId(), o.getId(), ownerId);
         jdbc.update("INSERT INTO organization_settings (organization_id) VALUES (?)", o.getId());
+        jdbc.update("INSERT INTO organization_onboarding (organization_id) VALUES (?)", o.getId()); // mandatory onboarding starts
         String status = switch (tax.type()) { case "NONE", "OTHER" -> "UNVERIFIED"; default -> "FORMAT_VALID"; };
         jdbc.update("""
                 INSERT INTO tax_profiles (id, organization_id, country_code, customer_type, tax_id_type, tax_id, tax_id_status, municipal_registration, us_state)

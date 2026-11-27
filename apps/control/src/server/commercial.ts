@@ -48,7 +48,7 @@ async function adminCall<T>(ctx: AuthContext, target: Target, method: "GET" | "P
   return (await r.json()) as T;
 }
 
-const MARKETS = new Set(["BR", "LATAM", "NA", "EU"]);
+const MARKETS = new Set(["BR", "LATAM", "US", "CA", "EU"]);
 const PLANS = new Set(["ALERTA", "ALERTA_VENDAS", "ILIMITADO"]);
 const CHANNELS = new Set(["EMAIL", "WHATSAPP", "SMS"]);
 function check(set: Set<string>, v: string, what: string) {

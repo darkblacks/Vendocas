@@ -19,9 +19,15 @@ import java.time.Instant;
 import java.util.*;
 
 /**
- * Sales Registry (plan Alerta + Vendas and above): sales made at the counter, on WhatsApp or Instagram are registered in
- * the Vendocas and become COMPLETED orders of the customer — so the CRM stage, the "thank you" alert and the reports
- * treat them exactly like an online purchase. Prices of catalogue products come from the server, never from the client.
+ * Vendocas PDV (sales registry). The Vendocas does not sell: the store registers what a customer bought elsewhere (counter,
+ * WhatsApp, Instagram) so the CRM learns the customer's behaviour. Each sale becomes a COMPLETED order of the customer — the
+ * B2C stage, the "thank you" alert and the reports treat it exactly like an online purchase.
+ *
+ * <ul>
+ *   <li>Every plan: "venda seca" — customer + amount paid (enough for average ticket and repurchase window).</li>
+ *   <li>PRODUCT_CATALOG (Alerta + Vendas and up): products and items, so the CRM knows <i>what</i> each customer buys.
+ *       Catalogue prices come from the server, never from the client.</li>
+ * </ul>
  */
 @Service
 public class SalesService {
@@ -54,7 +60,7 @@ public class SalesService {
     public record ProductView(UUID id, String name, String sku, long priceMinor, String currency, String category, boolean active) {}
 
     public List<ProductView> products(UUID org, String q, boolean includeInactive) {
-        entitlements.require(org, EntitlementService.SALES_REGISTRY);
+        entitlements.require(org, EntitlementService.PRODUCT_CATALOG);
         return jdbc.query("""
                 SELECT id, name, sku, price_minor, currency, category, active FROM products WHERE organization_id = ? AND (? OR active)
                   AND (?::text IS NULL OR lower(name) LIKE ? OR lower(COALESCE(sku,'')) LIKE ?) ORDER BY name LIMIT 500""",
@@ -66,7 +72,7 @@ public class SalesService {
 
     @Transactional
     public UUID saveProduct(UUID org, UUID userId, UUID id, ProductInput in) {
-        entitlements.require(org, EntitlementService.SALES_REGISTRY);
+        entitlements.require(org, EntitlementService.PRODUCT_CATALOG);
         String sku = in.sku() == null || in.sku().isBlank() ? null : in.sku().trim();
         if (sku != null) {
             Integer dup = jdbc.queryForObject("SELECT count(*) FROM products WHERE organization_id = ? AND sku = ? AND (?::uuid IS NULL OR id <> ?)",
@@ -93,7 +99,8 @@ public class SalesService {
 
     public record ItemInput(UUID productId, @Size(max = 200) String description, @Min(1) @Max(10000) int quantity, @PositiveOrZero Long unitAmountMinor) {}
 
-    public record SaleInput(UUID contactId, @Valid NewCustomer customer, @NotEmpty @Size(max = 100) List<@Valid ItemInput> items,
+    public record SaleInput(UUID contactId, @Valid NewCustomer customer, @Size(max = 100) List<@Valid ItemInput> items,
+                            /* "venda seca": amount paid, used when there are no items */ @Positive Long amountMinor,
                             @Pattern(regexp = "[A-Z]{3}") String currency, @NotBlank String paymentMethod, @NotBlank String salesChannel,
                             Instant occurredAt, @Size(max = 500) String notes,
                             /* "accepts alerts" checkbox: channels the customer agreed to receive alerts on */
@@ -108,10 +115,13 @@ public class SalesService {
         if (!CHANNELS.contains(in.salesChannel())) throw ApiException.badRequest("Invalid sales channel");
         if (in.occurredAt() != null && in.occurredAt().isAfter(Instant.now().plusSeconds(300))) throw ApiException.badRequest("Sale date is in the future");
 
-        // ---- items: catalogue prices are authoritative ----
+        // ---- items (catalogue plans) or just the amount paid ("venda seca") ----
         record Line(UUID productId, String description, int quantity, long unit, String currency) {}
         List<Line> lines = new ArrayList<>();
-        for (ItemInput it : in.items()) {
+        List<ItemInput> items = in.items() == null ? List.of() : in.items();
+        if (items.isEmpty() && (in.amountMinor() == null || in.amountMinor() <= 0)) throw ApiException.badRequest("Inform the amount paid or the items");
+        if (!items.isEmpty()) entitlements.require(org, EntitlementService.PRODUCT_CATALOG);
+        for (ItemInput it : items) {
             if (it.productId() != null) {
                 var p = jdbc.queryForList("SELECT name, price_minor, currency FROM products WHERE id = ? AND organization_id = ? AND active", it.productId(), org);
                 if (p.isEmpty()) throw ApiException.notFound("Product");
@@ -130,6 +140,7 @@ public class SalesService {
         if (lines.stream().anyMatch(l -> l.currency() != null && !l.currency().equals(currency))) throw ApiException.badRequest("All items must use the sale currency");
         long total = 0;
         for (Line l : lines) total = Math.addExact(total, Math.multiplyExact(l.unit(), (long) l.quantity()));
+        if (lines.isEmpty()) total = in.amountMinor();
 
         // ---- customer ----
         UUID contactId = in.contactId();

@@ -18,7 +18,7 @@ import java.util.UUID;
  */
 @Service
 public class MarketService {
-    public static final Set<String> CODES = Set.of("BR", "LATAM", "NA", "EU");
+    public static final Set<String> CODES = Set.of("BR", "LATAM", "US", "CA", "EU");
     static final Set<String> CHANNELS = Set.of("EMAIL", "WHATSAPP", "SMS");
     private final JdbcTemplate jdbc;
 
@@ -44,7 +44,7 @@ public class MarketService {
     }
 
     public List<Market> list() {
-        return jdbc.query("SELECT " + COLS + " FROM markets ORDER BY CASE code WHEN 'BR' THEN 1 WHEN 'LATAM' THEN 2 WHEN 'NA' THEN 3 ELSE 4 END",
+        return jdbc.query("SELECT " + COLS + " FROM markets ORDER BY CASE code WHEN 'BR' THEN 1 WHEN 'LATAM' THEN 2 WHEN 'US' THEN 3 WHEN 'CA' THEN 4 ELSE 5 END",
                 (rs, i) -> map(rs));
     }
 

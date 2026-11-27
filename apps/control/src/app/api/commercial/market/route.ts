@@ -5,7 +5,7 @@ import { updateMarket } from "@/server/commercial";
 
 export const dynamic = "force-dynamic";
 const Input = z.object({
-  target: z.enum(["TEST", "LIVE"]), market: z.enum(["BR", "LATAM", "NA", "EU"]),
+  target: z.enum(["TEST", "LIVE"]), market: z.enum(["BR", "LATAM", "US", "CA", "EU"]),
   name: z.string().min(1).max(60).optional(), defaultLocale: z.string().max(35).optional(), locales: z.array(z.string().max(35)).max(20).optional(),
   channelOrder: z.array(z.enum(["EMAIL", "WHATSAPP", "SMS"])).max(3).optional(),
   sendWindowStart: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(), sendWindowEnd: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/).optional(),

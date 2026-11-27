@@ -474,6 +474,54 @@
                 }
             }
         },
+        "/api/v1/onboarding": {
+            "get": {
+                "tags": [
+                    "onboarding"
+                ],
+                "operationId": "get",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/State"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "onboarding"
+                ],
+                "operationId": "save",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Update"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/State"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/members/{userId}/role": {
             "put": {
                 "tags": [
@@ -508,12 +556,182 @@
                 }
             }
         },
+        "/api/v1/crm/personas/{id}": {
+            "put": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "update_2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PersonaInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Persona"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "delete",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/deals/{id}": {
+            "put": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "update_3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DealInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Deal"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "delete_1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/customers/{id}/whatsapp": {
+            "put": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "setWhatsapp",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WhatsappStatus"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/contacts/{id}": {
             "get": {
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "get",
+                "operationId": "get_1",
                 "parameters": [
                     {
                         "name": "id",
@@ -542,7 +760,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "update_2",
+                "operationId": "update_4",
                 "parameters": [
                     {
                         "name": "id",
@@ -722,7 +940,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "update_3",
+                "operationId": "update_5",
                 "parameters": [
                     {
                         "name": "id",
@@ -790,7 +1008,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "get_1",
+                "operationId": "get_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -819,7 +1037,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "save",
+                "operationId": "save_1",
                 "parameters": [
                     {
                         "name": "id",
@@ -1581,6 +1799,26 @@
                 }
             }
         },
+        "/api/v1/onboarding/complete": {
+            "post": {
+                "tags": [
+                    "onboarding"
+                ],
+                "operationId": "complete",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/State"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/notifications/{id}/read": {
             "post": {
                 "tags": [
@@ -2023,6 +2261,194 @@
                 }
             }
         },
+        "/api/v1/crm/personas": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "list_5",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Persona"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "create_3",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PersonaInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Persona"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/personas/{id}/customers": {
+            "post": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "assign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Assign"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "integer",
+                                        "format": "int32"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/deals": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "board",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Column"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "create_4",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/DealInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Deal"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/deals/{id}/move": {
+            "post": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "move",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Move"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Deal"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversations/{id}/reply": {
             "post": {
                 "tags": [
@@ -2069,7 +2495,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "list_5",
+                "operationId": "list_6",
                 "parameters": [
                     {
                         "name": "q",
@@ -2159,7 +2585,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "create_3",
+                "operationId": "create_5",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2536,7 +2962,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "list_6",
+                "operationId": "list_7",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2557,7 +2983,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "create_4",
+                "operationId": "create_6",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2795,7 +3221,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "list_7",
+                "operationId": "list_8",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2816,7 +3242,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "create_5",
+                "operationId": "create_7",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -3716,7 +4142,7 @@
                 "tags": [
                     "conversations"
                 ],
-                "operationId": "update_4",
+                "operationId": "update_6",
                 "parameters": [
                     {
                         "name": "id",
@@ -3815,7 +4241,7 @@
                 "tags": [
                     "merchants-controller"
                 ],
-                "operationId": "list_8",
+                "operationId": "list_9",
                 "parameters": [
                     {
                         "name": "X-Control-Admin-Token",
@@ -4088,7 +4514,7 @@
                 "tags": [
                     "markets"
                 ],
-                "operationId": "list_9",
+                "operationId": "list_10",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4240,7 +4666,7 @@
                 "tags": [
                     "notifications"
                 ],
-                "operationId": "list_10",
+                "operationId": "list_11",
                 "parameters": [
                     {
                         "name": "unread",
@@ -4274,7 +4700,7 @@
                 "tags": [
                     "messages"
                 ],
-                "operationId": "list_11",
+                "operationId": "list_12",
                 "parameters": [
                     {
                         "name": "status",
@@ -4461,6 +4887,32 @@
                         "required": false,
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    {
+                        "name": "whatsapp",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "persona",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "vipOnly",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
                         }
                     },
                     {
@@ -4685,7 +5137,7 @@
                 "tags": [
                     "channels"
                 ],
-                "operationId": "list_12",
+                "operationId": "list_13",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5241,7 +5693,7 @@
                 "tags": [
                     "audit"
                 ],
-                "operationId": "list_13",
+                "operationId": "list_14",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5538,6 +5990,39 @@
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/personas/{id}/customers/{contactId}": {
+            "delete": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "unassign",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "contactId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
                     }
                 }
             }
@@ -6163,6 +6648,76 @@
                     }
                 }
             },
+            "Update": {
+                "type": "object",
+                "properties": {
+                    "storeName": {
+                        "type": "string",
+                        "maxLength": 250,
+                        "minLength": 1
+                    },
+                    "businessSegment": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "minLength": 0
+                    },
+                    "alertContact": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 0
+                    },
+                    "whatsappChoice": {
+                        "type": "string",
+                        "pattern": "CONNECT_OWN|PROVISION_NUMBER"
+                    },
+                    "emailChoice": {
+                        "type": "string",
+                        "pattern": "OWN_ADDRESS|VENDOCAS_ADDRESS"
+                    },
+                    "emailAddress": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254,
+                        "minLength": 0
+                    }
+                }
+            },
+            "State": {
+                "type": "object",
+                "properties": {
+                    "completed": {
+                        "type": "boolean"
+                    },
+                    "completedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "storeName": {
+                        "type": "string"
+                    },
+                    "businessSegment": {
+                        "type": "string"
+                    },
+                    "alertContact": {
+                        "type": "string"
+                    },
+                    "whatsappChoice": {
+                        "type": "string"
+                    },
+                    "emailChoice": {
+                        "type": "string"
+                    },
+                    "emailAddress": {
+                        "type": "string"
+                    },
+                    "whatsappChannelStatus": {
+                        "type": "string"
+                    },
+                    "emailChannelStatus": {
+                        "type": "string"
+                    }
+                }
+            },
             "ChangeRoleRequest": {
                 "type": "object",
                 "properties": {
@@ -6175,6 +6730,201 @@
                 "required": [
                     "role"
                 ]
+            },
+            "PersonaInput": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 80,
+                        "minLength": 0
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "minLength": 0
+                    },
+                    "color": {
+                        "type": "string",
+                        "pattern": "^#[0-9A-Fa-f]{6}$"
+                    },
+                    "productIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                },
+                "required": [
+                    "name"
+                ]
+            },
+            "Persona": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "color": {
+                        "type": "string"
+                    },
+                    "products": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProductRef"
+                        }
+                    },
+                    "customers": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "averageTicketMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "purchases": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "topWeekday": {
+                        "type": "string"
+                    },
+                    "topProducts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "ProductRef": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "DealInput": {
+                "type": "object",
+                "properties": {
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "companyName": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 0
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 200,
+                        "minLength": 0
+                    },
+                    "valueMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                    },
+                    "currency": {
+                        "type": "string",
+                        "pattern": "[A-Z]{3}"
+                    },
+                    "expectedCloseOn": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "maxLength": 2000,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "title"
+                ]
+            },
+            "Deal": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contactName": {
+                        "type": "string"
+                    },
+                    "companyName": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "stage": {
+                        "type": "string"
+                    },
+                    "position": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "valueMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "expectedCloseOn": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "lostReason": {
+                        "type": "string"
+                    },
+                    "closedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "WhatsappStatus": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string"
+                    }
+                }
             },
             "ContactInput": {
                 "type": "object",
@@ -7275,6 +8025,11 @@
                         "maxItems": 100,
                         "minItems": 0
                     },
+                    "amountMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "exclusiveMinimum": 0
+                    },
                     "currency": {
                         "type": "string",
                         "pattern": "[A-Z]{3}"
@@ -7305,7 +8060,6 @@
                     }
                 },
                 "required": [
-                    "items",
                     "paymentMethod",
                     "salesChannel"
                 ]
@@ -7780,6 +8534,39 @@
                         "type": "string"
                     }
                 }
+            },
+            "Assign": {
+                "type": "object",
+                "properties": {
+                    "contactIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                }
+            },
+            "Move": {
+                "type": "object",
+                "properties": {
+                    "stage": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "index": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "lostReason": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "stage"
+                ]
             },
             "ReplyRequest": {
                 "type": "object",
@@ -9232,6 +10019,22 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "vip": {
+                        "type": "boolean"
+                    },
+                    "whatsappStatus": {
+                        "type": "string"
+                    },
+                    "nextExpectedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "personas": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             },
@@ -9249,6 +10052,28 @@
                         "type": "array",
                         "items": {
                             "$ref": "#/components/schemas/CustomerRow"
+                        }
+                    }
+                }
+            },
+            "Column": {
+                "type": "object",
+                "properties": {
+                    "stage": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "valueMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "deals": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Deal"
                         }
                     }
                 }
@@ -9337,6 +10162,16 @@
                         "items": {
                             "type": "string"
                         }
+                    },
+                    "vip": {
+                        "type": "boolean"
+                    },
+                    "windowDays": {
+                        "type": "number"
+                    },
+                    "nextExpectedAt": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 }
             },

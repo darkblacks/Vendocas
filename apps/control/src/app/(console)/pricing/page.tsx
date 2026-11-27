@@ -28,7 +28,7 @@ export default function PricingPage() {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Segmented label="Ambiente" value={target} onChange={(v) => setTarget(v as Target)} options={[["TEST", "Homologação"], ["LIVE", "Produção"]]} />
-        <Segmented label="Mercado" value={market} onChange={(v) => setMarket(v as MarketCode)} options={(["BR", "LATAM", "NA", "EU"] as MarketCode[]).map((c) => [c, MARKET_LABEL[c]])} />
+        <Segmented label="Mercado" value={market} onChange={(v) => setMarket(v as MarketCode)} options={(["BR", "LATAM", "US", "CA", "EU"] as MarketCode[]).map((c) => [c, MARKET_LABEL[c]])} />
       </div>
       {q.error && <Alert tone="bad">{q.error}</Alert>}
       {!q.data && !q.error && <p className="text-sm text-muted-foreground">Carregando…</p>}

@@ -17,7 +17,9 @@ public class EntitlementService {
             CHANNEL_VOICE = "CHANNEL_VOICE", CAMPAIGNS_DAILY = "CAMPAIGNS_DAILY", AUTOMATIONS = "AUTOMATIONS", REPORTS = "REPORTS";
     /** Plans Alerta / Alerta + Vendas: automatic alerts only — no campaigns, no conversations, fixed alert footer. */
     public static final String ALERTS = "ALERTS", ALERTS_ONLY = "ALERTS_ONLY", CRM = "CRM", SALES_REGISTRY = "SALES_REGISTRY",
-            CAMPAIGNS = "CAMPAIGNS", CUSTOM_SEGMENTS = "CUSTOM_SEGMENTS", INBOX = "INBOX";
+            CAMPAIGNS = "CAMPAIGNS", CUSTOM_SEGMENTS = "CUSTOM_SEGMENTS", INBOX = "INBOX",
+            /** Plan Alerta + Vendas and up: product catalogue in the PDV, Personas, B2C/B2B kanbans and churn views. */
+            PRODUCT_CATALOG = "PRODUCT_CATALOG", PERSONAS = "PERSONAS", PIPELINE = "PIPELINE";
     private final JdbcTemplate jdbc;
 
     public EntitlementService(JdbcTemplate jdbc) { this.jdbc = jdbc; }

@@ -56,8 +56,8 @@ class MarketsPlansCrmIT extends IntegrationTest {
         assertThat(market(fx.brazil().orgId())).isEqualTo("BR:BRL");
         assertThat(market(fx.tenant("MX", "NONE", null).orgId())).isEqualTo("LATAM:USD");
         assertThat(market(fx.tenant("AR", "OTHER", "30-71234567-1").orgId())).isEqualTo("LATAM:USD");
-        assertThat(market(fx.tenant("CA", "NONE", null).orgId())).isEqualTo("NA:USD");
-        assertThat(market(fx.tenant("US", "NONE", null).orgId())).isEqualTo("NA:USD");
+        assertThat(market(fx.tenant("CA", "NONE", null).orgId())).isEqualTo("CA:USD");
+        assertThat(market(fx.tenant("US", "NONE", null).orgId())).isEqualTo("US:USD");
         assertThat(market(fx.tenant("GB", "NONE", null).orgId())).isEqualTo("EU:EUR");
         assertThat(market(fx.tenant("GF", "NONE", null).orgId())).isEqualTo("EU:EUR");
         assertThat(market(fx.tenant("DE", "EU_VAT", "DE123456789").orgId())).isEqualTo("EU:EUR");
@@ -108,20 +108,20 @@ class MarketsPlansCrmIT extends IntegrationTest {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM audit_logs WHERE action IN ('price.set','quota.set') AND details->>'actor' LIKE 'control-center:%'",
                 Integer.class)).isGreaterThanOrEqualTo(3);
 
-        mvc.perform(put("/internal/commercial/markets/NA").header("X-Control-Admin-Token", ADMIN).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put("/internal/commercial/markets/CA").header("X-Control-Admin-Token", ADMIN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"channelOrder\":[\"EMAIL\",\"FAX\"]}")).andExpect(status().isBadRequest());
     }
 
     @Test
     void closedMarketRejectsSignupAndHidesStorefront() throws Exception {
-        mvc.perform(put("/internal/commercial/markets/NA").header("X-Control-Admin-Token", ADMIN).contentType(MediaType.APPLICATION_JSON)
+        mvc.perform(put("/internal/commercial/markets/CA").header("X-Control-Admin-Token", ADMIN).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"enabled\":false}")).andExpect(status().isOk()).andExpect(jsonPath("$.enabled").value(false));
         try {
-            mvc.perform(get("/api/v1/public/markets/NA/plans")).andExpect(status().isNotFound());
+            mvc.perform(get("/api/v1/public/markets/CA/plans")).andExpect(status().isNotFound());
             org.assertj.core.api.Assertions.assertThatThrownBy(() -> fx.tenant("CA", "NONE", null))
                     .hasMessageContaining("not open in this market");
         } finally {
-            mvc.perform(put("/internal/commercial/markets/NA").header("X-Control-Admin-Token", ADMIN).contentType(MediaType.APPLICATION_JSON)
+            mvc.perform(put("/internal/commercial/markets/CA").header("X-Control-Admin-Token", ADMIN).contentType(MediaType.APPLICATION_JSON)
                     .content("{\"enabled\":true}")).andExpect(status().isOk());
         }
     }
@@ -222,44 +222,53 @@ class MarketsPlansCrmIT extends IntegrationTest {
     String stage(UUID contact) { return jdbc.queryForObject("SELECT stage FROM contact_metrics WHERE contact_id = ?", String.class, contact); }
 
     @Test
-    void stagesFollowPurchasesAndChangesBecomeEvents() throws Exception {
+    void b2cStagesFollowEachCustomersOwnWindow() throws Exception {
         var t = fx.brazil();
         fx.activeSubscription(t.orgId(), "ALERTA_VENDAS");
-        UUID fresh = buyer(t.orgId(), "Novo"), loyal = buyer(t.orgId(), "Fiel"), risk = buyer(t.orgId(), "Risco"), gone = buyer(t.orgId(), "Sumido"),
-                visitor = buyer(t.orgId(), "Visitante");
+        UUID fresh = buyer(t.orgId(), "Novo"), loyal = buyer(t.orgId(), "Fiel"), window = buyer(t.orgId(), "Janela"), risk = buyer(t.orgId(), "Risco"),
+                gone = buyer(t.orgId(), "Sumido"), visitor = buyer(t.orgId(), "Visitante");
         order(t.orgId(), fresh, 10000, 2);
-        order(t.orgId(), loyal, 10000, 20);
+        order(t.orgId(), loyal, 10000, 20);   // comes every 15 days, bought 5 days ago → first half of the window
         order(t.orgId(), loyal, 15000, 5);
-        order(t.orgId(), risk, 8000, 60);
-        order(t.orgId(), gone, 5000, 120);
+        order(t.orgId(), window, 8000, 32);   // comes every 20 days, bought 12 days ago → second half: the moment to come back
+        order(t.orgId(), window, 8000, 12);
+        order(t.orgId(), risk, 8000, 60);     // one purchase, store window 30 days → past the window
+        order(t.orgId(), gone, 5000, 120);    // past 3× the window
         crm.recompute(t.orgId());
 
-        // Store with fewer than 3 repeat buyers → 30-day reference: at risk after 45 days, inactive after 90.
-        assertThat(stage(fresh)).isEqualTo("NEW");
+        assertThat(stage(fresh)).isEqualTo("FIRST_SALE");
         assertThat(stage(loyal)).isEqualTo("RECURRING");
-        assertThat(stage(risk)).isEqualTo("AT_RISK");
-        assertThat(stage(gone)).isEqualTo("INACTIVE");
+        assertThat(stage(window)).isEqualTo("IN_WINDOW");
+        assertThat(stage(risk)).isEqualTo("CHURN_RISK");
+        assertThat(stage(gone)).isEqualTo("CHURNED");
         assertThat(stage(visitor)).isEqualTo("VISITOR");
-        assertThat(jdbc.queryForObject("SELECT orders_count FROM contact_metrics WHERE contact_id = ?", Integer.class, loyal)).isEqualTo(2);
-        // First classifications are silent; the only change so far is the loyal customer's second purchase (NEW → RECURRING).
+        assertThat(jdbc.queryForObject("SELECT window_days FROM contact_metrics WHERE contact_id = ?", java.math.BigDecimal.class, loyal)).isEqualByComparingTo("15");
+        // First classifications are silent; second purchases moved Fiel (FIRST_SALE → RECURRING) and Janela (CHURN_RISK → IN_WINDOW).
         assertThat(jdbc.queryForList("SELECT contact_id FROM contact_events WHERE organization_id = ? AND type = 'STAGE_CHANGED'", UUID.class, t.orgId()))
-                .containsExactly(loyal);
+                .containsExactlyInAnyOrder(loyal, window);
 
         order(t.orgId(), risk, 9000, 0); // comes back
         assertThat(stage(risk)).isEqualTo("RECURRING");
         var ev = jdbc.queryForMap("SELECT properties->>'from' AS f, properties->>'to' AS t FROM contact_events WHERE contact_id = ? AND type = 'STAGE_CHANGED'", risk);
-        assertThat(ev.get("f")).isEqualTo("AT_RISK");
+        assertThat(ev.get("f")).isEqualTo("CHURN_RISK");
         assertThat(ev.get("t")).isEqualTo("RECURRING");
 
         String auth = "Bearer " + t.token();
-        mvc.perform(get("/api/v1/crm/customers?stage=INACTIVE").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
+        mvc.perform(get("/api/v1/crm/customers?stage=CHURNED").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].name").value("Sumido"));
         mvc.perform(get("/api/v1/crm/kanban").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[?(@.stage == 'RECURRING')].count").value(2));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(5)).andExpect(jsonPath("$[0].stage").value("FIRST_SALE"))
+                .andExpect(jsonPath("$[?(@.stage == 'RECURRING')].count").value(2));
         mvc.perform(get("/api/v1/crm/customers/" + loyal).header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.averageTicketMinor").value(12500));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.averageTicketMinor").value(12500)).andExpect(jsonPath("$.nextExpectedAt").isNotEmpty());
         mvc.perform(get("/api/v1/crm/summary").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.stages.INACTIVE").value(1)).andExpect(jsonPath("$.atRisk").value(0));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.stages.CHURNED").value(1)).andExpect(jsonPath("$.atRisk").value(0));
+
+        // The kanban (and churn views) are part of the R$ 29,90 plan, not the alert plan.
+        var alertOnly = fx.brazil();
+        fx.activeSubscription(alertOnly.orgId(), "ALERTA");
+        mvc.perform(get("/api/v1/crm/kanban").header("Authorization", "Bearer " + alertOnly.token()).header("X-Organization-Id", alertOnly.orgId().toString()))
+                .andExpect(status().isPaymentRequired());
     }
 
     // ------------------------------------------------------------------ Sales Registry
@@ -271,8 +280,16 @@ class MarketsPlansCrmIT extends IntegrationTest {
         String sale = """
                 {"customer":{"name":"Ana Ribeiro","phone":"(21) 99876-1234"},"paymentMethod":"PIX","salesChannel":"STORE","alertConsents":["WHATSAPP"],
                  "items":[%s{"description":"Meia de lã","quantity":2,"unitAmountMinor":3900}]}""";
+        // Alert plan: items/products need the catalogue (R$ 29,90)…
         mvc.perform(post("/api/v1/sales").header("Authorization", "Bearer " + alertOnly.token()).header("X-Organization-Id", alertOnly.orgId().toString())
                 .contentType(MediaType.APPLICATION_JSON).content(sale.formatted(""))).andExpect(status().isPaymentRequired());
+        // …but the "venda seca" (customer + amount paid) works on every plan.
+        mvc.perform(post("/api/v1/sales").header("Authorization", "Bearer " + alertOnly.token()).header("X-Organization-Id", alertOnly.orgId().toString())
+                .contentType(MediaType.APPLICATION_JSON).content("""
+                        {"customer":{"name":"Seca","phone":"(21) 99876-0000"},"amountMinor":15990,"paymentMethod":"CASH","salesChannel":"STORE"}"""))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.totalMinor").value(15990));
+        mvc.perform(get("/api/v1/products").header("Authorization", "Bearer " + alertOnly.token()).header("X-Organization-Id", alertOnly.orgId().toString()))
+                .andExpect(status().isPaymentRequired());
 
         var t = fx.brazil();
         fx.activeSubscription(t.orgId(), "ALERTA_VENDAS");
@@ -286,7 +303,7 @@ class MarketsPlansCrmIT extends IntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalMinor").value(28900 + 2 * 3900)).andExpect(jsonPath("$.currency").value("BRL"));
 
         UUID contact = jdbc.queryForObject("SELECT id FROM contacts WHERE organization_id = ? AND phone_e164 = '+5521998761234'", UUID.class, t.orgId());
-        assertThat(stage(contact)).isEqualTo("NEW");
+        assertThat(stage(contact)).isEqualTo("FIRST_SALE");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM order_items i JOIN orders o ON o.id = i.order_id WHERE o.contact_id = ?", Integer.class, contact)).isEqualTo(2);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM contact_consents WHERE contact_id = ? AND channel = 'WHATSAPP' AND status = 'GRANTED'", Integer.class, contact))
                 .isEqualTo(4);
@@ -297,6 +314,97 @@ class MarketsPlansCrmIT extends IntegrationTest {
                 .andExpect(jsonPath("$.newCustomers").value(1)).andExpect(jsonPath("$.byPayment.PIX").value(36700));
         mvc.perform(get("/api/v1/sales").header("Authorization", auth).header("X-Organization-Id", org))
                 .andExpect(status().isOk()).andExpect(jsonPath("$[0].items").value(3)).andExpect(jsonPath("$[0].contactName").value("Ana Ribeiro"));
+    }
+
+    @Test
+    void b2bDealsMoveThroughTheFunnel() throws Exception {
+        var t = fx.brazil();
+        fx.activeSubscription(t.orgId(), "ALERTA_VENDAS");
+        String auth = "Bearer " + t.token(), org = t.orgId().toString();
+        String a = id(mvc.perform(post("/api/v1/crm/deals").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Uniformes 2027\",\"companyName\":\"Escola Sol\",\"valueMinor\":1200000,\"currency\":\"BRL\"}")).andExpect(status().isOk()));
+        String b = id(mvc.perform(post("/api/v1/crm/deals").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Revenda Sul\",\"valueMinor\":500000,\"currency\":\"BRL\"}")).andExpect(status().isOk()));
+        mvc.perform(post("/api/v1/crm/deals/" + b + "/move").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"stage\":\"PROPOSAL\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.stage").value("PROPOSAL"));
+        mvc.perform(post("/api/v1/crm/deals/" + a + "/move").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"stage\":\"PROPOSAL\",\"index\":0}")).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/crm/deals").header("Authorization", auth).header("X-Organization-Id", org)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[1].stage").value("PROPOSAL")).andExpect(jsonPath("$[1].count").value(2)).andExpect(jsonPath("$[1].valueMinor").value(1700000))
+                .andExpect(jsonPath("$[1].deals[0].title").value("Uniformes 2027"));
+        mvc.perform(post("/api/v1/crm/deals/" + b + "/move").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"stage\":\"LOST\",\"lostReason\":\"Preço\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.closedAt").isNotEmpty()).andExpect(jsonPath("$.lostReason").value("Preço"));
+        var other = fx.brazil();
+        fx.activeSubscription(other.orgId(), "ALERTA_VENDAS");
+        mvc.perform(post("/api/v1/crm/deals/" + a + "/move").header("Authorization", "Bearer " + other.token()).header("X-Organization-Id", other.orgId().toString())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"stage\":\"WON\"}")).andExpect(status().isNotFound());
+    }
+
+    String id(org.springframework.test.web.servlet.ResultActions r) throws Exception {
+        return r.andReturn().getResponse().getContentAsString().replaceAll("^\\{\"id\":\"([^\"]+)\".*", "$1");
+    }
+
+    @Test
+    void personasLinkCustomersAndProductsAndShowBehaviour() throws Exception {
+        var t = fx.brazil();
+        fx.activeSubscription(t.orgId(), "ALERTA_VENDAS");
+        String auth = "Bearer " + t.token(), org = t.orgId().toString();
+        String product = mvc.perform(post("/api/v1/products").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Tênis escolar\",\"priceMinor\":19900,\"currency\":\"BRL\"}")).andReturn().getResponse().getContentAsString()
+                .replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+        String persona = id(mvc.perform(post("/api/v1/crm/personas").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Mãe prática\",\"productIds\":[\"" + product + "\"]}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.products[0].name").value("Tênis escolar")));
+        UUID c1 = buyer(t.orgId(), "Mae Um"), c2 = buyer(t.orgId(), "Mae Dois");
+        order(t.orgId(), c1, 20000, 3);
+        order(t.orgId(), c2, 10000, 10);
+        mvc.perform(post("/api/v1/crm/personas/" + persona + "/customers").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"contactIds\":[\"" + c1 + "\",\"" + c2 + "\"]}")).andExpect(status().isOk()).andExpect(jsonPath("$.added").value(2));
+        mvc.perform(get("/api/v1/crm/personas").header("Authorization", auth).header("X-Organization-Id", org)).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].customers").value(2)).andExpect(jsonPath("$[0].averageTicketMinor").value(15000))
+                .andExpect(jsonPath("$[0].topWeekday").isNotEmpty());
+        mvc.perform(get("/api/v1/crm/customers?persona=" + persona).header("Authorization", auth).header("X-Organization-Id", org))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2)).andExpect(jsonPath("$.items[0].personas[0]").value("Mãe prática"));
+        mvc.perform(post("/api/v1/crm/personas").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Mãe prática\"}")).andExpect(status().isConflict());
+        var alertOnly = fx.brazil();
+        fx.activeSubscription(alertOnly.orgId(), "ALERTA");
+        mvc.perform(get("/api/v1/crm/personas").header("Authorization", "Bearer " + alertOnly.token()).header("X-Organization-Id", alertOnly.orgId().toString()))
+                .andExpect(status().isPaymentRequired());
+    }
+
+    @Test
+    void onboardingCannotBeSkipped() throws Exception {
+        var t = fx.brazil();
+        String auth = "Bearer " + t.token(), org = t.orgId().toString();
+        mvc.perform(get("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(false));
+        mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.whatsappChoice").value("required"));
+        mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"storeName\":\"Transmassa\",\"businessSegment\":\"Calçados\",\"alertContact\":\"(11) 98888-0000\",\"whatsappChoice\":\"CONNECT_OWN\",\"emailChoice\":\"OWN_ADDRESS\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.emailAddress").value("required"));
+        mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"emailChoice\":\"VENDOCAS_ADDRESS\"}")).andExpect(status().isOk());
+        mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(true)).andExpect(jsonPath("$.storeName").value("Transmassa"));
+        assertThat(jdbc.queryForObject("SELECT alert_contact FROM organization_settings WHERE organization_id = ?", String.class, t.orgId())).isEqualTo("(11) 98888-0000");
+    }
+
+    @Test
+    void storeTellsWhetherANumberHasWhatsapp() throws Exception {
+        var t = fx.brazil();
+        String auth = "Bearer " + t.token(), org = t.orgId().toString();
+        UUID c = buyer(t.orgId(), "Zap");
+        mvc.perform(put("/api/v1/crm/customers/" + c + "/whatsapp").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"YES\"}")).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/crm/customers?whatsapp=YES").header("Authorization", auth).header("X-Organization-Id", org))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1)).andExpect(jsonPath("$.items[0].whatsappStatus").value("YES"));
+        mvc.perform(put("/api/v1/crm/customers/" + c + "/whatsapp").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"MAYBE\"}")).andExpect(status().isBadRequest());
     }
 
     @Test
