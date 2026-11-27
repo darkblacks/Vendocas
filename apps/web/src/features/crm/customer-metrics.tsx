@@ -9,7 +9,8 @@ import { STAGE_TONE, type Stage } from "@/features/markets";
 interface Metrics {
   stage: Stage; recency?: number | null; frequency?: number | null; monetary?: number | null; orders: number; totalSpentMinor: number;
   spent12mMinor: number; currency?: string | null; firstPurchaseAt?: string | null; lastPurchaseAt?: string | null; avgIntervalDays?: number | null;
-  averageTicketMinor?: number | null; stageChangedAt?: string | null; favoriteProducts: string[];
+  averageTicketMinor?: number | null; stageChangedAt?: string | null; favoriteProducts: string[]; vip: boolean; windowDays?: number | null;
+  nextExpectedAt?: string | null;
 }
 
 /** Stage, RFM and purchase numbers of one customer (computed by the API after every purchase and daily). */
@@ -37,7 +38,9 @@ export function CustomerMetrics({ contactId }: { contactId: string }) {
         {row(t("rfm"), m.recency ? <span title={t("rfmHint")}>{m.recency}-{m.frequency}-{m.monetary}</span> : "—")}
         {row(t("lastPurchase"), date(m.lastPurchaseAt, locale))}
         {row(t("firstPurchase"), date(m.firstPurchaseAt, locale))}
-        {row(t("repurchaseEvery"), m.avgIntervalDays != null ? t("days", { n: Math.round(Number(m.avgIntervalDays)) }) : "—")}
+        {row(t("repurchaseEvery"), m.windowDays != null ? t("days", { n: Math.round(Number(m.windowDays)) }) : "—")}
+        {row(t("nextExpected"), date(m.nextExpectedAt, locale))}
+        {m.vip && row("VIP", t("vipText"))}
         {row(t("spent12m"), money(m.spent12mMinor, m.currency ?? undefined, locale))}
         {row(t("favorites"), m.favoriteProducts.length ? m.favoriteProducts.join(", ") : "—")}
         {m.stageChangedAt && row(t("stageSince"), date(m.stageChangedAt, locale))}

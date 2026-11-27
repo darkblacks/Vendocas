@@ -1,95 +1,106 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { useLocale, useTranslations } from "next-intl";
+import { CheckCircle2, Circle, KanbanSquare, LineChart, MessageSquareHeart, Receipt, UserPlus, UsersRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { money } from "@/lib/format";
 import { useAuth } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
-import { Alert, Button, Card, CardTitle, PageHeader, Spinner, Stat, cn } from "@/components/ui";
-import { OnboardingChecklist } from "@/features/onboarding/checklist";
+import { Card, cn } from "@/components/ui";
 import { QuotaBars } from "@/features/crm/quota-bars";
-import { MARKET_CURRENCY, type Entitlements, type UsageView } from "@/features/markets";
+import { PlanBadge, useEntitlements } from "@/features/plan";
+import { MARKET_CURRENCY, type UsageView } from "@/features/markets";
+import { PRESET_INACTIVE } from "@/features/messages-presets";
 
-interface Summary {
-  currency?: string | null; recoveredMinor: number; recoveredSales: number; messagesSent: number; messagesEngaged: number;
-  sentByChannel: Record<string, number>; atRisk: number; activeCustomers: number; newThisMonth: number; stages: Record<string, number>;
-  byAlert: { automationId: string; name: string; revenueMinor: number; sales: number; sent: number }[];
-}
+interface Summary { currency?: string | null; recoveredMinor: number; recoveredSales: number; stages: Record<string, number>; activeCustomers: number }
+interface Onb { storeName?: string | null; whatsappChannelStatus?: string | null; emailChannelStatus?: string | null }
+interface Automation { id: string; description?: string | null; status: string }
 
-/** Início: what the alerts brought in this month, quota usage, customers at risk and results per alert. */
+/** Início: thanks the store, asks "what do you want to do today?" and shows the first steps and a few numbers. */
 export default function HomePage() {
-  const t = useTranslations("home");
+  const t = useTranslations("journey.home");
   const locale = useLocale();
-  const { me, membership } = useAuth();
+  const { me, orgId } = useAuth();
+  const ent = useEntitlements();
+  const f = ent.data?.features ?? [];
+  const legacy = !!ent.data && !f.includes("ALERTS");
+  const has = (x: string) => legacy || f.includes(x);
+  const onb = useQuery({ queryKey: ["onboarding-state", orgId], enabled: !!orgId, queryFn: () => api<Onb>("/onboarding") });
   const s = useQuery({ queryKey: ["crm-summary"], queryFn: () => api<Summary>("/crm/summary") });
-  const ent = useQuery({ queryKey: ["entitlements"], queryFn: () => api<Entitlements>("/billing/entitlements") });
-  const canSell = ent.data?.features.includes("SALES_REGISTRY");
   const usage = useQuery({ queryKey: ["usage"], queryFn: () => api<UsageView>("/billing/usage") });
-  const d = s.data;
-  const currency = d?.currency ?? (usage.data ? MARKET_CURRENCY[usage.data.market] : "USD");
-  const firstName = me?.fullName?.split(" ")[0];
-  const engagedPct = d && d.messagesSent > 0 ? Math.round((d.messagesEngaged / d.messagesSent) * 100) : null;
+  const customers = useQuery({ queryKey: ["crm", "count"], queryFn: () => api<{ total: number }>("/crm/customers?size=1") });
+  const autos = useQuery({ queryKey: ["automations"], queryFn: () => api<Automation[]>("/automations") });
+  const currency = s.data?.currency ?? (usage.data ? MARKET_CURRENCY[usage.data.market] : "BRL");
+  const firstName = me?.fullName?.split(" ")[0] ?? "";
+  const store = onb.data?.storeName ?? "";
+
+  const actions = [
+    { href: "/app/contacts", icon: UserPlus, title: t("a.customers"), text: t("a.customersText") },
+    { href: "/app/messages", icon: MessageSquareHeart, title: t("a.messages"), text: t("a.messagesText") },
+    { href: "/app/sales", icon: Receipt, title: t("a.pdv"), text: t("a.pdvText") },
+    { href: "/app/insights", icon: LineChart, title: t("a.insights"), text: t("a.insightsText") },
+    { href: "/app/kanban", icon: KanbanSquare, title: t("a.kanban"), text: t("a.kanbanText"), feature: "PIPELINE" },
+    { href: "/app/personas", icon: UsersRound, title: t("a.personas"), text: t("a.personasText"), feature: "PERSONAS" },
+  ];
+  const steps = [
+    { done: onb.data?.whatsappChannelStatus === "ACTIVE" || onb.data?.emailChannelStatus === "ACTIVE", label: t("s.channels"), href: "/app/channels" },
+    { done: (customers.data?.total ?? 0) >= 10, label: t("s.customers"), href: "/app/contacts" },
+    { done: !!autos.data?.some((a) => a.description === PRESET_INACTIVE && a.status === "ACTIVE"), label: t("s.inactive"), href: "/app/messages" },
+    { done: (s.data ? s.data.activeCustomers + (s.data.stages.CHURN_RISK ?? 0) + (s.data.stages.CHURNED ?? 0) : 0) > 0, label: t("s.sale"), href: "/app/sales" },
+  ];
+  const doneCount = steps.filter((x) => x.done).length;
+
   return (
-    <div className="space-y-6">
-      <PageHeader title={firstName ? t("greeting", { name: firstName }) : t("title")}
-        description={[membership?.organizationName, ent.data?.planCode ? (t.has(`plan.${ent.data.planCode}`) ? t(`plan.${ent.data.planCode}`) : ent.data.planCode) : null].filter(Boolean).join(" · ")}
-        actions={canSell && <Button asChild><Link href="/app/sales">{t("registerSale")}</Link></Button>} />
-      <OnboardingChecklist compact />
-      {s.isLoading && <Spinner />}
-      {s.error && <Alert tone="danger" title={String(s.error)} />}
-      {d && (
-        <>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="brand-gradient border-0 shadow-glow">
-              <p className="text-sm opacity-90">{t("recovered")}</p>
-              <p className="mt-1 text-3xl font-bold tabular-nums">{money(d.recoveredMinor, currency, locale)}</p>
-              <p className="text-sm opacity-90">{t("recoveredSales", { n: d.recoveredSales })}</p>
-            </Card>
-            <Stat label={t("sent")} value={d.messagesSent.toLocaleString(locale)} hint={engagedPct == null ? undefined : t("engaged", { pct: engagedPct })} />
-            <Card>
-              <p className="text-sm text-muted-foreground">{t("atRisk")}</p>
-              <p className="mt-1 text-2xl font-semibold tabular-nums">{d.atRisk.toLocaleString(locale)}</p>
-              <Link href="/app/contacts?stage=AT_RISK" className="text-sm text-primary">{t("viewList")}</Link>
-            </Card>
-            <Stat label={t("active")} value={d.activeCustomers.toLocaleString(locale)} hint={t("newThisMonth", { n: d.newThisMonth })} />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <Card>
-              <CardTitle>{t("quota")}</CardTitle>
-              <QuotaBars className="mt-4" />
-            </Card>
-            <Card className="lg:col-span-2">
-              <CardTitle>{t("byAlert")}</CardTitle>
-              {d.byAlert.length === 0
-                ? <p className="mt-3 text-sm text-muted-foreground">{t("noAlerts")} <Link href="/app/automations" className="text-primary">{t("setupAlerts")}</Link></p>
-                : (
-                  <ul className="mt-3 divide-y divide-border text-sm">
-                    {d.byAlert.map((a) => (
-                      <li key={a.automationId} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
-                        <Link href={`/app/automations/${a.automationId}`} className="font-medium hover:text-primary">{a.name}</Link>
-                        <span className="tabular-nums text-muted-foreground">
-                          <b className={cn("text-foreground", a.revenueMinor === 0 && "font-normal")}>{money(a.revenueMinor, currency, locale)}</b>
-                          {" · "}{t("sales", { n: a.sales })}{" · "}{t("sentCount", { n: a.sent })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-            </Card>
-          </div>
-          <Card>
-            <CardTitle>{t("stagesTitle")}</CardTitle>
-            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-              {Object.entries(d.stages).map(([stage, n]) => (
-                <Link key={stage} href={`/app/contacts?stage=${stage}`} className="rounded-lg border border-border p-3 hover:bg-muted">
-                  <p className="text-xs text-muted-foreground">{t(`stages.${stage}`)}</p>
-                  <p className="text-xl font-semibold tabular-nums">{n.toLocaleString(locale)}</p>
-                </Link>
-              ))}
-            </div>
-          </Card>
-        </>
-      )}
+    <div className="mx-auto max-w-6xl space-y-8">
+      <section className="brand-glow rounded-2xl p-6 sm:p-8">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t("welcome", { name: firstName })}</h1>
+        <p className="mt-2 max-w-2xl text-lg text-[#C9D2EA]">{t("love", { store })}</p>
+        <p className="mt-6 text-xl font-semibold">{t("today")}</p>
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {actions.map(({ href, icon: Icon, title, text, feature }) => {
+          const locked = feature ? !has(feature) : false;
+          return (
+            <Link key={href} href={href} className={cn("group flex min-h-40 flex-col gap-3 rounded-2xl border bg-card p-5 transition-colors",
+              locked ? "border-dashed border-border" : "border-border hover:border-primary")}>
+              <span className="flex items-center justify-between">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground"><Icon className="h-5 w-5" aria-hidden /></span>
+                {locked && feature && <PlanBadge feature={feature} />}
+              </span>
+              <span className="text-lg font-semibold group-hover:text-primary">{title}</span>
+              <span className="text-sm text-muted-foreground">{text}</span>
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-1">
+          <div className="flex items-center justify-between"><h2 className="font-semibold">{t("firstSteps")}</h2><span className="text-sm tabular-nums text-muted-foreground">{doneCount}/{steps.length}</span></div>
+          <ul className="mt-3 space-y-1">
+            {steps.map((x) => (
+              <li key={x.label}><Link href={x.href} className="flex min-h-10 items-center gap-3 rounded-lg px-2 text-sm hover:bg-muted">
+                {x.done ? <CheckCircle2 className="h-5 w-5 text-success" aria-label={t("done")} /> : <Circle className="h-5 w-5 text-muted-foreground" aria-label={t("todo")} />}
+                <span className={x.done ? "text-muted-foreground line-through" : ""}>{x.label}</span>
+              </Link></li>
+            ))}
+          </ul>
+        </Card>
+        <Card>
+          <h2 className="font-semibold">{t("numbers")}</h2>
+          <dl className="mt-3 space-y-3 text-sm">
+            <div className="flex justify-between gap-2"><dt className="text-muted-foreground">{t("recovered")}</dt><dd className="font-semibold tabular-nums">{money(s.data?.recoveredMinor ?? 0, currency, locale)}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-muted-foreground">{t("active")}</dt><dd className="font-semibold tabular-nums">{s.data?.activeCustomers ?? "—"}</dd></div>
+            <div className="flex justify-between gap-2"><dt className="text-muted-foreground">{t("churnRisk")}</dt><dd className="font-semibold tabular-nums">{s.data?.stages.CHURN_RISK ?? "—"}</dd></div>
+          </dl>
+          <Link href="/app/insights" className="mt-4 inline-block text-sm text-primary">{t("understand")}</Link>
+        </Card>
+        <Card>
+          <h2 className="font-semibold">{t("quota")}</h2>
+          <QuotaBars className="mt-3" />
+        </Card>
+      </div>
     </div>
   );
 }

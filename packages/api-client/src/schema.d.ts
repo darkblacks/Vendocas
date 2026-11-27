@@ -1940,6 +1940,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/crm/insights/weekdays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["weekdays"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crm/insights/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["replies"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/crm/customers": {
         parameters: {
             query?: never;
@@ -3867,6 +3899,23 @@ export interface components {
             count?: number;
             cards?: components["schemas"]["CustomerRow"][];
         };
+        Weekday: {
+            weekday?: string;
+            /** Format: int64 */
+            purchases?: number;
+            /** Format: int64 */
+            amountMinor?: number;
+        };
+        Reply: {
+            /** Format: uuid */
+            contactId?: string;
+            contactName?: string;
+            stage?: string;
+            channel?: string;
+            body?: string;
+            /** Format: date-time */
+            receivedAt?: string;
+        };
         Column: {
             stage?: string;
             /** Format: int64 */
@@ -4024,13 +4073,13 @@ export interface components {
             textual?: boolean;
             boolean?: boolean;
             binary?: boolean;
-            string?: boolean;
-            integralNumber?: boolean;
             valueNode?: boolean;
             container?: boolean;
             missingNode?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
+            string?: boolean;
+            integralNumber?: boolean;
             number?: boolean;
             embeddedValue?: boolean;
         };
@@ -7900,6 +7949,48 @@ export interface operations {
             };
         };
     };
+    weekdays: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Weekday"][];
+                };
+            };
+        };
+    };
+    replies: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["Reply"][];
+                };
+            };
+        };
+    };
     customers: {
         parameters: {
             query?: {
@@ -7910,6 +8001,7 @@ export interface operations {
                 whatsapp?: string;
                 persona?: string;
                 vipOnly?: boolean;
+                minOrders?: number;
                 sort?: string;
                 dir?: string;
                 page?: number;

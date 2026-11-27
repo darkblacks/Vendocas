@@ -56,14 +56,21 @@
     "conversations": "Conversations",
     "calls": "Calls",
     "channels": "Channels",
-    "billing": "Billing",
+    "billing": "My plan",
     "settings": "Settings",
     "admin": "Platform admin",
     "templates": "Templates",
-    "customers": "Customers",
+    "customers": "My customers",
     "alerts": "Alerts",
     "sales": "Sales registry",
-    "lockedHint": "Not in your plan — see plans"
+    "lockedHint": "Higher-plan feature",
+    "home": "Home",
+    "messages": "My messages",
+    "pdv": "Vendocas Sales",
+    "kanban": "Kanban",
+    "insights": "Understand customers",
+    "personas": "Personas",
+    "main": "Main menu"
   },
   "landing": {
     "heroTitle": "Bring customers back automatically — with your own email, WhatsApp, SMS and phone",
@@ -486,12 +493,12 @@
     "retry": "Try now"
   },
   "stages": {
-    "VISITOR": "Visitor",
-    "NEW": "New",
-    "RECURRING": "Returning",
-    "VIP": "VIP",
-    "AT_RISK": "At risk",
-    "INACTIVE": "Inactive"
+    "VISITOR": "Not bought yet",
+    "FIRST_SALE": "First sale",
+    "RECURRING": "Recurring",
+    "IN_WINDOW": "In window",
+    "CHURN_RISK": "Churn risk",
+    "CHURNED": "Churned"
   },
   "markets": {
     "names": {
@@ -619,15 +626,17 @@
     "rfm": "RFM",
     "lastPurchase": "Last purchase",
     "firstPurchase": "Customer since",
-    "repurchaseEvery": "Buys every",
+    "repurchaseEvery": "Usually comes back every",
     "days": "~{n} days",
     "spent12m": "Spent in 12 months",
     "favorites": "Favourite products",
-    "stageSince": "In this stage since"
+    "stageSince": "In this stage since",
+    "nextExpected": "Expected back",
+    "vipText": "Among the top 10% of buyers"
   },
   "sales": {
-    "title": "Sales registry",
-    "subtitle": "Register counter, WhatsApp and Instagram sales: they count as purchases and trigger the \"thank you\" alert.",
+    "title": "Vendocas Sales (POS)",
+    "subtitle": "Log every purchase made at the counter, on WhatsApp or Instagram. Vendocas doesn't sell: it learns each customer's behaviour.",
     "upgrade": "The Sales registry is part of the Alert + Sales and Unlimited plans.",
     "seePlans": "See plans",
     "soldToday": "Sold today",
@@ -682,11 +691,344 @@
       "ONLINE": "Online",
       "PHONE": "Phone",
       "OTHER": "Other"
-    }
+    },
+    "amountPaid": "Amount paid",
+    "amountHint": "Use just the amount if you don't want to list the products.",
+    "drySaleHint": "Simple sale: who bought and how much they paid. Enough for average ticket and each customer's window.",
+    "itemsOptional": "Products (optional)",
+    "productsLocked": "Logging which products the customer bought is part of the Alert + Sales plan."
   },
   "brand": {
     "slogan": "Every sale is the start of the next one.",
     "highlight": "next one.",
     "tagline": "Relationship CRM for stores"
+  },
+  "journey": {
+    "plans": {
+      "ALERTA_VENDAS": "Alert + Sales plan",
+      "ILIMITADO": "Unlimited plan"
+    },
+    "seePlans": "See plans",
+    "preview": "Preview:",
+    "onboardingOwnerOnly": "The store's setup isn't finished yet. Ask the account owner to complete it.",
+    "onboarding": {
+      "steps": {
+        "store": "Your store",
+        "whatsapp": "WhatsApp",
+        "email": "E-mail"
+      },
+      "progress": "Setup steps",
+      "incomplete": "A step is still unanswered.",
+      "store": {
+        "title": "Let's set up your store",
+        "text": "Three quick steps for vendocas. to start looking after your customers.",
+        "name": "Store name (as customers know it)",
+        "segment": "What you sell",
+        "choose": "Choose…",
+        "contact": "Phone or WhatsApp customers can reach you on",
+        "contactHint": "Shown at the end of messages: \"To talk to the store: …\""
+      },
+      "segments": {
+        "fashion": "Clothing & fashion",
+        "shoes": "Shoes & accessories",
+        "beauty": "Beauty",
+        "food": "Food",
+        "pet": "Pets",
+        "home": "Home & decor",
+        "health": "Health & pharmacy",
+        "services": "Services",
+        "electronics": "Electronics",
+        "other": "Other"
+      },
+      "whatsapp": {
+        "title": "Do you already have WhatsApp Business?",
+        "text": "Messages go out from your store's number. The number is yours, not Vendocas's.",
+        "own": "Yes, I have it",
+        "ownText": "Connect my store's WhatsApp Business.",
+        "new": "I don't have it",
+        "newText": "I want Vendocas to get a number for the store.",
+        "ownHow": "After finishing, open Channels and tap \"Connect with Meta\": sign in with the store's Facebook and choose the number. You can keep using WhatsApp Business on your phone.",
+        "newHow": "Vendocas buys a number and registers it in your store's name. We'll let you know when it's ready."
+      },
+      "email": {
+        "title": "Which e-mail do messages come from?",
+        "text": "If a customer replies, the reply goes to the store's e-mail.",
+        "own": "I have a store e-mail",
+        "ownText": "Send from my address (e.g. hello@mystore.com).",
+        "address": "Store e-mail",
+        "addressHint": "Next we'll show 3 records to add where you bought the domain.",
+        "vendocas": "Use a Vendocas address",
+        "vendocasText": "For stores without their own e-mail domain yet. Ready right away."
+      },
+      "back": "Back",
+      "continue": "Continue",
+      "finish": "Finish",
+      "noSkip": "These three answers are needed for vendocas. to work. You can change them later in Channels and Settings."
+    },
+    "home": {
+      "welcome": "Welcome, {name}!",
+      "love": "We love having {store} with us. Every sale is the start of the next one.",
+      "today": "What do you want to do today?",
+      "a": {
+        "customers": "Add my customers",
+        "customersText": "Name, phone, e-mail and whether they have WhatsApp.",
+        "messages": "Set up my messages",
+        "messagesText": "7-days-without-buying reminder and missed-call follow-up.",
+        "pdv": "Log a sale",
+        "pdvText": "Note who bought and how much they paid in the Vendocas POS.",
+        "insights": "Understand my customers",
+        "insightsText": "Who buys most, who went quiet and why.",
+        "kanban": "See my kanban",
+        "kanbanText": "First sale, recurring, in window, churn risk and churned.",
+        "personas": "Create personas",
+        "personasText": "Group customers by profile and learn when and what they buy."
+      },
+      "firstSteps": "Your first steps",
+      "done": "Done",
+      "todo": "To do",
+      "s": {
+        "channels": "Connect WhatsApp or e-mail",
+        "customers": "Add 10 customers",
+        "inactive": "Turn on the 7-days-without-buying message",
+        "sale": "Log the first sale"
+      },
+      "numbers": "Your relationships today",
+      "recovered": "Sales recovered this month",
+      "active": "Active customers",
+      "churnRisk": "At churn risk",
+      "understand": "Understand my customers",
+      "quota": "This month's messages"
+    },
+    "messages": {
+      "title": "My messages",
+      "subtitle": "Messages that go out on their own. Turn them on, adjust the text, done.",
+      "inactive": {
+        "title": "Gone quiet for 7 days",
+        "when": "Customer hasn't bought for 7 days (or the period you choose)",
+        "subject": "We miss you at [store]",
+        "body": "Hi [name]! We haven't seen you at [store] for a while. Is everything OK? Anything we could do better? Just reply to this message.",
+        "days": "Send after how many days without buying",
+        "daysHint": "Counted from the last logged purchase."
+      },
+      "missed": {
+        "title": "Missed-call follow-up",
+        "when": "The customer called and nobody answered: the message goes out right away",
+        "body": "Hi [name]! We saw your call to [store] and couldn't pick up. We'll call you back shortly!",
+        "requires": "Works when the store's calls go through a number Vendocas can see (a Vendocas number or forwarding of unanswered calls).",
+        "setup": "Set up in Channels"
+      },
+      "statusOn": "On · {sent} sent",
+      "statusOff": "Off",
+      "statusNew": "Not set up yet",
+      "edit": "Edit message",
+      "campaigns": {
+        "title": "Campaigns",
+        "text": "Promotions and scheduled messages to customer groups."
+      },
+      "advanced": "Need something more specific?",
+      "advancedLink": "See advanced automations",
+      "previewStore": "your store",
+      "savedOn": "Message saved and turned on.",
+      "savedOff": "Message saved (off).",
+      "toggle": "Turn on or off",
+      "on": "On",
+      "off": "Off",
+      "channel": "Send via",
+      "channels": {
+        "EMAIL": "E-mail",
+        "SMS": "SMS",
+        "WHATSAPP": "WhatsApp"
+      },
+      "whatsappTemplate": "On WhatsApp the message must be a Meta-approved template before it can go out.",
+      "subject": "E-mail subject",
+      "message": "Message",
+      "variables": "Use {name} for the customer's name and {store} for the store's name.",
+      "preview": "What the customer sees",
+      "footer": "This message is only an alert. To talk to the store: {contact}",
+      "save": "Save",
+      "tokenName": "[name]",
+      "tokenStore": "[store]"
+    },
+    "customers": {
+      "title": "My customers",
+      "subtitle": "Add the people who buy from you — that's how vendocas. knows who to talk to.",
+      "import": "Import spreadsheet",
+      "search": "Search by name, phone or e-mail",
+      "whatsappFilter": "Has WhatsApp",
+      "whatsappAny": "Has WhatsApp: all",
+      "wa": {
+        "YES": "Yes",
+        "NO": "No",
+        "UNKNOWN": "Don't know"
+      },
+      "stageFilter": "Stage",
+      "stageAny": "All stages",
+      "stages": {
+        "VISITOR": "Not bought yet",
+        "FIRST_SALE": "First sale",
+        "RECURRING": "Recurring",
+        "IN_WINDOW": "In window",
+        "CHURN_RISK": "Churn risk",
+        "CHURNED": "Churned"
+      },
+      "add": "Add customer",
+      "name": "Name",
+      "phone": "Phone",
+      "hasWhatsapp": "Does this number have WhatsApp?",
+      "email": "E-mail",
+      "accepts": "The customer agrees to receive messages by",
+      "acceptsHint": "Only tick if the customer agreed. Without consent vendocas. doesn't send.",
+      "consentEvidence": "Consent reported by the store when adding the customer",
+      "saved": "{name} added.",
+      "duplicate": "A customer with this phone or e-mail already exists.",
+      "badPhone": "Invalid phone number.",
+      "save": "Save customer",
+      "empty": "No customers yet",
+      "emptyText": "Add the first one on the left or import a spreadsheet.",
+      "col": {
+        "customer": "Customer",
+        "stage": "Stage",
+        "lastPurchase": "Last purchase",
+        "total": "Total spent"
+      },
+      "total": "{n} customers",
+      "lastPurchaseHint": "Last purchase shows up when you log sales in the POS or connect your online store."
+    },
+    "kanban": {
+      "lockedTitle": "Kanban: see which phase each customer is in",
+      "lockedText": "In B2C, customers move on their own between first sale, recurring, in window, churn risk and churned, based on POS sales. In B2B you track deals.",
+      "title": "Kanban",
+      "b2cText": "Automatic: cards move with POS purchases and the time since each customer's last purchase.",
+      "b2bText": "Deals with companies. Drag cards between stages.",
+      "mode": "Kanban type",
+      "tabs": {
+        "B2C": "B2C · Customers",
+        "B2B": "B2B · Deals"
+      },
+      "b2c": {
+        "FIRST_SALE": "First sale",
+        "RECURRING": "Recurring",
+        "IN_WINDOW": "In window",
+        "CHURN_RISK": "Churn risk",
+        "CHURNED": "Churned"
+      },
+      "b2cHint": {
+        "FIRST_SALE": "Bought once",
+        "RECURRING": "Came back and bought again",
+        "IN_WINDOW": "Around when they usually come back",
+        "CHURN_RISK": "Past the time they usually come back",
+        "CHURNED": "Gone: more than 3× their interval"
+      },
+      "purchases": "{n, plural, one {# purchase} other {# purchases}}",
+      "returnsIn": "Due back in {n} days",
+      "late": "{n} days later than usual",
+      "seeAll": "See all {n}",
+      "b2cAuto": "B2C cards aren't dragged: the phase changes on its own with every logged purchase and every day.",
+      "b2b": {
+        "LEAD": "Lead",
+        "PROPOSAL": "Proposal",
+        "NEGOTIATION": "Negotiation",
+        "WON": "Won",
+        "LOST": "Lost"
+      },
+      "lostReason": "Why was it lost? (optional)",
+      "moveTo": "Move to",
+      "moveOption": "Move to {stage}",
+      "b2bHint": "Drag the cards or use \"Move to\" on each card.",
+      "newDeal": "New deal",
+      "dealTitle": "Deal",
+      "company": "Company",
+      "value": "Value",
+      "notes": "Notes",
+      "create": "Create"
+    },
+    "insights": {
+      "title": "Understand my customers",
+      "subtitle": "The questions that matter, answered with what your customers actually do.",
+      "why": {
+        "title": "Why aren't they buying?",
+        "locked": "See who is at churn risk and what they answered to the 7-day message.",
+        "text": "{n} customers are past the time they usually come back. What they answered:",
+        "none": "Nobody has replied yet. The \"Gone quiet for 7 days\" message asks for the reason.",
+        "list": "See customers at risk"
+      },
+      "top": {
+        "title": "Who buys most"
+      },
+      "purchases": "{n, plural, one {# purchase} other {# purchases}}",
+      "low": {
+        "title": "Recurring customers who spend least",
+        "text": "They always come back but spend little — a good chance to offer more."
+      },
+      "ticket": "ticket {v}",
+      "buy": {
+        "title": "Why they buy",
+        "text": "Purchases that came after a vendocas. message this month:",
+        "none": "No purchase has come after a message yet this month."
+      },
+      "sales": "{n, plural, one {# sale} other {# sales}}",
+      "when": {
+        "title": "When they buy",
+        "aria": "Purchases by weekday",
+        "hint": "Purchases in the last 12 months by weekday."
+      },
+      "days": {
+        "SUNDAY": "Sun",
+        "MONDAY": "Mon",
+        "TUESDAY": "Tue",
+        "WEDNESDAY": "Wed",
+        "THURSDAY": "Thu",
+        "FRIDAY": "Fri",
+        "SATURDAY": "Sat"
+      },
+      "personas": {
+        "title": "Average ticket per persona",
+        "locked": "Create personas and see each profile's average ticket and favourite day.",
+        "none": "No personas yet.",
+        "create": "Create persona"
+      },
+      "empty": "No purchases logged yet.",
+      "registerSale": "Log a sale"
+    },
+    "personas": {
+      "lockedTitle": "Personas: meet your store's customer types",
+      "lockedText": "Group customers by profile, link each profile to products and discover patterns: which day each profile buys, how much they spend, what they take.",
+      "example1": "Busy parent · 32 customers · buys on Tuesdays · $42 ticket",
+      "example2": "Young & trendy · 51 customers · buys most on Saturdays",
+      "example3": "Wholesale · 6 customers · $380 ticket",
+      "title": "Personas",
+      "subtitle": "Profiles of your customers, linked to the products they buy.",
+      "emptyTitle": "No personas yet",
+      "emptyText": "Create the first one, e.g. \"Busy parent\" or \"Wholesale\".",
+      "delete": "Delete {name}",
+      "deleteConfirm": "Delete the persona {name}? Customers stay registered.",
+      "customers": "Customers",
+      "ticket": "Average ticket",
+      "buysOn": "Buys most on",
+      "days": {
+        "SUNDAY": "Sunday",
+        "MONDAY": "Monday",
+        "TUESDAY": "Tuesday",
+        "WEDNESDAY": "Wednesday",
+        "THURSDAY": "Thursday",
+        "FRIDAY": "Friday",
+        "SATURDAY": "Saturday"
+      },
+      "buys": "Buys most",
+      "linked": "Linked products",
+      "weatherSoon": "Coming soon: weather patterns (e.g. buys more on cold days).",
+      "new": "New persona",
+      "newText": "Name the profile and link the products it usually buys.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Busy parent",
+      "description": "What this customer is like",
+      "products": "Products",
+      "noProducts": "Add products in the POS to link them here.",
+      "save": "Save",
+      "added": "{name} added.",
+      "assign": "Add customers",
+      "assignTitle": "Customers of persona {name}",
+      "search": "Search customer"
+    }
   }
 }

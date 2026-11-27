@@ -1,7 +1,7 @@
 /** Commercial markets, plans and CRM types shared by the public site and the merchant app (source of truth: the API). */
-export const MARKETS = ["BR", "LATAM", "NA", "EU"] as const;
+export const MARKETS = ["BR", "LATAM", "US", "CA", "EU"] as const;
 export type MarketCode = (typeof MARKETS)[number];
-export const MARKET_CURRENCY: Record<MarketCode, string> = { BR: "BRL", LATAM: "USD", NA: "USD", EU: "EUR" };
+export const MARKET_CURRENCY: Record<MarketCode, string> = { BR: "BRL", LATAM: "USD", US: "USD", CA: "USD", EU: "EUR" };
 
 export interface Quota { channel: "EMAIL" | "WHATSAPP" | "SMS"; monthlyLimit: number | null; fairUseNote?: string | null }
 
@@ -27,17 +27,22 @@ export function marketForLocale(locale: string): MarketCode {
     case "fr":
     case "de":
     case "it": return "EU";
-    default: return "NA";
+    default: return "US";
   }
 }
 
-export const STAGES = ["VISITOR", "NEW", "RECURRING", "VIP", "AT_RISK", "INACTIVE"] as const;
+/** B2C board (automatic, per-customer window) — VISITOR = never bought, not on the board. */
+export const BOARD = ["FIRST_SALE", "RECURRING", "IN_WINDOW", "CHURN_RISK", "CHURNED"] as const;
+export const STAGES = ["VISITOR", ...BOARD] as const;
 export type Stage = (typeof STAGES)[number];
 
 /** Badge tone per customer stage (colour is never the only signal: the label is always shown). */
 export const STAGE_TONE: Record<Stage, "neutral" | "info" | "success" | "warning" | "danger"> = {
-  VISITOR: "neutral", NEW: "info", RECURRING: "success", VIP: "info", AT_RISK: "warning", INACTIVE: "neutral",
+  VISITOR: "neutral", FIRST_SALE: "info", RECURRING: "success", IN_WINDOW: "success", CHURN_RISK: "warning", CHURNED: "danger",
 };
+
+/** Plan features that unlock screens (the Alerta plan has none of these). */
+export const FEATURE = { PIPELINE: "PIPELINE", PERSONAS: "PERSONAS", PRODUCT_CATALOG: "PRODUCT_CATALOG", CAMPAIGNS: "CAMPAIGNS" } as const;
 
 /** Features shown on plan cards, in display order (internal flags such as ALERTS_ONLY are explained separately). */
 export const DISPLAY_FEATURES = ["ALERTS", "CRM", "SALES_REGISTRY", "CAMPAIGNS", "CAMPAIGNS_DAILY", "CUSTOM_SEGMENTS", "INBOX"] as const;

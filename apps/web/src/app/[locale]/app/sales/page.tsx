@@ -10,6 +10,7 @@ import { Link } from "@/i18n/navigation";
 import { Alert, Button, Card, CardTitle, Dialog, DialogContent, DialogTrigger, EmptyState, Field, Input, PageHeader, Select, Spinner, Stat } from "@/components/ui";
 import type { Contact, Page } from "@/features/types";
 import { MARKET_CURRENCY, type Entitlements, type UsageView } from "@/features/markets";
+import { PlanBadge } from "@/features/plan";
 
 interface Product { id: string; name: string; sku?: string | null; priceMinor: number; currency: string; category?: string | null; active: boolean }
 interface Sale { id: string; occurredAt: string; contactId?: string | null; contactName?: string | null; totalMinor: number; currency: string; salesChannel: string;
@@ -20,13 +21,19 @@ type Line = { key: number; productId?: string; description: string; quantity: nu
 const PAYMENTS = ["PIX", "CARD", "CASH", "BOLETO", "TRANSFER", "OTHER"] as const;
 const SALE_CHANNELS = ["STORE", "WHATSAPP", "INSTAGRAM", "ONLINE", "PHONE", "OTHER"] as const;
 
-/** Registro de Vendas: counter / WhatsApp / Instagram sales become purchases of the customer (stage, "thank you" alert, reports). */
+/**
+ * Vendocas PDV: the store registers what a customer bought elsewhere (counter, WhatsApp, Instagram) — the Vendocas does not
+ * sell. Every plan: "venda seca" (customer + amount). Alerta + Vendas: products and items, so the CRM knows what each one buys.
+ */
 export default function SalesPage() {
   const t = useTranslations("sales");
   const locale = useLocale();
   const ent = useQuery({ queryKey: ["entitlements"], queryFn: () => api<Entitlements>("/billing/entitlements") });
   const usage = useQuery({ queryKey: ["usage"], queryFn: () => api<UsageView>("/billing/usage") });
-  const allowed = ent.data?.features.includes("SALES_REGISTRY");
+  const features = ent.data?.features ?? [];
+  const legacy = !!ent.data && !features.includes("ALERTS");
+  const allowed = legacy || features.includes("SALES_REGISTRY");
+  const catalog = legacy || features.includes("PRODUCT_CATALOG");
   const currency = usage.data ? MARKET_CURRENCY[usage.data.market] : "USD";
   const summary = useQuery({ queryKey: ["sales", "summary"], enabled: !!allowed, queryFn: () => api<Summary>("/sales/summary") });
   const sales = useQuery({ queryKey: ["sales", "today"], enabled: !!allowed, queryFn: () => api<Sale[]>("/sales") });
@@ -43,7 +50,7 @@ export default function SalesPage() {
   const s = summary.data;
   return (
     <div className="space-y-6">
-      <PageHeader title={t("title")} description={t("subtitle")} actions={<ProductsDialog currency={currency} />} />
+      <PageHeader title={t("title")} description={t("subtitle")} actions={catalog ? <ProductsDialog currency={currency} /> : <PlanBadge feature="PRODUCT_CATALOG" />} />
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label={t("soldToday")} value={money(s?.totalMinor ?? 0, s?.currency ?? currency, locale)} />
         <Stat label={t("count")} value={s?.sales ?? 0} />
@@ -51,7 +58,7 @@ export default function SalesPage() {
         <Stat label={t("newCustomers")} value={s?.newCustomers ?? 0} />
       </div>
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
-        <SaleForm currency={currency} />
+        <SaleForm currency={currency} catalog={catalog} />
         <Card className="p-0">
           <div className="p-5 pb-3"><CardTitle>{t("today")}</CardTitle></div>
           {sales.isLoading && <div className="p-5"><Spinner /></div>}
@@ -83,7 +90,7 @@ export default function SalesPage() {
   );
 }
 
-function SaleForm({ currency }: { currency: string }) {
+function SaleForm({ currency, catalog }: { currency: string; catalog: boolean }) {
   const t = useTranslations("sales");
   const tm = useTranslations("markets");
   const locale = useLocale();
@@ -94,18 +101,19 @@ function SaleForm({ currency }: { currency: string }) {
   const [newCustomer, setNewCustomer] = useState({ name: "", phone: "", email: "" });
   const [lines, setLines] = useState<Line[]>([]);
   const [custom, setCustom] = useState({ description: "", price: "" });
+  const [amount, setAmount] = useState("");
   const [payment, setPayment] = useState<(typeof PAYMENTS)[number]>("PIX");
   const [channel, setChannel] = useState<(typeof SALE_CHANNELS)[number]>("STORE");
   const [consents, setConsents] = useState<string[]>(["WHATSAPP"]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
-  const products = useQuery({ queryKey: ["products"], queryFn: () => api<Product[]>("/products") });
+  const products = useQuery({ queryKey: ["products"], enabled: catalog, queryFn: () => api<Product[]>("/products") });
   const matches = useQuery({
     queryKey: ["contacts", "pick", customerQuery], enabled: customerQuery.trim().length >= 2 && !customer,
     queryFn: () => api<Page<Contact>>(`/contacts?size=5&q=${encodeURIComponent(customerQuery.trim())}`),
   });
-  const total = useMemo(() => lines.reduce((n, l) => n + l.quantity * l.unitMinor, 0), [lines]);
+  const total = useMemo(() => lines.length ? lines.reduce((n, l) => n + l.quantity * l.unitMinor, 0) : toMinor(amount), [lines, amount]);
   const hasNewCustomer = !customer && (newCustomer.phone.trim() || newCustomer.email.trim());
 
   const addProduct = (id: string) => {
@@ -131,11 +139,12 @@ function SaleForm({ currency }: { currency: string }) {
         contactId: customer?.id ?? null,
         customer: hasNewCustomer ? { name: newCustomer.name || null, phone: newCustomer.phone || null, email: newCustomer.email || null } : null,
         items: lines.map((l) => l.productId ? { productId: l.productId, quantity: l.quantity } : { description: l.description, quantity: l.quantity, unitAmountMinor: l.unitMinor }),
+        amountMinor: lines.length ? null : toMinor(amount),
         currency, paymentMethod: payment, salesChannel: channel,
         alertConsents: customer || hasNewCustomer ? consents : [],
       } });
       setDone(t("registered", { total: money(r.totalMinor, r.currency, locale) }));
-      setLines([]); setCustomer(null); setCustomerQuery(""); setNewCustomer({ name: "", phone: "", email: "" });
+      setLines([]); setAmount(""); setCustomer(null); setCustomerQuery(""); setNewCustomer({ name: "", phone: "", email: "" });
       await qc.invalidateQueries({ queryKey: ["sales"] });
       await qc.invalidateQueries({ queryKey: ["crm"] });
     } catch (e) {
@@ -177,8 +186,14 @@ function SaleForm({ currency }: { currency: string }) {
           )}
         </div>
 
-        <div>
-          <p className="mb-1.5 text-sm font-medium">{t("items")}</p>
+        {lines.length === 0 && (
+          <Field label={t("amountPaid")} htmlFor="sale-amount" hint={catalog ? t("amountHint") : t("drySaleHint")}>
+            <Input id="sale-amount" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="159,90" />
+          </Field>
+        )}
+        {catalog ? (
+          <div>
+          <p className="mb-1.5 text-sm font-medium">{t("itemsOptional")}</p>
           {lines.length > 0 && (
             <ul className="mb-2 divide-y divide-border rounded-lg border border-border text-sm">
               {lines.map((l) => (
@@ -202,6 +217,9 @@ function SaleForm({ currency }: { currency: string }) {
             <Button variant="outline" onClick={addCustom}>{t("add")}</Button>
           </div>
         </div>
+        ) : (
+          <p className="flex flex-wrap items-center gap-2 rounded-lg bg-muted p-3 text-xs text-muted-foreground"><PlanBadge feature="PRODUCT_CATALOG" />{t("productsLocked")}</p>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Field label={t("payment")} htmlFor="sale-pay"><Select id="sale-pay" value={payment} onChange={(e) => setPayment(e.target.value as typeof payment)}>{PAYMENTS.map((p) => <option key={p} value={p}>{t(`payments.${p}`)}</option>)}</Select></Field>
@@ -229,7 +247,7 @@ function SaleForm({ currency }: { currency: string }) {
         </div>
         {error && <Alert tone="danger" title={error} />}
         {done && <Alert tone="success" title={done}>{t("thankYouNote")}</Alert>}
-        <Button className="w-full" size="lg" disabled={!canWrite || lines.length === 0} loading={busy} onClick={submit}>{t("register")}</Button>
+        <Button className="w-full" size="lg" disabled={!canWrite || total <= 0 || (!customer && !hasNewCustomer)} loading={busy} onClick={submit}>{t("register")}</Button>
       </div>
     </Card>
   );

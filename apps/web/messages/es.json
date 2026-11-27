@@ -56,14 +56,21 @@
     "conversations": "Conversaciones",
     "calls": "Llamadas",
     "channels": "Canales",
-    "billing": "Facturación",
-    "settings": "Ajustes",
+    "billing": "Mi plan",
+    "settings": "Configuración",
     "admin": "Administración",
     "templates": "Plantillas",
-    "customers": "Clientes",
+    "customers": "Mis clientes",
     "alerts": "Avisos",
     "sales": "Registro de ventas",
-    "lockedHint": "No está en tu plan — ver planes"
+    "lockedHint": "Función de un plan superior",
+    "home": "Inicio",
+    "messages": "Mis mensajes",
+    "pdv": "Vendocas Ventas",
+    "kanban": "Kanban",
+    "insights": "Entender clientes",
+    "personas": "Personas",
+    "main": "Menú principal"
   },
   "landing": {
     "heroTitle": "Recupera clientes automáticamente — con tu propio correo, WhatsApp, SMS y teléfono",
@@ -486,12 +493,12 @@
     "retry": "Intentar ahora"
   },
   "stages": {
-    "VISITOR": "Visitante",
-    "NEW": "Nuevo",
+    "VISITOR": "Aún no compró",
+    "FIRST_SALE": "Primera venta",
     "RECURRING": "Recurrente",
-    "VIP": "VIP",
-    "AT_RISK": "En riesgo",
-    "INACTIVE": "Inactivo"
+    "IN_WINDOW": "Dentro de la ventana",
+    "CHURN_RISK": "Riesgo de churn",
+    "CHURNED": "Churn"
   },
   "markets": {
     "names": {
@@ -619,15 +626,17 @@
     "rfm": "RFM",
     "lastPurchase": "Última compra",
     "firstPurchase": "Cliente desde",
-    "repurchaseEvery": "Compra cada",
+    "repurchaseEvery": "Suele volver cada",
     "days": "~{n} días",
     "spent12m": "Gastado en 12 meses",
     "favorites": "Productos favoritos",
-    "stageSince": "En esta etapa desde"
+    "stageSince": "En esta etapa desde",
+    "nextExpected": "Regreso previsto",
+    "vipText": "Entre el 10% que más compra"
   },
   "sales": {
-    "title": "Registro de ventas",
-    "subtitle": "Registra las ventas de mostrador, WhatsApp e Instagram: cuentan como compra y disparan el aviso de agradecimiento.",
+    "title": "Vendocas Ventas (PDV)",
+    "subtitle": "Anota cada compra hecha en el mostrador, por WhatsApp o Instagram. Vendocas no vende: aprende el comportamiento de cada cliente.",
     "upgrade": "El Registro de ventas es parte de los planes Aviso + Ventas e Ilimitado.",
     "seePlans": "Ver planes",
     "soldToday": "Vendido hoy",
@@ -682,11 +691,344 @@
       "ONLINE": "Online",
       "PHONE": "Teléfono",
       "OTHER": "Otro"
-    }
+    },
+    "amountPaid": "Monto pagado",
+    "amountHint": "Usa solo el monto si no quieres detallar los productos.",
+    "drySaleHint": "Venta simple: quién compró y cuánto pagó. Ya permite calcular el ticket promedio y la ventana de cada cliente.",
+    "itemsOptional": "Productos (opcional)",
+    "productsLocked": "Registrar qué productos compró el cliente es parte del plan Aviso + Ventas."
   },
   "brand": {
     "slogan": "Cada venta es el comienzo de la próxima.",
     "highlight": "próxima.",
     "tagline": "CRM de relación para tiendas"
+  },
+  "journey": {
+    "plans": {
+      "ALERTA_VENDAS": "Plan Aviso + Ventas",
+      "ILIMITADO": "Plan Ilimitado"
+    },
+    "seePlans": "Ver planes",
+    "preview": "Vista previa:",
+    "onboardingOwnerOnly": "La configuración inicial de la tienda aún no termina. Pide al responsable de la cuenta que la complete.",
+    "onboarding": {
+      "steps": {
+        "store": "Tu tienda",
+        "whatsapp": "WhatsApp",
+        "email": "Correo"
+      },
+      "progress": "Pasos de la configuración",
+      "incomplete": "Falta responder algún paso.",
+      "store": {
+        "title": "Preparemos tu tienda",
+        "text": "Tres pasos rápidos para que vendocas. empiece a cuidar a tus clientes.",
+        "name": "Nombre de la tienda (como te conoce el cliente)",
+        "segment": "Qué vendes",
+        "choose": "Elige…",
+        "contact": "Teléfono o WhatsApp para que el cliente hable contigo",
+        "contactHint": "Aparece al final de los mensajes: \"Para hablar con la tienda: …\""
+      },
+      "segments": {
+        "fashion": "Ropa y moda",
+        "shoes": "Calzado y accesorios",
+        "beauty": "Belleza",
+        "food": "Alimentación",
+        "pet": "Mascotas",
+        "home": "Hogar y decoración",
+        "health": "Salud y farmacia",
+        "services": "Servicios",
+        "electronics": "Electrónica",
+        "other": "Otro"
+      },
+      "whatsapp": {
+        "title": "¿Ya tienes WhatsApp Business?",
+        "text": "Los mensajes salen del número de tu tienda. El número es tuyo, no de Vendocas.",
+        "own": "Sí, ya tengo",
+        "ownText": "Conectar el WhatsApp Business de mi tienda.",
+        "new": "No tengo",
+        "newText": "Quiero que Vendocas consiga un número para la tienda.",
+        "ownHow": "Al terminar, abre Canales y toca \"Conectar con Meta\": entras con el Facebook de la tienda y eliges el número. Puedes seguir usando WhatsApp Business en el celular.",
+        "newHow": "Vendocas compra un número y lo registra a nombre de tu tienda. Te avisamos cuando esté listo."
+      },
+      "email": {
+        "title": "¿Desde qué correo salen los mensajes?",
+        "text": "Si el cliente responde, la respuesta llega al correo de la tienda.",
+        "own": "Ya tengo correo de la tienda",
+        "ownText": "Enviar con mi dirección (ej.: contacto@mitienda.com).",
+        "address": "Correo de la tienda",
+        "addressHint": "Luego te mostramos 3 registros para agregar donde compraste el dominio.",
+        "vendocas": "Usar una dirección de Vendocas",
+        "vendocasText": "Para quien aún no tiene correo con dominio propio. Listo al instante."
+      },
+      "back": "Volver",
+      "continue": "Continuar",
+      "finish": "Terminar",
+      "noSkip": "Estas tres respuestas son necesarias para que vendocas. funcione. Todo se puede cambiar después en Canales y Configuración."
+    },
+    "home": {
+      "welcome": "¡Bienvenido, {name}!",
+      "love": "Nos encanta tener a {store} aquí. Cada venta es el comienzo de la próxima.",
+      "today": "¿Qué quieres hacer hoy?",
+      "a": {
+        "customers": "Registrar a mis clientes",
+        "customersText": "Nombre, teléfono, correo y si tiene WhatsApp.",
+        "messages": "Configurar mis mensajes",
+        "messagesText": "Recordatorio de 7 días sin comprar y respuesta a llamada perdida.",
+        "pdv": "Registrar una venta",
+        "pdvText": "Anota quién compró y cuánto pagó en el PDV de Vendocas.",
+        "insights": "Entender a mis clientes",
+        "insightsText": "Quién compra más, quién desapareció y por qué.",
+        "kanban": "Ver mi kanban",
+        "kanbanText": "Primera venta, recurrente, dentro de la ventana, riesgo de churn y churn.",
+        "personas": "Crear personas",
+        "personasText": "Agrupa clientes por perfil y descubre cuándo y qué compran."
+      },
+      "firstSteps": "Tus primeros pasos",
+      "done": "Hecho",
+      "todo": "Pendiente",
+      "s": {
+        "channels": "Conectar WhatsApp o correo",
+        "customers": "Registrar 10 clientes",
+        "inactive": "Activar el mensaje de 7 días sin comprar",
+        "sale": "Registrar la primera venta"
+      },
+      "numbers": "Tu relación hoy",
+      "recovered": "Ventas recuperadas este mes",
+      "active": "Clientes activos",
+      "churnRisk": "En riesgo de churn",
+      "understand": "Entender a mis clientes",
+      "quota": "Mensajes del mes"
+    },
+    "messages": {
+      "title": "Mis mensajes",
+      "subtitle": "Mensajes que salen solos. Actívalos, ajusta el texto y listo.",
+      "inactive": {
+        "title": "Desapareció hace 7 días",
+        "when": "Cliente sin comprar hace 7 días (o el plazo que elijas)",
+        "subject": "Te extrañamos en [tienda]",
+        "body": "¡Hola, [nombre]! Hace un tiempo que no pasas por [tienda]. ¿Todo bien? ¿Hay algo que podamos mejorar? Solo responde este mensaje.",
+        "days": "Enviar después de cuántos días sin comprar",
+        "daysHint": "Cuenta desde la última compra registrada."
+      },
+      "missed": {
+        "title": "Respuesta a llamada perdida",
+        "when": "El cliente llamó y nadie atendió: el mensaje sale al instante",
+        "body": "¡Hola, [nombre]! Vimos tu llamada a [tienda] y no pudimos atender. ¡Te devolvemos la llamada pronto!",
+        "requires": "Funciona cuando las llamadas de la tienda pasan por un número que Vendocas ve (número de Vendocas o desvío de llamadas no atendidas).",
+        "setup": "Configurar en Canales"
+      },
+      "statusOn": "Activo · {sent} enviados",
+      "statusOff": "Desactivado",
+      "statusNew": "Aún sin configurar",
+      "edit": "Editar mensaje",
+      "campaigns": {
+        "title": "Campañas",
+        "text": "Promociones y mensajes programados para grupos de clientes."
+      },
+      "advanced": "¿Necesitas algo más específico?",
+      "advancedLink": "Ver automatizaciones avanzadas",
+      "previewStore": "tu tienda",
+      "savedOn": "Mensaje guardado y activado.",
+      "savedOff": "Mensaje guardado (desactivado).",
+      "toggle": "Activar o desactivar",
+      "on": "Activo",
+      "off": "Desactivado",
+      "channel": "Por dónde enviar",
+      "channels": {
+        "EMAIL": "Correo",
+        "SMS": "SMS",
+        "WHATSAPP": "WhatsApp"
+      },
+      "whatsappTemplate": "En WhatsApp el mensaje debe ser una plantilla aprobada por Meta antes de enviarse.",
+      "subject": "Asunto del correo",
+      "message": "Mensaje",
+      "variables": "Usa {name} para el nombre del cliente y {store} para el nombre de la tienda.",
+      "preview": "Cómo lo ve el cliente",
+      "footer": "Este mensaje es solo un aviso. Para hablar con la tienda: {contact}",
+      "save": "Guardar",
+      "tokenName": "[nombre]",
+      "tokenStore": "[tienda]"
+    },
+    "customers": {
+      "title": "Mis clientes",
+      "subtitle": "Registra a quienes te compran. Así vendocas. sabe con quién hablar.",
+      "import": "Importar planilla",
+      "search": "Buscar por nombre, teléfono o correo",
+      "whatsappFilter": "Tiene WhatsApp",
+      "whatsappAny": "Tiene WhatsApp: todos",
+      "wa": {
+        "YES": "Sí",
+        "NO": "No",
+        "UNKNOWN": "No sé"
+      },
+      "stageFilter": "Etapa",
+      "stageAny": "Todas las etapas",
+      "stages": {
+        "VISITOR": "Aún no compró",
+        "FIRST_SALE": "Primera venta",
+        "RECURRING": "Recurrente",
+        "IN_WINDOW": "Dentro de la ventana",
+        "CHURN_RISK": "Riesgo de churn",
+        "CHURNED": "Churn"
+      },
+      "add": "Agregar cliente",
+      "name": "Nombre",
+      "phone": "Teléfono",
+      "hasWhatsapp": "¿Ese número tiene WhatsApp?",
+      "email": "Correo",
+      "accepts": "El cliente acepta recibir mensajes por",
+      "acceptsHint": "Marca solo si el cliente aceptó. Sin autorización vendocas. no envía.",
+      "consentEvidence": "Autorización informada por la tienda al registrar al cliente",
+      "saved": "{name} registrado(a).",
+      "duplicate": "Ya existe un cliente con ese teléfono o correo.",
+      "badPhone": "Teléfono inválido.",
+      "save": "Guardar cliente",
+      "empty": "Aún no hay clientes",
+      "emptyText": "Registra el primero al lado o importa una planilla.",
+      "col": {
+        "customer": "Cliente",
+        "stage": "Etapa",
+        "lastPurchase": "Última compra",
+        "total": "Total gastado"
+      },
+      "total": "{n} clientes",
+      "lastPurchaseHint": "La última compra aparece cuando registras ventas en el PDV o conectas tu tienda online."
+    },
+    "kanban": {
+      "lockedTitle": "Kanban: ve en qué fase está cada cliente",
+      "lockedText": "En B2C los clientes avanzan solos entre primera venta, recurrente, dentro de la ventana, riesgo de churn y churn, a partir de las ventas del PDV. En B2B sigues negociaciones.",
+      "title": "Kanban",
+      "b2cText": "Automático: las tarjetas avanzan según las compras del PDV y el tiempo desde la última compra de cada cliente.",
+      "b2bText": "Negociaciones con empresas. Arrastra las tarjetas entre etapas.",
+      "mode": "Tipo de kanban",
+      "tabs": {
+        "B2C": "B2C · Clientes",
+        "B2B": "B2B · Negociaciones"
+      },
+      "b2c": {
+        "FIRST_SALE": "Primera venta",
+        "RECURRING": "Recurrente",
+        "IN_WINDOW": "Dentro de la ventana",
+        "CHURN_RISK": "Riesgo de churn",
+        "CHURNED": "Churn"
+      },
+      "b2cHint": {
+        "FIRST_SALE": "Compró una vez",
+        "RECURRING": "Volvió a comprar",
+        "IN_WINDOW": "En la época en que suele volver",
+        "CHURN_RISK": "Pasó el tiempo en que suele volver",
+        "CHURNED": "Desapareció: más de 3× su intervalo"
+      },
+      "purchases": "{n, plural, one {# compra} other {# compras}}",
+      "returnsIn": "Debería volver en {n} días",
+      "late": "{n} días más de lo normal",
+      "seeAll": "Ver los {n}",
+      "b2cAuto": "Las tarjetas B2C no se arrastran: la fase cambia sola con cada compra registrada y cada día.",
+      "b2b": {
+        "LEAD": "Lead",
+        "PROPOSAL": "Propuesta",
+        "NEGOTIATION": "Negociación",
+        "WON": "Ganada",
+        "LOST": "Perdida"
+      },
+      "lostReason": "¿Por qué se perdió? (opcional)",
+      "moveTo": "Mover a",
+      "moveOption": "Mover a {stage}",
+      "b2bHint": "Arrastra las tarjetas o usa \"Mover a\" en cada una.",
+      "newDeal": "Nueva negociación",
+      "dealTitle": "Negociación",
+      "company": "Empresa",
+      "value": "Valor",
+      "notes": "Notas",
+      "create": "Crear"
+    },
+    "insights": {
+      "title": "Entender a mis clientes",
+      "subtitle": "Las preguntas que importan, respondidas con lo que hacen tus clientes.",
+      "why": {
+        "title": "¿Por qué no compran?",
+        "locked": "Mira quién está en riesgo de churn y qué respondieron al mensaje de 7 días.",
+        "text": "{n} clientes pasaron el tiempo en que suelen volver. Lo que respondieron:",
+        "none": "Nadie respondió aún. El mensaje \"Desapareció hace 7 días\" pregunta el motivo.",
+        "list": "Ver clientes en riesgo"
+      },
+      "top": {
+        "title": "Quién compra más"
+      },
+      "purchases": "{n, plural, one {# compra} other {# compras}}",
+      "low": {
+        "title": "Recurrentes que menos compran",
+        "text": "Vuelven siempre, pero gastan poco: buena oportunidad para ofrecer más."
+      },
+      "ticket": "ticket {v}",
+      "buy": {
+        "title": "Por qué compran",
+        "text": "Compras que llegaron después de un mensaje de vendocas. este mes:",
+        "none": "Aún ninguna compra llegó después de un mensaje este mes."
+      },
+      "sales": "{n, plural, one {# venta} other {# ventas}}",
+      "when": {
+        "title": "Cuándo compran",
+        "aria": "Compras por día de la semana",
+        "hint": "Compras de los últimos 12 meses por día de la semana."
+      },
+      "days": {
+        "SUNDAY": "Dom",
+        "MONDAY": "Lun",
+        "TUESDAY": "Mar",
+        "WEDNESDAY": "Mié",
+        "THURSDAY": "Jue",
+        "FRIDAY": "Vie",
+        "SATURDAY": "Sáb"
+      },
+      "personas": {
+        "title": "Ticket promedio de cada persona",
+        "locked": "Crea personas y ve el ticket promedio y el día preferido de cada perfil.",
+        "none": "Aún no hay personas.",
+        "create": "Crear persona"
+      },
+      "empty": "Aún no hay compras registradas.",
+      "registerSale": "Registrar una venta"
+    },
+    "personas": {
+      "lockedTitle": "Personas: conoce los tipos de cliente de tu tienda",
+      "lockedText": "Agrupa clientes por perfil, vincula cada perfil a productos y descubre patrones: qué día compra cada perfil, cuánto gasta, qué lleva.",
+      "example1": "Mamá práctica · 32 clientes · compra los martes · ticket US$ 42",
+      "example2": "Joven fashion · 51 clientes · compra más el sábado",
+      "example3": "Mayorista · 6 clientes · ticket US$ 380",
+      "title": "Personas",
+      "subtitle": "Perfiles de tus clientes, vinculados a los productos que compran.",
+      "emptyTitle": "Aún no hay personas",
+      "emptyText": "Crea la primera, por ejemplo \"Mamá práctica\" o \"Mayorista\".",
+      "delete": "Eliminar {name}",
+      "deleteConfirm": "¿Eliminar la persona {name}? Los clientes siguen registrados.",
+      "customers": "Clientes",
+      "ticket": "Ticket promedio",
+      "buysOn": "Compra más el",
+      "days": {
+        "SUNDAY": "domingo",
+        "MONDAY": "lunes",
+        "TUESDAY": "martes",
+        "WEDNESDAY": "miércoles",
+        "THURSDAY": "jueves",
+        "FRIDAY": "viernes",
+        "SATURDAY": "sábado"
+      },
+      "buys": "Lleva más",
+      "linked": "Productos vinculados",
+      "weatherSoon": "Próximamente: relación con el clima (ej.: compran más en días fríos).",
+      "new": "Nueva persona",
+      "newText": "Ponle nombre al perfil y vincula los productos que suele comprar.",
+      "name": "Nombre",
+      "namePlaceholder": "Ej.: Mamá práctica",
+      "description": "Cómo es este cliente",
+      "products": "Productos",
+      "noProducts": "Registra productos en el PDV para vincularlos aquí.",
+      "save": "Guardar",
+      "added": "{name} agregado(a).",
+      "assign": "Agregar clientes",
+      "assignTitle": "Clientes de la persona {name}",
+      "search": "Buscar cliente"
+    }
   }
 }

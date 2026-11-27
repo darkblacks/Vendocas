@@ -8,7 +8,8 @@ Testes: `MarketsPlansCrmIT` (10 cenários, Postgres real).
 |---|---|---|---|---|
 | `BR` | Brasil | BRL | pt-BR | WhatsApp → e-mail → SMS |
 | `LATAM` | MX, GT, SV, HN, NI, CR, PA, CU, DO, PR, CO, VE, EC, PE, BO, CL, AR, UY, PY | USD | es-419 | WhatsApp → e-mail → SMS |
-| `NA` | EUA, Canadá | USD | en-US (en-CA, fr-CA) | e-mail → SMS → WhatsApp |
+| `US` | Estados Unidos | USD | en-US | e-mail → SMS → WhatsApp |
+| `CA` | Canadá | USD (CAD possível depois) | en-CA, fr-CA | e-mail → SMS → WhatsApp |
 | `EU` | UE-27 + Reino Unido + **Guiana Francesa** | EUR | en-GB (es-ES, pt-PT, fr-FR, en-IE, it-IT, de-DE) | e-mail → WhatsApp → SMS |
 
 - O lojista entra no mercado do **país de cobrança** no cadastro (`organizations.market_code`).
@@ -47,25 +48,35 @@ Testes: `MarketsPlansCrmIT` (10 cenários, Postgres real).
 Janela = período atual da assinatura (mês do calendário se não houver). Envios simultâneos do mesmo lojista/canal são
 serializados (advisory lock) para ninguém ultrapassar a cota.
 
-## CRM
-`contact_metrics` por cliente: estágio, RFM (1–5), nº de compras, total, gasto em 12 meses, primeira/última compra,
-intervalo médio.
+## CRM — kanban B2C (V11)
+Cada cliente tem a sua **janela**: o intervalo em que costuma voltar (média dos intervalos dele; enquanto só comprou
+uma vez, o intervalo típico da loja). Com `dias` = tempo desde a última compra:
 
 | Estágio | Regra |
 |---|---|
-| `VISITOR` | nunca comprou |
-| `NEW` | 1 compra |
-| `RECURRING` | 2+ compras |
-| `VIP` | top 10% em gasto de 12 meses (só com ≥ 10 compradores) |
-| `AT_RISK` | > 1,5 × intervalo típico de recompra da loja sem comprar |
-| `INACTIVE` | > 3 × intervalo (máx. 180 dias) |
+| `VISITOR` | nunca comprou (fora do quadro) |
+| `FIRST_SALE` — Primeira venda | 1 compra, dentro da janela |
+| `RECURRING` — Recorrente | 2+ compras, primeira metade da janela (acabou de voltar) |
+| `IN_WINDOW` — Dentro da janela | segunda metade da janela: a época em que costuma voltar |
+| `CHURN_RISK` — Risco de churn | passou da janela dele |
+| `CHURNED` — Churn | passou 3× a janela (ou 1 ano) |
 
-- Intervalo típico = mediana dos intervalos dos clientes recorrentes (30 dias até a loja ter 3 recorrentes; limitado a 7–365).
-- Recalcula **a cada compra** (cliente) e **todo dia após 3h** no fuso da loja (job `crm.recompute`, deduplicado).
-- Mudança de estágio grava o evento `STAGE_CHANGED` (`from`, `to`). Novo gatilho de automação `STAGE_CHANGED` com
-  estágio-alvo opcional (`eventType: "AT_RISK"`) → é assim que o alerta "Recompra / feedback" dispara.
+- VIP é marcador (top 10% do gasto em 12 meses, com 10+ compradores), não estágio.
+- Recalcula a cada venda (PDV, integrações, API) e todo dia; mudança de estágio grava `STAGE_CHANGED`.
+- **Kanban B2B** (`/crm/deals`): negociações arrastáveis Lead → Proposta → Negociação → Ganho / Perdido.
+- **Personas** (`/crm/personas`): perfis ligados a produtos e clientes, com clientes, ticket médio, dia da semana e
+  produtos mais comprados.
+- Kanbans, churn e Personas: plano **Alerta + Vendas** e acima (recurso `PIPELINE`, `PERSONAS`).
 
-## Registro de Vendas (`SALES_REGISTRY`)
+## PDV — Vendocas Vendas (`SALES_REGISTRY`, todos os planos)
+- **Alerta:** "venda seca" — cliente + valor pago (`amountMinor`), suficiente para ticket médio e janela.
+- **Alerta + Vendas e acima (`PRODUCT_CATALOG`):** produtos e itens.
+
+## Onboarding obrigatório (`/onboarding`)
+Loja (nome, segmento, contato do rodapé) → WhatsApp (conectar o próprio / Vendocas providencia número) → e-mail (próprio /
+endereço do Vendocas). Sem "pular": `POST /onboarding/complete` recusa enquanto faltar resposta; o app fica no onboarding.
+
+## Registro de Vendas — detalhes
 - Produtos com preço do servidor: o cliente não consegue mudar o preço de um item do catálogo.
 - A venda vira pedido `COMPLETED` do cliente → evento `PURCHASE_COMPLETED` (dispara "Obrigado pela compra"), estágio e
   atribuição como uma compra online. Itens avulsos aceitos (descrição + valor).

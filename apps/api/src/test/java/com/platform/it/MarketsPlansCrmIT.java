@@ -264,6 +264,12 @@ class MarketsPlansCrmIT extends IntegrationTest {
         mvc.perform(get("/api/v1/crm/summary").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.stages.CHURNED").value(1)).andExpect(jsonPath("$.atRisk").value(0));
 
+        mvc.perform(get("/api/v1/crm/insights/weekdays").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(7));
+        mvc.perform(get("/api/v1/crm/customers?sort=ticket&dir=asc&minOrders=2").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3)).andExpect(jsonPath("$.items[0].name").value("Janela"));
+        mvc.perform(get("/api/v1/crm/insights/replies").header("Authorization", auth).header("X-Organization-Id", t.orgId().toString()))
+                .andExpect(status().isOk());
         // The kanban (and churn views) are part of the R$ 29,90 plan, not the alert plan.
         var alertOnly = fx.brazil();
         fx.activeSubscription(alertOnly.orgId(), "ALERTA");

@@ -4850,6 +4850,64 @@
                 }
             }
         },
+        "/api/v1/crm/insights/weekdays": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "weekdays",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Weekday"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/crm/insights/replies": {
+            "get": {
+                "tags": [
+                    "crm"
+                ],
+                "operationId": "replies",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Reply"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/crm/customers": {
             "get": {
                 "tags": [
@@ -4913,6 +4971,16 @@
                         "schema": {
                             "type": "boolean",
                             "default": false
+                        }
+                    },
+                    {
+                        "name": "minOrders",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
                         }
                     },
                     {
@@ -10056,6 +10124,47 @@
                     }
                 }
             },
+            "Weekday": {
+                "type": "object",
+                "properties": {
+                    "weekday": {
+                        "type": "string"
+                    },
+                    "purchases": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "amountMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "Reply": {
+                "type": "object",
+                "properties": {
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contactName": {
+                        "type": "string"
+                    },
+                    "stage": {
+                        "type": "string"
+                    },
+                    "channel": {
+                        "type": "string"
+                    },
+                    "body": {
+                        "type": "string"
+                    },
+                    "receivedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
             "Column": {
                 "type": "object",
                 "properties": {
@@ -10455,12 +10564,6 @@
                     "binary": {
                         "type": "boolean"
                     },
-                    "string": {
-                        "type": "boolean"
-                    },
-                    "integralNumber": {
-                        "type": "boolean"
-                    },
                     "valueNode": {
                         "type": "boolean"
                     },
@@ -10483,6 +10586,12 @@
                             "POJO",
                             "STRING"
                         ]
+                    },
+                    "string": {
+                        "type": "boolean"
+                    },
+                    "integralNumber": {
+                        "type": "boolean"
                     },
                     "number": {
                         "type": "boolean"

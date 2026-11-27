@@ -23,7 +23,8 @@ import java.util.*;
 public class CrmController {
     static final Map<String, String> SORTS = Map.of(
             "name", "c.name", "lastPurchase", "m.last_purchase_at", "totalSpent", "m.total_spent_minor", "orders", "m.orders_count",
-            "rfm", "(COALESCE(m.recency_score,0) + COALESCE(m.frequency_score,0) + COALESCE(m.monetary_score,0))", "created", "c.created_at");
+            "rfm", "(COALESCE(m.recency_score,0) + COALESCE(m.frequency_score,0) + COALESCE(m.monetary_score,0))", "created", "c.created_at",
+            "ticket", "(m.total_spent_minor / NULLIF(m.orders_count, 0))", "nextExpected", "m.next_expected_at");
     private final NamedParameterJdbcTemplate named;
     private final JobService jobs;
     private final com.platform.billing.EntitlementService entitlements;
@@ -84,7 +85,7 @@ public class CrmController {
     public Page<CustomerRow> customers(@RequestParam(required = false) String stage, @RequestParam(required = false) String q,
                                        @RequestParam(required = false) String channel, @RequestParam(required = false) String tag,
                                        @RequestParam(required = false) String whatsapp, @RequestParam(required = false) UUID persona,
-                                       @RequestParam(defaultValue = "false") boolean vipOnly,
+                                       @RequestParam(defaultValue = "false") boolean vipOnly, @RequestParam(defaultValue = "0") int minOrders,
                                        @RequestParam(defaultValue = "lastPurchase") String sort, @RequestParam(defaultValue = "desc") String dir,
                                        @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "50") int size) {
         if (stage != null && !CrmService.STAGES.contains(stage)) throw ApiException.badRequest("Unknown stage");
@@ -95,7 +96,7 @@ public class CrmController {
         size = Math.max(1, Math.min(200, size));
         page = Math.max(0, page);
         var p = new MapSqlParameterSource("org", TenantContext.current().orgId()).addValue("stage", stage).addValue("channel", channel)
-                .addValue("tag", tag).addValue("wa", whatsapp).addValue("persona", persona, java.sql.Types.OTHER).addValue("vipOnly", vipOnly).addValue("q", q == null || q.isBlank() ? null : "%" + q.trim().toLowerCase(Locale.ROOT) + "%")
+                .addValue("tag", tag).addValue("wa", whatsapp).addValue("persona", persona, java.sql.Types.OTHER).addValue("vipOnly", vipOnly).addValue("minOrders", Math.max(0, minOrders)).addValue("q", q == null || q.isBlank() ? null : "%" + q.trim().toLowerCase(Locale.ROOT) + "%")
                 .addValue("limit", size).addValue("offset", page * size);
         String where = """
                 WHERE c.organization_id = :org AND c.status = 'ACTIVE'
@@ -104,6 +105,7 @@ public class CrmController {
                   AND (CAST(:wa AS text) IS NULL OR c.whatsapp_status = CAST(:wa AS text))
                   AND (CAST(:persona AS uuid) IS NULL OR EXISTS (SELECT 1 FROM contact_personas cp WHERE cp.contact_id = c.id AND cp.persona_id = CAST(:persona AS uuid)))
                   AND (NOT :vipOnly OR COALESCE(m.vip, false))
+                  AND COALESCE(m.orders_count, 0) >= :minOrders
                   AND (CAST(:tag AS text) IS NULL OR EXISTS (SELECT 1 FROM contact_tags ct JOIN tags t ON t.id = ct.tag_id WHERE ct.contact_id = c.id AND t.name = CAST(:tag AS text)))
                   AND (CAST(:q AS text) IS NULL OR lower(COALESCE(c.name,'')) LIKE CAST(:q AS text) OR lower(COALESCE(c.email::text,'')) LIKE CAST(:q AS text)
                        OR COALESCE(c.phone_e164,'') LIKE CAST(:q AS text))
@@ -216,6 +218,46 @@ public class CrmController {
                 (rs, i) -> new AlertResult(rs.getObject(1, UUID.class), rs.getString(2), rs.getLong(3), rs.getLong(4), rs.getLong(5)));
         return new Summary((String) rec.get("currency"), ((Number) rec.get("amount")).longValue(), ((Number) rec.get("n")).longValue(), sent, opened,
                 byChannel, stages.get("CHURN_RISK"), active, newThisMonth == null ? 0 : newThisMonth, stages, byAlert);
+    }
+
+    public record Weekday(String weekday, long purchases, long amountMinor) {}
+
+    /** When customers buy: purchases per weekday in the store's time zone (last 12 months). */
+    @GetMapping("/insights/weekdays")
+    @RequiresPermission(Permission.REPORTS_READ)
+    public List<Weekday> weekdays() {
+        UUID org = TenantContext.current().orgId();
+        String[] names = {"SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"};
+        long[][] acc = new long[7][2];
+        named.query("""
+                SELECT extract(dow FROM o.occurred_at AT TIME ZONE z.tz)::int, count(*), COALESCE(sum(o.amount_minor), 0)
+                FROM orders o, (SELECT time_zone AS tz FROM organizations WHERE id = :org) z
+                WHERE o.organization_id = :org AND o.status = 'COMPLETED' AND o.occurred_at > now() - interval '12 months' GROUP BY 1""",
+                new MapSqlParameterSource("org", org), rs -> { acc[rs.getInt(1)][0] = rs.getLong(2); acc[rs.getInt(1)][1] = rs.getLong(3); });
+        List<Weekday> out = new ArrayList<>();
+        for (int i = 0; i < 7; i++) out.add(new Weekday(names[i], acc[i][0], acc[i][1]));
+        return out;
+    }
+
+    public record Reply(UUID contactId, String contactName, String stage, String channel, String body, Instant receivedAt) {}
+
+    /**
+     * "Why don't they buy?": what customers at churn risk or churned answered (last 60 days). The Vendocas only knows the
+     * reason when the customer says it — the reminder message asks for it.
+     */
+    @GetMapping("/insights/replies")
+    @RequiresPermission(Permission.CONVERSATIONS_READ)
+    public List<Reply> replies(@RequestParam(defaultValue = "20") int limit) {
+        UUID org = TenantContext.current().orgId();
+        return named.query("""
+                SELECT msg.contact_id, c.name, m.stage, msg.channel, msg.body, msg.created_at FROM messages msg
+                JOIN contacts c ON c.id = msg.contact_id JOIN contact_metrics m ON m.contact_id = c.id
+                WHERE msg.organization_id = :org AND msg.direction = 'INBOUND' AND msg.body IS NOT NULL
+                  AND m.stage IN ('CHURN_RISK', 'CHURNED', 'IN_WINDOW') AND msg.created_at > now() - interval '60 days'
+                ORDER BY msg.created_at DESC LIMIT :limit""",
+                new MapSqlParameterSource("org", org).addValue("limit", Math.max(1, Math.min(100, limit))),
+                (rs, i) -> new Reply(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5),
+                        rs.getTimestamp(6).toInstant()));
     }
 
     /** Asks for an immediate recomputation (e.g. right after an import); runs on the job worker. */
