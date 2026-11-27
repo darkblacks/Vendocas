@@ -20,7 +20,9 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Mandatory onboarding (cannot be skipped): 1) the store — name, segment and the contact shown in every alert;
+ * Mandatory onboarding (cannot be skipped): 1) the store — name, type of establishment, sales model (B2C: customers
+ * come, buy and leave — automatic board from the PDV; B2B: sells to companies — negotiation funnel; pre-set per type
+ * of establishment and editable) and the contact shown in every alert;
  * 2) WhatsApp — connect the store's own WhatsApp Business or ask the Vendocas to provide a number;
  * 3) e-mail — the store's own address or an address on the Vendocas domain. The app stays on the onboarding until
  * {@code POST /onboarding/complete} succeeds. Connecting the channels themselves uses the regular channel endpoints.
@@ -38,9 +40,11 @@ public class OnboardingController {
     }
 
     public record State(boolean completed, Instant completedAt, String storeName, String businessSegment, String alertContact,
-                        String whatsappChoice, String emailChoice, String emailAddress, String whatsappChannelStatus, String emailChannelStatus) {}
+                        String whatsappChoice, String emailChoice, String emailAddress, String whatsappChannelStatus, String emailChannelStatus,
+                        String salesModel) {}
 
-    public record Update(@Size(min = 1, max = 250) String storeName, @Size(max = 80) String businessSegment, @Size(max = 200) String alertContact,
+    public record Update(@Size(min = 1, max = 250) String storeName, @Pattern(regexp = "^[a-z0-9_]{2,80}$") String businessSegment,
+                         @Pattern(regexp = "B2C|B2B") String salesModel, @Size(max = 200) String alertContact,
                          @Pattern(regexp = "CONNECT_OWN|PROVISION_NUMBER") String whatsappChoice,
                          @Pattern(regexp = "OWN_ADDRESS|VENDOCAS_ADDRESS") String emailChoice, @Email @Size(max = 254) String emailAddress) {}
 
@@ -57,11 +61,12 @@ public class OnboardingController {
                 SELECT ob.completed_at, o.trade_name, ob.business_segment, COALESCE(s.alert_contact, o.contact_phone) AS alert_contact,
                        ob.whatsapp_choice, ob.email_choice, ob.email_address,
                        (SELECT status FROM channel_connections WHERE organization_id = o.id AND channel = 'WHATSAPP' ORDER BY updated_at DESC LIMIT 1) AS wa,
-                       (SELECT status FROM channel_connections WHERE organization_id = o.id AND channel = 'EMAIL' ORDER BY updated_at DESC LIMIT 1) AS em
+                       (SELECT status FROM channel_connections WHERE organization_id = o.id AND channel = 'EMAIL' ORDER BY updated_at DESC LIMIT 1) AS em,
+                       ob.sales_model
                 FROM organization_onboarding ob JOIN organizations o ON o.id = ob.organization_id
                 LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE ob.organization_id = ?""",
                 (rs, i) -> new State(rs.getTimestamp(1) != null, rs.getTimestamp(1) == null ? null : rs.getTimestamp(1).toInstant(), rs.getString(2),
-                        rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7), rs.getString(8), rs.getString(9)), org);
+                        rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7), rs.getString(8), rs.getString(9), rs.getString(10)), org);
     }
 
     /** Saves any step (partial). */
@@ -76,10 +81,11 @@ public class OnboardingController {
             jdbc.update("UPDATE organization_settings SET alert_contact = ? WHERE organization_id = ?", u.alertContact().isBlank() ? null : u.alertContact().trim(), t.orgId());
         }
         jdbc.update("""
-                UPDATE organization_onboarding SET business_segment = COALESCE(?, business_segment), whatsapp_choice = COALESCE(?, whatsapp_choice),
+                UPDATE organization_onboarding SET business_segment = COALESCE(?, business_segment), sales_model = COALESCE(?, sales_model),
+                  whatsapp_choice = COALESCE(?, whatsapp_choice),
                   email_choice = COALESCE(?, email_choice), email_address = CASE WHEN ? = 'VENDOCAS_ADDRESS' THEN NULL ELSE COALESCE(?, email_address) END,
                   updated_at = now() WHERE organization_id = ?""",
-                blank(u.businessSegment()), u.whatsappChoice(), u.emailChoice(), u.emailChoice(), blank(u.emailAddress()), t.orgId());
+                blank(u.businessSegment()), u.salesModel(), u.whatsappChoice(), u.emailChoice(), u.emailChoice(), blank(u.emailAddress()), t.orgId());
         return get();
     }
 
@@ -94,6 +100,7 @@ public class OnboardingController {
         Map<String, Object> missing = new LinkedHashMap<>();
         if (s.storeName() == null || s.storeName().isBlank()) missing.put("storeName", "required");
         if (s.businessSegment() == null) missing.put("businessSegment", "required");
+        if (s.salesModel() == null) missing.put("salesModel", "required");
         if (s.alertContact() == null || s.alertContact().isBlank()) missing.put("alertContact", "required");
         if (s.whatsappChoice() == null) missing.put("whatsappChoice", "required");
         if (s.emailChoice() == null) missing.put("emailChoice", "required");
@@ -102,7 +109,7 @@ public class OnboardingController {
         jdbc.update("UPDATE organization_onboarding SET completed_at = now(), updated_at = now() WHERE organization_id = ?", t.orgId());
         // Requests the operator acts on (number purchase, e-mail on the Vendocas domain) are visible in the audit trail.
         audit.user(t.orgId(), t.userId(), "onboarding.completed", "organization", t.orgId(),
-                Map.of("whatsapp", s.whatsappChoice(), "email", s.emailChoice()));
+                Map.of("whatsapp", s.whatsappChoice(), "email", s.emailChoice(), "salesModel", s.salesModel(), "type", s.businessSegment()));
         return get();
     }
 

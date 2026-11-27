@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
-import { Check, Mail, MessageCircle } from "lucide-react";
+import { Building2, Check, Mail, MessageCircle, ShoppingBag } from "lucide-react";
+import { BUSINESS_GROUPS, defaultModel, type SalesModel } from "@/features/business-types";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth";
@@ -12,10 +13,9 @@ import { Alert, Button, Field, Input, Select, Spinner, cn } from "@/components/u
 interface State {
   completed: boolean; storeName?: string | null; businessSegment?: string | null; alertContact?: string | null;
   whatsappChoice?: "CONNECT_OWN" | "PROVISION_NUMBER" | null; emailChoice?: "OWN_ADDRESS" | "VENDOCAS_ADDRESS" | null; emailAddress?: string | null;
-  whatsappChannelStatus?: string | null; emailChannelStatus?: string | null;
+  whatsappChannelStatus?: string | null; emailChannelStatus?: string | null; salesModel?: SalesModel | null;
 }
 
-const SEGMENTS = ["fashion", "shoes", "beauty", "food", "pet", "home", "health", "services", "electronics", "other"] as const;
 
 /** Mandatory onboarding: store → WhatsApp → e-mail. No skip: every step needs an answer before the app opens. */
 export default function OnboardingPage() {
@@ -25,20 +25,22 @@ export default function OnboardingPage() {
   const { orgId } = useAuth();
   const q = useQuery({ queryKey: ["onboarding-state", orgId], enabled: !!orgId, queryFn: () => api<State>("/onboarding") });
   const [step, setStep] = useState(0);
-  const [f, setF] = useState({ storeName: "", businessSegment: "", alertContact: "", whatsappChoice: "", emailChoice: "", emailAddress: "" });
+  const [f, setF] = useState({ storeName: "", businessSegment: "", salesModel: "" as SalesModel | "", alertContact: "", whatsappChoice: "", emailChoice: "", emailAddress: "" });
+  const tt = useTranslations("journey");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!q.data) return;
     if (q.data.completed) { router.replace("/app"); return; }
-    setF({ storeName: q.data.storeName ?? "", businessSegment: q.data.businessSegment ?? "", alertContact: q.data.alertContact ?? "",
+    const known = BUSINESS_GROUPS.some((g) => g.types.some((x) => x.key === q.data!.businessSegment));
+    setF({ storeName: q.data.storeName ?? "", businessSegment: known ? q.data.businessSegment ?? "" : "", salesModel: q.data.salesModel ?? "", alertContact: q.data.alertContact ?? "",
       whatsappChoice: q.data.whatsappChoice ?? "", emailChoice: q.data.emailChoice ?? "", emailAddress: q.data.emailAddress ?? "" });
   }, [q.data, router]);
 
   const steps = [t("steps.store"), t("steps.whatsapp"), t("steps.email")];
   const valid = [
-    f.storeName.trim() && f.businessSegment && f.alertContact.trim(),
+    f.storeName.trim() && f.businessSegment && f.salesModel && f.alertContact.trim(),
     !!f.whatsappChoice,
     f.emailChoice === "VENDOCAS_ADDRESS" || (f.emailChoice === "OWN_ADDRESS" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.emailAddress.trim())),
   ];
@@ -46,7 +48,7 @@ export default function OnboardingPage() {
   async function next() {
     setBusy(true); setError(null);
     try {
-      const body = step === 0 ? { storeName: f.storeName.trim(), businessSegment: f.businessSegment, alertContact: f.alertContact.trim() }
+      const body = step === 0 ? { storeName: f.storeName.trim(), businessSegment: f.businessSegment, salesModel: f.salesModel, alertContact: f.alertContact.trim() }
         : step === 1 ? { whatsappChoice: f.whatsappChoice }
         : { emailChoice: f.emailChoice, emailAddress: f.emailChoice === "OWN_ADDRESS" ? f.emailAddress.trim() : null };
       await api("/onboarding", { method: "PUT", body });
@@ -79,12 +81,38 @@ export default function OnboardingPage() {
               {step === 0 && (<>
                 <Head title={t("store.title")} text={t("store.text")} />
                 <Field label={t("store.name")} htmlFor="ob-name"><Input id="ob-name" value={f.storeName} onChange={(e) => setF({ ...f, storeName: e.target.value })} /></Field>
-                <Field label={t("store.segment")} htmlFor="ob-seg">
-                  <Select id="ob-seg" value={f.businessSegment} onChange={(e) => setF({ ...f, businessSegment: e.target.value })}>
+                <Field label={t("store.type")} htmlFor="ob-type">
+                  <Select id="ob-type" value={f.businessSegment}
+                    onChange={(e) => setF({ ...f, businessSegment: e.target.value, salesModel: e.target.value ? defaultModel(e.target.value) : "" })}>
                     <option value="">{t("store.choose")}</option>
-                    {SEGMENTS.map((s) => <option key={s} value={s}>{t(`segments.${s}`)}</option>)}
+                    {BUSINESS_GROUPS.map((g) => (
+                      <optgroup key={g.group} label={tt(`typeGroups.${g.group}`)}>
+                        {g.types.map((x) => <option key={x.key} value={x.key}>{tt(`types.${x.key}`)}</option>)}
+                      </optgroup>
+                    ))}
                   </Select>
                 </Field>
+                {f.businessSegment && (
+                  <fieldset>
+                    <legend className="mb-1.5 text-sm font-medium">{t("store.model")}</legend>
+                    <div className="grid gap-2 sm:grid-cols-2" role="radiogroup">
+                      {(["B2C", "B2B"] as const).map((m) => {
+                        const suggested = defaultModel(f.businessSegment) === m;
+                        const on = f.salesModel === m;
+                        const Icon = m === "B2C" ? ShoppingBag : Building2;
+                        return (
+                          <button key={m} type="button" role="radio" aria-checked={on} onClick={() => setF({ ...f, salesModel: m })}
+                            className={cn("flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition-colors",
+                              on ? "border-[var(--brand-orange)] bg-[var(--brand-orange)]/10" : "border-white/15 opacity-60 hover:opacity-100")}>
+                            <span className="flex items-center gap-2 font-semibold"><Icon className="h-4 w-4 text-[var(--brand-blue-light)]" aria-hidden />{t(`store.${m}`)}</span>
+                            <span className="text-xs text-[#A3AECB]">{t(`store.${m}text`)}</span>
+                            {suggested && <span className="text-xs text-[#A3AECB]">{t("store.suggested", { type: tt(`types.${f.businessSegment}`) })}</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                )}
                 <Field label={t("store.contact")} htmlFor="ob-contact" hint={t("store.contactHint")}>
                   <Input id="ob-contact" value={f.alertContact} onChange={(e) => setF({ ...f, alertContact: e.target.value })} placeholder="(11) 98888-0000" />
                 </Field>

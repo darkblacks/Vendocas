@@ -389,14 +389,20 @@ class MarketsPlansCrmIT extends IntegrationTest {
         mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.whatsappChoice").value("required"));
         mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
-                .content("{\"storeName\":\"Transmassa\",\"businessSegment\":\"Calçados\",\"alertContact\":\"(11) 98888-0000\",\"whatsappChoice\":\"CONNECT_OWN\",\"emailChoice\":\"OWN_ADDRESS\"}"))
+                .content("{\"storeName\":\"Transmassa\",\"businessSegment\":\"shoe_store\",\"alertContact\":\"(11) 98888-0000\",\"whatsappChoice\":\"CONNECT_OWN\",\"emailChoice\":\"OWN_ADDRESS\"}"))
                 .andExpect(status().isOk());
         mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
-                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.emailAddress").value("required"));
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.emailAddress").value("required"))
+                .andExpect(jsonPath("$.fields.salesModel").value("required"));
+        mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"salesModel\":\"B2X\"}")).andExpect(status().isBadRequest());
+        mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"salesModel\":\"B2B\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.salesModel").value("B2B"));
         mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"emailChoice\":\"VENDOCAS_ADDRESS\"}")).andExpect(status().isOk());
         mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(true)).andExpect(jsonPath("$.storeName").value("Transmassa"));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(true)).andExpect(jsonPath("$.storeName").value("Transmassa"))
+                .andExpect(jsonPath("$.salesModel").value("B2B")).andExpect(jsonPath("$.businessSegment").value("shoe_store"));
         assertThat(jdbc.queryForObject("SELECT alert_contact FROM organization_settings WHERE organization_id = ?", String.class, t.orgId())).isEqualTo("(11) 98888-0000");
     }
 

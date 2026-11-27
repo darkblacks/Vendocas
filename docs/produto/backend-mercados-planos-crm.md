@@ -73,8 +73,14 @@ uma vez, o intervalo típico da loja). Com `dias` = tempo desde a última compra
 - **Alerta + Vendas e acima (`PRODUCT_CATALOG`):** produtos e itens.
 
 ## Onboarding obrigatório (`/onboarding`)
-Loja (nome, segmento, contato do rodapé) → WhatsApp (conectar o próprio / Vendocas providencia número) → e-mail (próprio /
+Loja (nome, **tipo de estabelecimento**, **modelo de venda B2C/B2B** e contato do rodapé) → WhatsApp (conectar o próprio / Vendocas providencia número) → e-mail (próprio /
 endereço do Vendocas). Sem "pular": `POST /onboarding/complete` recusa enquanto faltar resposta; o app fica no onboarding.
+
+- Tipo de estabelecimento (V12): catálogo com 92 tipos em `apps/web/src/features/business-types.ts` (pizzaria, clínica de
+  estética, distribuidora de bebidas…). Cada tipo vem moldado para B2C ou B2B; o outro modelo aparece apagado e o lojista
+  pode trocar. Gravado em `organization_onboarding.business_segment` (chave) e `sales_model`.
+- O Kanban mostra só o modelo da loja: **B2C** = esteira automática movida pelas vendas registradas; **B2B** = funil de
+  negociação movido à mão. Dá para trocar depois ("Mudar para B2B") em `PUT /onboarding {salesModel}`.
 
 ## Registro de Vendas — detalhes
 - Produtos com preço do servidor: o cliente não consegue mudar o preço de um item do catálogo.

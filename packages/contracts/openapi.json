@@ -6726,8 +6726,11 @@
                     },
                     "businessSegment": {
                         "type": "string",
-                        "maxLength": 80,
-                        "minLength": 0
+                        "pattern": "^[a-z0-9_]{2,80}$"
+                    },
+                    "salesModel": {
+                        "type": "string",
+                        "pattern": "B2C|B2B"
                     },
                     "alertContact": {
                         "type": "string",
@@ -6782,6 +6785,9 @@
                         "type": "string"
                     },
                     "emailChannelStatus": {
+                        "type": "string"
+                    },
+                    "salesModel": {
                         "type": "string"
                     }
                 }

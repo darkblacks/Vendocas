@@ -2776,6 +2776,7 @@ export interface components {
         Update: {
             storeName?: string;
             businessSegment?: string;
+            salesModel?: string;
             alertContact?: string;
             whatsappChoice?: string;
             emailChoice?: string;
@@ -2794,6 +2795,7 @@ export interface components {
             emailAddress?: string;
             whatsappChannelStatus?: string;
             emailChannelStatus?: string;
+            salesModel?: string;
         };
         ChangeRoleRequest: {
             role: string;

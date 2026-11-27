@@ -13,7 +13,7 @@ import { MARKET_CURRENCY, type UsageView } from "@/features/markets";
 import { PRESET_INACTIVE } from "@/features/messages-presets";
 
 interface Summary { currency?: string | null; recoveredMinor: number; recoveredSales: number; stages: Record<string, number>; activeCustomers: number }
-interface Onb { storeName?: string | null; whatsappChannelStatus?: string | null; emailChannelStatus?: string | null }
+interface Onb { storeName?: string | null; whatsappChannelStatus?: string | null; emailChannelStatus?: string | null; salesModel?: "B2C" | "B2B" | null }
 interface Automation { id: string; description?: string | null; status: string }
 
 /** Início: thanks the store, asks "what do you want to do today?" and shows the first steps and a few numbers. */
@@ -39,7 +39,7 @@ export default function HomePage() {
     { href: "/app/messages", icon: MessageSquareHeart, title: t("a.messages"), text: t("a.messagesText") },
     { href: "/app/sales", icon: Receipt, title: t("a.pdv"), text: t("a.pdvText") },
     { href: "/app/insights", icon: LineChart, title: t("a.insights"), text: t("a.insightsText") },
-    { href: "/app/kanban", icon: KanbanSquare, title: t("a.kanban"), text: t("a.kanbanText"), feature: "PIPELINE" },
+    { href: "/app/kanban", icon: KanbanSquare, title: t("a.kanban"), text: onb.data?.salesModel === "B2B" ? t("a.kanbanTextB2B") : t("a.kanbanText"), feature: "PIPELINE" },
     { href: "/app/personas", icon: UsersRound, title: t("a.personas"), text: t("a.personasText"), feature: "PERSONAS" },
   ];
   const steps = [

@@ -5,7 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Plus, Star } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
 import { money, toMinor } from "@/lib/format";
-import { useCan } from "@/lib/auth";
+import { useAuth, useCan } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import { Alert, Button, Dialog, DialogContent, DialogTrigger, Field, Input, PageHeader, Spinner, Textarea, cn } from "@/components/ui";
 import { LockedScreen, useHasFeature } from "@/features/plan";
@@ -19,12 +19,20 @@ interface DealColumn { stage: string; count: number; valueMinor: number; deals: 
 
 const DEAL_STAGES = ["LEAD", "PROPOSAL", "NEGOTIATION", "WON", "LOST"] as const;
 
-/** Kanban: B2C (automatic, from the PDV) and B2B (deals moved by hand). Plan Alerta + Vendas. */
+/**
+ * Kanban of the store's sales model (chosen in the onboarding from the type of establishment):
+ * B2C — automatic board driven by the sales registered in the PDV; B2B — negotiation funnel moved by hand.
+ * Plan Alerta + Vendas.
+ */
 export default function KanbanPage() {
   const t = useTranslations("journey.kanban");
   const has = useHasFeature("PIPELINE");
-  const [mode, setMode] = useState<"B2C" | "B2B">("B2C");
-  if (has === undefined) return <Spinner />;
+  const { orgId } = useAuth();
+  const qc = useQueryClient();
+  const canManage = useCan("manage");
+  const onb = useQuery({ queryKey: ["onboarding-state", orgId], enabled: !!orgId, queryFn: () => api<{ salesModel?: "B2C" | "B2B" | null }>("/onboarding") });
+  const [switching, setSwitching] = useState(false);
+  if (has === undefined || onb.isLoading) return <Spinner />;
   if (!has) {
     return (
       <LockedScreen feature="PIPELINE" title={t("lockedTitle")} text={t("lockedText")}>
@@ -33,17 +41,23 @@ export default function KanbanPage() {
       </LockedScreen>
     );
   }
+  const mode = onb.data?.salesModel ?? "B2C";
+  const other = mode === "B2C" ? "B2B" : "B2C";
+  async function switchModel() {
+    if (!confirm(t("switchConfirm", { model: t(`models.${other}`) }))) return;
+    setSwitching(true);
+    try { await api("/onboarding", { method: "PUT", body: { salesModel: other } }); await qc.invalidateQueries({ queryKey: ["onboarding-state"] }); }
+    finally { setSwitching(false); }
+  }
   return (
     <div>
-      <PageHeader title={t("title")} description={mode === "B2C" ? t("b2cText") : t("b2bText")}
+      <PageHeader title={t(`title${mode}`)} description={mode === "B2C" ? t("b2cText") : t("b2bText")}
         actions={mode === "B2B" ? <NewDeal /> : undefined} />
-      <div role="tablist" aria-label={t("mode")} className="mb-4 inline-flex rounded-lg bg-muted p-1">
-        {(["B2C", "B2B"] as const).map((m) => (
-          <button key={m} role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
-            className={cn("min-h-9 rounded-md px-4 text-sm", mode === m ? "bg-card font-semibold shadow-sm" : "text-muted-foreground")}>{t(`tabs.${m}`)}</button>
-        ))}
-      </div>
       {mode === "B2C" ? <B2C /> : <B2B />}
+      <p className="mt-6 text-xs text-muted-foreground">
+        {t("modelNote", { model: t(`models.${mode}`) })}{" "}
+        {canManage && <button type="button" disabled={switching} onClick={switchModel} className="text-primary underline-offset-4 hover:underline">{t("switch", { model: t(`models.${other}`) })}</button>}
+      </p>
     </div>
   );
 }
