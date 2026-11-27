@@ -92,6 +92,9 @@ function LimitsTab() {
       <Field label={t("quietEnd")} htmlFor="qe"><Input id="qe" type="time" value={String(f.quietHoursEnd).slice(0, 5)} onChange={(e) => setF({ ...f, quietHoursEnd: e.target.value })} /></Field>
       {num("defaultFrequencyCap", t("frequencyCap"))}{num("dataRetentionDays", t("retention"))}
       {num("dailySpendLimitMinor", t("dailyLimit"), "minor units")}{num("monthlySpendLimitMinor", t("monthlyLimit"), "minor units")}{num("lowBalanceThresholdMinor", t("lowBalance"), "minor units")}
+      <div className="sm:col-span-2"><Field label={t("alertEmail")} htmlFor="alertEmail" hint={t("alertEmailHint")}>
+        <Input id="alertEmail" type="email" maxLength={254} value={String(f.alertEmail ?? "")} onChange={(e) => setF({ ...f, alertEmail: e.target.value })} />
+      </Field></div>
       <div className="sm:col-span-2"><Field label={t("alertContact")} htmlFor="alertContact" hint={t("alertContactHint")}>
         <Input id="alertContact" maxLength={200} value={String(f.alertContact ?? "")} onChange={(e) => setF({ ...f, alertContact: e.target.value })} />
       </Field></div>

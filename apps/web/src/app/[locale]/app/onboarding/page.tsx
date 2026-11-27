@@ -9,11 +9,12 @@ import { useRouter } from "@/i18n/navigation";
 import { useAuth } from "@/lib/auth";
 import { Logo } from "@/components/brand";
 import { Alert, Button, Field, Input, Select, Spinner, cn } from "@/components/ui";
+import { AlertFooterPreview } from "@/features/alert-footer";
 
 interface State {
   completed: boolean; storeName?: string | null; businessSegment?: string | null; alertContact?: string | null;
   whatsappChoice?: "CONNECT_OWN" | "PROVISION_NUMBER" | null; emailChoice?: "OWN_ADDRESS" | "VENDOCAS_ADDRESS" | null; emailAddress?: string | null;
-  whatsappChannelStatus?: string | null; emailChannelStatus?: string | null; salesModel?: SalesModel | null;
+  whatsappChannelStatus?: string | null; emailChannelStatus?: string | null; salesModel?: SalesModel | null; alertEmail?: string | null;
 }
 
 
@@ -25,7 +26,7 @@ export default function OnboardingPage() {
   const { orgId } = useAuth();
   const q = useQuery({ queryKey: ["onboarding-state", orgId], enabled: !!orgId, queryFn: () => api<State>("/onboarding") });
   const [step, setStep] = useState(0);
-  const [f, setF] = useState({ storeName: "", businessSegment: "", salesModel: "" as SalesModel | "", alertContact: "", whatsappChoice: "", emailChoice: "", emailAddress: "" });
+  const [f, setF] = useState({ storeName: "", businessSegment: "", salesModel: "" as SalesModel | "", alertContact: "", alertEmail: "", whatsappChoice: "", emailChoice: "", emailAddress: "" });
   const tt = useTranslations("journey");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,21 +35,23 @@ export default function OnboardingPage() {
     if (!q.data) return;
     if (q.data.completed) { router.replace("/app"); return; }
     const known = BUSINESS_GROUPS.some((g) => g.types.some((x) => x.key === q.data!.businessSegment));
-    setF({ storeName: q.data.storeName ?? "", businessSegment: known ? q.data.businessSegment ?? "" : "", salesModel: q.data.salesModel ?? "", alertContact: q.data.alertContact ?? "",
+    setF({ storeName: q.data.storeName ?? "", businessSegment: known ? q.data.businessSegment ?? "" : "", salesModel: q.data.salesModel ?? "", alertContact: q.data.alertContact ?? "", alertEmail: q.data.alertEmail ?? "",
       whatsappChoice: q.data.whatsappChoice ?? "", emailChoice: q.data.emailChoice ?? "", emailAddress: q.data.emailAddress ?? "" });
   }, [q.data, router]);
 
+  const emailOk = (v: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim());
+  const reachOk = (f.alertEmail.trim() === "" || emailOk(f.alertEmail)) && (emailOk(f.alertEmail) || f.alertContact.trim() !== "");
   const steps = [t("steps.store"), t("steps.whatsapp"), t("steps.email")];
   const valid = [
-    f.storeName.trim() && f.businessSegment && f.salesModel && f.alertContact.trim(),
+    f.storeName.trim() && f.businessSegment && f.salesModel && reachOk,
     !!f.whatsappChoice,
-    f.emailChoice === "VENDOCAS_ADDRESS" || (f.emailChoice === "OWN_ADDRESS" && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.emailAddress.trim())),
+    f.emailChoice === "VENDOCAS_ADDRESS" || (f.emailChoice === "OWN_ADDRESS" && emailOk(f.emailAddress)),
   ];
 
   async function next() {
     setBusy(true); setError(null);
     try {
-      const body = step === 0 ? { storeName: f.storeName.trim(), businessSegment: f.businessSegment, salesModel: f.salesModel, alertContact: f.alertContact.trim() }
+      const body = step === 0 ? { storeName: f.storeName.trim(), businessSegment: f.businessSegment, salesModel: f.salesModel, alertEmail: f.alertEmail.trim(), alertContact: f.alertContact.trim() }
         : step === 1 ? { whatsappChoice: f.whatsappChoice }
         : { emailChoice: f.emailChoice, emailAddress: f.emailChoice === "OWN_ADDRESS" ? f.emailAddress.trim() : null };
       await api("/onboarding", { method: "PUT", body });
@@ -113,9 +116,20 @@ export default function OnboardingPage() {
                     </div>
                   </fieldset>
                 )}
-                <Field label={t("store.contact")} htmlFor="ob-contact" hint={t("store.contactHint")}>
-                  <Input id="ob-contact" value={f.alertContact} onChange={(e) => setF({ ...f, alertContact: e.target.value })} placeholder="(11) 98888-0000" />
-                </Field>
+                <fieldset className="space-y-3 rounded-xl border border-white/10 p-4">
+                  <legend className="px-1 text-sm font-semibold">{t("store.reachTitle")}</legend>
+                  <p className="text-xs text-[#A3AECB]">{t("store.reachText")}</p>
+                  <Field label={t("store.email")} htmlFor="ob-alert-email" hint={t("store.emailHint")}>
+                    <Input id="ob-alert-email" type="email" value={f.alertEmail} onChange={(e) => setF({ ...f, alertEmail: e.target.value })} placeholder="contato@minhaloja.com.br" />
+                  </Field>
+                  <Field label={t("store.contact")} htmlFor="ob-contact" hint={t("store.contactHint")}>
+                    <Input id="ob-contact" value={f.alertContact} onChange={(e) => setF({ ...f, alertContact: e.target.value })} placeholder="(11) 98888-0000" />
+                  </Field>
+                  <div className="rounded-lg border border-dashed border-white/15 bg-white/5 p-3">
+                    <p className="mb-1 text-[11px] uppercase tracking-wide text-[#A3AECB]">{tt("alertFooter.title")}</p>
+                    <AlertFooterPreview store={f.storeName} email={emailOk(f.alertEmail) ? f.alertEmail : ""} phone={f.alertContact} className="text-[#C9D2EA]" />
+                  </div>
+                </fieldset>
               </>)}
               {step === 1 && (<>
                 <Head title={t("whatsapp.title")} text={t("whatsapp.text")} />

@@ -469,8 +469,10 @@
     "changePassword": "Alterar senha",
     "currentPassword": "Senha atual",
     "newPassword": "Nova senha",
-    "alertContact": "Contato mostrado nos alertas",
-    "alertContactHint": "Vai no rodapé \"Esta mensagem é apenas um alerta. Para falar com a loja: …\". Vazio = telefone ou e-mail da empresa."
+    "alertContact": "Telefone mostrado nos alertas",
+    "alertContactHint": "Vai no rodapé, embaixo do e-mail. Vazio = telefone da empresa.",
+    "alertEmail": "E-mail mostrado nos alertas",
+    "alertEmailHint": "Vai no rodapé, embaixo do nome da loja. Vazio = e-mail da empresa."
   },
   "admin": {
     "title": "Administração da plataforma",
@@ -724,15 +726,19 @@
         "text": "Três passos rápidos para o vendocas. começar a cuidar dos seus clientes.",
         "name": "Nome da loja (como o cliente conhece)",
         "choose": "Escolha…",
-        "contact": "Telefone ou WhatsApp para o cliente falar com você",
-        "contactHint": "Aparece no final das mensagens: \"Para falar com a loja: …\"",
+        "contact": "Telefone ou WhatsApp de contato (opcional)",
+        "contactHint": "Se você não tiver telefone, deixe em branco.",
         "type": "Tipo de estabelecimento",
         "model": "Você vende para quem?",
         "B2C": "Consumidores (B2C)",
         "B2Ctext": "Clientes vêm, compram e vão embora. A esteira anda sozinha a cada venda registrada.",
         "B2B": "Empresas (B2B)",
         "B2Btext": "Você negocia com empresas. Funil de negociação que você move.",
-        "suggested": "Sugerido para {type}"
+        "suggested": "Sugerido para {type}",
+        "reachTitle": "Como o cliente fala com você",
+        "reachText": "Os alertas saem pelo vendocas. No final de cada um aparecem o nome da loja, este e-mail e este telefone. Preencha pelo menos um.",
+        "email": "E-mail de contato",
+        "emailHint": "Já veio com o e-mail do seu login. Pode trocar."
       },
       "whatsapp": {
         "title": "Você já tem WhatsApp Business?",
@@ -801,7 +807,7 @@
         "title": "Sumiu há 7 dias",
         "when": "Cliente sem comprar há 7 dias (ou o prazo que você escolher)",
         "subject": "Sentimos sua falta na [loja]",
-        "body": "Oi, [nome]! Faz um tempinho que você não aparece na [loja]. Está tudo bem? Tem algo que a gente possa melhorar? É só responder esta mensagem.",
+        "body": "Oi, [nome]! Faz um tempinho que você não aparece na [loja]. Está tudo bem? Tem algo que a gente possa melhorar? Vai ser um prazer te ver de novo — nossos contatos estão logo abaixo.",
         "days": "Enviar depois de quantos dias sem comprar",
         "daysHint": "Conta a partir da última compra registrada."
       },
@@ -839,7 +845,6 @@
       "message": "Mensagem",
       "variables": "Use {name} para o nome do cliente e {store} para o nome da loja.",
       "preview": "Como o cliente vê",
-      "footer": "Esta mensagem é apenas um alerta. Para falar com a loja: {contact}",
       "save": "Salvar",
       "tokenName": "[nome]",
       "tokenStore": "[loja]"
@@ -1141,6 +1146,14 @@
       "services": "Serviços",
       "b2b": "Para empresas",
       "other": "Outro"
+    },
+    "alertFooter": {
+      "sentBy": "Este alerta foi enviado por {store}. É apenas um alerta, não precisa responder.",
+      "generic": "Esta mensagem é apenas um alerta, não precisa responder.",
+      "reach": "Para falar com a loja:",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "title": "Como o cliente vê o final de cada alerta"
     }
   }
 }

@@ -28,11 +28,20 @@ Testes: `MarketsPlansCrmIT` (10 cenários, Postgres real).
   depois que o preço for definido no Control.
 - `ALERTS_ONLY` (planos de 19 e 29):
   - envio com origem `CAMPAIGN` → bloqueado `PLAN_CAMPAIGNS_REQUIRED`; resposta manual (`MANUAL`) → `PLAN_INBOX_REQUIRED`;
-  - toda mensagem leva o rodapé no idioma do cliente: *"Esta mensagem é apenas um alerta. Para falar com a loja: {contato}"*
-    (e-mail texto e HTML, SMS, WhatsApp texto livre);
-  - modelos de WhatsApp desses lojistas são enviados à Meta com o rodapé curto (≤ 60 caracteres, sem variáveis);
-  - contato do rodapé: `organization_settings.alert_contact` (configurável em `PUT /organizations/current/settings`),
-    senão telefone/e-mail da empresa.
+  - toda mensagem leva o rodapé no idioma do cliente (e-mail texto e HTML, WhatsApp texto livre):
+    ```
+    Este alerta foi enviado por {loja}. É apenas um alerta, não precisa responder.
+    Para falar com a loja:
+    E-mail: {e-mail}
+    Telefone: {telefone}
+    ```
+  - SMS leva uma linha curta (cada caractere custa): *"Alerta de {loja}, não responda. Para falar com a loja: {telefone ou e-mail}"*;
+  - modelos de WhatsApp desses lojistas vão à Meta com rodapé fixo de até 60 caracteres, sem variáveis
+    (*"Alerta de {loja}. Não responda. {telefone}"*, encurtado se não couber);
+  - e-mail do rodapé: `organization_settings.alert_email` (V13; o onboarding já traz o e-mail do login), senão o e-mail da
+    empresa; telefone: `organization_settings.alert_contact`, senão o telefone da empresa. Os dois são editáveis no
+    onboarding e em Configurações (`PUT /organizations/current/settings` com `alertEmail` / `alertContact`). A loja não
+    precisa ter telefone: basta um dos dois.
 
 ## Cotas inclusas ("tudo incluso")
 `plan_quotas` por plano × mercado × canal (definidas no Control; **nada pré-cadastrado**).
@@ -73,7 +82,7 @@ uma vez, o intervalo típico da loja). Com `dias` = tempo desde a última compra
 - **Alerta + Vendas e acima (`PRODUCT_CATALOG`):** produtos e itens.
 
 ## Onboarding obrigatório (`/onboarding`)
-Loja (nome, **tipo de estabelecimento**, **modelo de venda B2C/B2B** e contato do rodapé) → WhatsApp (conectar o próprio / Vendocas providencia número) → e-mail (próprio /
+Loja (nome, **tipo de estabelecimento**, **modelo de venda B2C/B2B**, e-mail e telefone do rodapé) → WhatsApp (conectar o próprio / Vendocas providencia número) → e-mail (próprio /
 endereço do Vendocas). Sem "pular": `POST /onboarding/complete` recusa enquanto faltar resposta; o app fica no onboarding.
 
 - Tipo de estabelecimento (V12): catálogo com 92 tipos em `apps/web/src/features/business-types.ts` (pizzaria, clínica de

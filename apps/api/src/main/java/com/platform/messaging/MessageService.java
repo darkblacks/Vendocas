@@ -146,9 +146,8 @@ public class MessageService {
 
         // ---- content ----
         Map<String, Object> vars = new HashMap<>(c.variables());
-        var orgRow = jdbc.queryForMap("""
-                SELECT o.trade_name, o.time_zone, o.locale, o.market_code, COALESCE(s.alert_contact, o.contact_phone, o.contact_email::text) AS alert_contact
-                FROM organizations o LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE o.id = ?""", org);
+        var orgRow = jdbc.queryForMap("SELECT o.trade_name, o.time_zone, o.locale, o.market_code, " + AlertFooter.SQL_COLUMNS
+                + " FROM organizations o LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE o.id = ?", org);
         vars.put("business.name", orgRow.get("trade_name"));
         String subject = r.subject(), body = r.body(), html = null;
         String waCategory = null;
@@ -203,8 +202,11 @@ public class MessageService {
         String alertFooter = null;
         if (ent.alertsOnly()) {
             // WhatsApp templates carry the footer as an approved component (see WhatsAppChannelSetup); free text gets it appended.
-            alertFooter = AlertFooter.text(c.locale() != null ? c.locale() : (String) orgRow.get("locale"), (String) orgRow.get("alert_contact"));
-            if (!"WHATSAPP".equals(r.channel()) || p.waTemplate == null) p.text = p.text + "\n\n" + alertFooter;
+            String footerLocale = c.locale() != null ? c.locale() : (String) orgRow.get("locale");
+            var footerContact = AlertFooter.Contact.of(orgRow);
+            alertFooter = AlertFooter.text(footerLocale, footerContact);
+            String inText = "SMS".equals(r.channel()) || "MMS".equals(p.sendChannel) ? AlertFooter.sms(footerLocale, footerContact) : alertFooter;
+            if (!"WHATSAPP".equals(r.channel()) || p.waTemplate == null) p.text = p.text + "\n\n" + inText;
         }
         if ("EMAIL".equals(r.channel())) {
             if (p.subject == null || p.subject.isBlank()) return block(p, "EMPTY_SUBJECT");
@@ -216,7 +218,7 @@ public class MessageService {
                 footer = "<a href=\"" + url + "\">Unsubscribe</a>";
                 p.text = p.text + "\n\n—\nUnsubscribe: " + url;
             }
-            String alertHtml = alertFooter == null ? "" : "<p style=\"font-size:12px;color:#555\">" + HtmlUtils.htmlEscape(alertFooter) + "</p>";
+            String alertHtml = alertFooter == null ? "" : "<p style=\"font-size:12px;color:#555\">" + HtmlUtils.htmlEscape(alertFooter).replace("\n", "<br>") + "</p>";
             p.html = html != null ? TemplateRenderer.render(html, vars, true) + alertHtml + (footer == null ? "" : "<p style=\"font-size:12px\">" + footer + "</p>")
                     : TemplateRenderer.textToHtml(TemplateRenderer.render(body, vars, false) + (alertFooter == null ? "" : "\n\n" + alertFooter), footer);
         } else if (("SMS".equals(r.channel()) || "MMS".equals(p.sendChannel)) && PROMOTIONAL.contains(r.purpose())) {

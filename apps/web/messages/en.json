@@ -469,8 +469,10 @@
     "changePassword": "Change password",
     "currentPassword": "Current password",
     "newPassword": "New password",
-    "alertContact": "Contact shown in alert messages",
-    "alertContactHint": "Goes in the footer \"This message is only an alert — to talk to the store: …\". Empty = company phone or e-mail."
+    "alertContact": "Phone shown in alerts",
+    "alertContactHint": "Goes in the footer, under the email. Empty = company phone.",
+    "alertEmail": "Email shown in alerts",
+    "alertEmailHint": "Goes in the footer, under the store name. Empty = company email."
   },
   "admin": {
     "title": "Platform administration",
@@ -724,15 +726,19 @@
         "text": "Three quick steps for vendocas. to start looking after your customers.",
         "name": "Store name (as customers know it)",
         "choose": "Choose…",
-        "contact": "Phone or WhatsApp customers can reach you on",
-        "contactHint": "Shown at the end of messages: \"To talk to the store: …\"",
+        "contact": "Contact phone or WhatsApp (optional)",
+        "contactHint": "No phone? Leave it blank.",
         "type": "Type of business",
         "model": "Who do you sell to?",
         "B2C": "Consumers (B2C)",
         "B2Ctext": "Customers come, buy and leave. The board moves on its own with every logged sale.",
         "B2B": "Companies (B2B)",
         "B2Btext": "You negotiate with companies. A deal funnel you move.",
-        "suggested": "Suggested for {type}"
+        "suggested": "Suggested for {type}",
+        "reachTitle": "How customers reach you",
+        "reachText": "Alerts are sent by vendocas. Each one ends with your store name, this email and this phone. Fill in at least one.",
+        "email": "Contact email",
+        "emailHint": "Pre-filled with your login email. You can change it."
       },
       "whatsapp": {
         "title": "Do you already have WhatsApp Business?",
@@ -801,7 +807,7 @@
         "title": "Gone quiet for 7 days",
         "when": "Customer hasn't bought for 7 days (or the period you choose)",
         "subject": "We miss you at [store]",
-        "body": "Hi [name]! We haven't seen you at [store] for a while. Is everything OK? Anything we could do better? Just reply to this message.",
+        "body": "Hi [name]! We haven't seen you at [store] for a while. Is everything OK? Anything we could do better? We would love to see you again — our contacts are below.",
         "days": "Send after how many days without buying",
         "daysHint": "Counted from the last logged purchase."
       },
@@ -839,7 +845,6 @@
       "message": "Message",
       "variables": "Use {name} for the customer's name and {store} for the store's name.",
       "preview": "What the customer sees",
-      "footer": "This message is only an alert. To talk to the store: {contact}",
       "save": "Save",
       "tokenName": "[name]",
       "tokenStore": "[store]"
@@ -1141,6 +1146,14 @@
       "services": "Services",
       "b2b": "For businesses",
       "other": "Other"
+    },
+    "alertFooter": {
+      "sentBy": "This alert was sent by {store}. It is only an alert, no need to reply.",
+      "generic": "This message is only an alert, no need to reply.",
+      "reach": "To reach the store:",
+      "email": "Email",
+      "phone": "Phone",
+      "title": "How the customer sees the end of each alert"
     }
   }
 }

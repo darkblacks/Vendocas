@@ -469,8 +469,10 @@
     "changePassword": "Cambiar contraseña",
     "currentPassword": "Contraseña actual",
     "newPassword": "Nueva contraseña",
-    "alertContact": "Contacto que aparece en los avisos",
-    "alertContactHint": "Va en el pie \"Este mensaje es solo un aviso. Para hablar con la tienda: …\". Vacío = teléfono o correo de la empresa."
+    "alertContact": "Teléfono mostrado en los avisos",
+    "alertContactHint": "Va en el pie, debajo del correo. Vacío = teléfono de la empresa.",
+    "alertEmail": "Correo mostrado en los avisos",
+    "alertEmailHint": "Va en el pie, debajo del nombre de la tienda. Vacío = correo de la empresa."
   },
   "admin": {
     "title": "Administración de la plataforma",
@@ -724,15 +726,19 @@
         "text": "Tres pasos rápidos para que vendocas. empiece a cuidar a tus clientes.",
         "name": "Nombre de la tienda (como te conoce el cliente)",
         "choose": "Elige…",
-        "contact": "Teléfono o WhatsApp para que el cliente hable contigo",
-        "contactHint": "Aparece al final de los mensajes: \"Para hablar con la tienda: …\"",
+        "contact": "Teléfono o WhatsApp de contacto (opcional)",
+        "contactHint": "Si no tienes teléfono, déjalo en blanco.",
         "type": "Tipo de negocio",
         "model": "¿A quién le vendes?",
         "B2C": "Consumidores (B2C)",
         "B2Ctext": "Los clientes vienen, compran y se van. El tablero avanza solo con cada venta registrada.",
         "B2B": "Empresas (B2B)",
         "B2Btext": "Negocias con empresas. Embudo de negociación que tú mueves.",
-        "suggested": "Sugerido para {type}"
+        "suggested": "Sugerido para {type}",
+        "reachTitle": "Cómo te contacta el cliente",
+        "reachText": "Los avisos salen por vendocas. Al final de cada uno aparecen el nombre de la tienda, este correo y este teléfono. Completa al menos uno.",
+        "email": "Correo de contacto",
+        "emailHint": "Viene con el correo de tu cuenta. Puedes cambiarlo."
       },
       "whatsapp": {
         "title": "¿Ya tienes WhatsApp Business?",
@@ -801,7 +807,7 @@
         "title": "Desapareció hace 7 días",
         "when": "Cliente sin comprar hace 7 días (o el plazo que elijas)",
         "subject": "Te extrañamos en [tienda]",
-        "body": "¡Hola, [nombre]! Hace un tiempo que no pasas por [tienda]. ¿Todo bien? ¿Hay algo que podamos mejorar? Solo responde este mensaje.",
+        "body": "¡Hola, [nombre]! Hace un tiempo que no pasas por [tienda]. ¿Todo bien? ¿Hay algo que podamos mejorar? Nos encantará verte de nuevo — nuestros contactos están abajo.",
         "days": "Enviar después de cuántos días sin comprar",
         "daysHint": "Cuenta desde la última compra registrada."
       },
@@ -839,7 +845,6 @@
       "message": "Mensaje",
       "variables": "Usa {name} para el nombre del cliente y {store} para el nombre de la tienda.",
       "preview": "Cómo lo ve el cliente",
-      "footer": "Este mensaje es solo un aviso. Para hablar con la tienda: {contact}",
       "save": "Guardar",
       "tokenName": "[nombre]",
       "tokenStore": "[tienda]"
@@ -1141,6 +1146,14 @@
       "services": "Servicios",
       "b2b": "Para empresas",
       "other": "Otro"
+    },
+    "alertFooter": {
+      "sentBy": "Este aviso fue enviado por {store}. Es solo un aviso, no hace falta responder.",
+      "generic": "Este mensaje es solo un aviso, no hace falta responder.",
+      "reach": "Para hablar con la tienda:",
+      "email": "Correo",
+      "phone": "Teléfono",
+      "title": "Cómo ve el cliente el final de cada aviso"
     }
   }
 }

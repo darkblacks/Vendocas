@@ -185,10 +185,10 @@ public class OrganizationService {
     public SettingsView settings(UUID orgId) {
         return jdbc.queryForObject("""
                 SELECT s.quiet_hours_start, s.quiet_hours_end, s.default_frequency_cap, s.daily_spend_limit_minor, s.monthly_spend_limit_minor,
-                       s.low_balance_threshold_minor, s.data_retention_days, s.require_mfa_for_admins, s.alert_contact, o.market_code
+                       s.low_balance_threshold_minor, s.data_retention_days, s.require_mfa_for_admins, s.alert_contact, o.market_code, s.alert_email
                 FROM organization_settings s JOIN organizations o ON o.id = s.organization_id WHERE s.organization_id = ?""",
                 (rs, i) -> new SettingsView(rs.getTime(1).toLocalTime(), rs.getTime(2).toLocalTime(), rs.getInt(3), rs.getLong(4),
-                        rs.getLong(5), rs.getLong(6), rs.getInt(7), rs.getBoolean(8), rs.getString(9), rs.getString(10)), orgId);
+                        rs.getLong(5), rs.getLong(6), rs.getInt(7), rs.getBoolean(8), rs.getString(9), rs.getString(10), rs.getString(11)), orgId);
     }
 
     @Transactional
@@ -201,6 +201,10 @@ public class OrganizationService {
         if (r.alertContact() != null) {
             jdbc.update("UPDATE organization_settings SET alert_contact = ? WHERE organization_id = ?",
                     r.alertContact().isBlank() ? null : r.alertContact().trim(), orgId);
+        }
+        if (r.alertEmail() != null) {
+            jdbc.update("UPDATE organization_settings SET alert_email = ? WHERE organization_id = ?",
+                    r.alertEmail().isBlank() ? null : r.alertEmail().trim(), orgId);
         }
         audit.user(orgId, userId, "settings.updated", "organization", orgId, Map.of());
         return settings(orgId);

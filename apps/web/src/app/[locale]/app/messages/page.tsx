@@ -4,15 +4,16 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Megaphone, PhoneMissed, UserRoundX } from "lucide-react";
 import { api, errorMessage } from "@/lib/api";
-import { useCan } from "@/lib/auth";
+import { useAuth, useCan } from "@/lib/auth";
 import { Link } from "@/i18n/navigation";
 import { Alert, Button, Card, Field, Input, PageHeader, Select, Spinner, Switch, Textarea, cn } from "@/components/ui";
 import { PlanBadge, useEntitlements } from "@/features/plan";
+import { AlertFooterPreview } from "@/features/alert-footer";
 import { PRESET_INACTIVE, PRESET_MISSED_CALL, configFrom, definitionFor, type Channel, type PresetConfig, type PresetKey } from "@/features/messages-presets";
 
 interface Automation { id: string; name: string; description?: string | null; status: string; running: number; completed: number; blocked: number }
 interface Detail { summary: Automation; draft?: unknown; active?: unknown; validationErrors: string[] }
-interface Settings { alertContact?: string | null }
+interface Reach { storeName?: string | null; alertContact?: string | null; alertEmail?: string | null }
 
 /** Minhas mensagens: the two ready messages (7 days without buying, missed-call return) and campaigns (Ilimitado). */
 export default function MessagesPage() {
@@ -78,7 +79,8 @@ function Editor({ preset, automation, alertsOnly }: { preset: PresetKey; automat
     ? { days: 7, channel: "EMAIL", subject: t.raw("inactive.subject") as string, body: t.raw("inactive.body") as string }
     : { days: 0, channel: "SMS", subject: "", body: t.raw("missed.body") as string }, [inactive, t]);
   const detail = useQuery({ queryKey: ["automation", automation?.id], enabled: !!automation, queryFn: () => api<Detail>(`/automations/${automation!.id}`) });
-  const settings = useQuery({ queryKey: ["settings"], queryFn: () => api<Settings>("/organizations/current/settings") });
+  const { orgId } = useAuth();
+  const reach = useQuery({ queryKey: ["onboarding-state", orgId], enabled: !!orgId, queryFn: () => api<Reach>("/onboarding") });
   const [c, setC] = useState<PresetConfig>(defaults);
   const [on, setOn] = useState(automation?.status === "ACTIVE");
   const [busy, setBusy] = useState(false);
@@ -137,7 +139,8 @@ function Editor({ preset, automation, alertsOnly }: { preset: PresetKey; automat
         <p className="mb-2 text-xs text-muted-foreground">{t("preview")}</p>
         <div className="rounded-xl rounded-bl-sm border border-border bg-card p-3 text-sm leading-relaxed">
           {preview}
-          {alertsOnly && <p className="mt-2 border-t border-dashed border-border pt-2 text-xs text-muted-foreground">{t("footer", { contact: settings.data?.alertContact ?? "…" })}</p>}
+          {alertsOnly && <AlertFooterPreview className="mt-2 border-t border-dashed border-border pt-2 text-muted-foreground"
+            store={reach.data?.storeName} email={reach.data?.alertEmail} phone={reach.data?.alertContact} />}
         </div>
       </div>
       {msg && <Alert tone={msg.tone} title={msg.text} />}

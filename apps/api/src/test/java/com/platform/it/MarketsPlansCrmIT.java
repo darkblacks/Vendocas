@@ -145,7 +145,8 @@ class MarketsPlansCrmIT extends IntegrationTest {
         var t = fx.brazil();
         fx.activeSubscription(t.orgId(), "ALERTA");
         fx.emailChannel(t.orgId());
-        jdbc.update("UPDATE organization_settings SET quiet_hours_start = '00:00', quiet_hours_end = '00:00', alert_contact = '(11) 98888-0000' WHERE organization_id = ?", t.orgId());
+        jdbc.update("UPDATE organization_settings SET quiet_hours_start = '00:00', quiet_hours_end = '00:00', alert_contact = '(11) 98888-0000', alert_email = 'contato@transmassa.com.br' WHERE organization_id = ?", t.orgId());
+        jdbc.update("UPDATE organizations SET trade_name = 'Transmassa' WHERE id = ?", t.orgId());
         UUID c = emailContact(t.orgId(), "alert-" + UUID.randomUUID() + "@example.com");
         jdbc.update("UPDATE contacts SET locale = 'pt-BR' WHERE id = ?", c);
 
@@ -158,8 +159,12 @@ class MarketsPlansCrmIT extends IntegrationTest {
         var alert = messages.enqueue(send(t.orgId(), c, "EMAIL", "TRANSACTIONAL", "AUTOMATION"));
         assertThat(alert.status()).isEqualTo("QUEUED");
         var row = jdbc.queryForMap("SELECT body, render_meta->>'html' AS html FROM messages WHERE id = ?", alert.messageId());
-        assertThat((String) row.get("body")).contains("Esta mensagem é apenas um alerta. Para falar com a loja: (11) 98888-0000");
-        assertThat((String) row.get("html")).contains("apenas um alerta");
+        assertThat((String) row.get("body")).contains("""
+                Este alerta foi enviado por Transmassa. É apenas um alerta, não precisa responder.
+                Para falar com a loja:
+                E-mail: contato@transmassa.com.br
+                Telefone: (11) 98888-0000""");
+        assertThat((String) row.get("html")).contains("enviado por Transmassa").contains("E-mail: contato@transmassa.com.br<br>Telefone: (11) 98888-0000");
     }
 
     @Test
@@ -384,8 +389,10 @@ class MarketsPlansCrmIT extends IntegrationTest {
     void onboardingCannotBeSkipped() throws Exception {
         var t = fx.brazil();
         String auth = "Bearer " + t.token(), org = t.orgId().toString();
+        String loginEmail = jdbc.queryForObject("SELECT u.email::text FROM users u JOIN organization_members m ON m.user_id = u.id WHERE m.organization_id = ? LIMIT 1", String.class, t.orgId());
         mvc.perform(get("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(false));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(false))
+                .andExpect(jsonPath("$.alertEmail").value(loginEmail)).andExpect(jsonPath("$.alertContact").doesNotExist());
         mvc.perform(post("/api/v1/onboarding/complete").header("Authorization", auth).header("X-Organization-Id", org))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.fields.whatsappChoice").value("required"));
         mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
@@ -404,6 +411,10 @@ class MarketsPlansCrmIT extends IntegrationTest {
                 .andExpect(status().isOk()).andExpect(jsonPath("$.completed").value(true)).andExpect(jsonPath("$.storeName").value("Transmassa"))
                 .andExpect(jsonPath("$.salesModel").value("B2B")).andExpect(jsonPath("$.businessSegment").value("shoe_store"));
         assertThat(jdbc.queryForObject("SELECT alert_contact FROM organization_settings WHERE organization_id = ?", String.class, t.orgId())).isEqualTo("(11) 98888-0000");
+        // the pre-filled login e-mail is kept as the footer e-mail
+        assertThat(jdbc.queryForObject("SELECT alert_email FROM organization_settings WHERE organization_id = ?", String.class, t.orgId())).isEqualTo(loginEmail);
+        mvc.perform(put("/api/v1/onboarding").header("Authorization", auth).header("X-Organization-Id", org).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"alertEmail\":\"not-an-email\"}")).andExpect(status().isBadRequest());
     }
 
     @Test

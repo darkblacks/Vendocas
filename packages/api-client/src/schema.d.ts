@@ -2753,6 +2753,8 @@ export interface components {
             dataRetentionDays?: number;
             requireMfaForAdmins?: boolean;
             alertContact?: string;
+            /** Format: email */
+            alertEmail?: string;
         };
         SettingsView: {
             /** Format: time-local */
@@ -2772,12 +2774,15 @@ export interface components {
             requireMfaForAdmins?: boolean;
             alertContact?: string;
             marketCode?: string;
+            alertEmail?: string;
         };
         Update: {
             storeName?: string;
             businessSegment?: string;
             salesModel?: string;
             alertContact?: string;
+            /** Format: email */
+            alertEmail?: string;
             whatsappChoice?: string;
             emailChoice?: string;
             /** Format: email */
@@ -2796,6 +2801,7 @@ export interface components {
             whatsappChannelStatus?: string;
             emailChannelStatus?: string;
             salesModel?: string;
+            alertEmail?: string;
         };
         ChangeRoleRequest: {
             role: string;
@@ -4075,13 +4081,13 @@ export interface components {
             textual?: boolean;
             boolean?: boolean;
             binary?: boolean;
+            string?: boolean;
+            integralNumber?: boolean;
             valueNode?: boolean;
             container?: boolean;
             missingNode?: boolean;
             /** @enum {string} */
             nodeType?: "ARRAY" | "BINARY" | "BOOLEAN" | "MISSING" | "NULL" | "NUMBER" | "OBJECT" | "POJO" | "STRING";
-            string?: boolean;
-            integralNumber?: boolean;
             number?: boolean;
             embeddedValue?: boolean;
         };

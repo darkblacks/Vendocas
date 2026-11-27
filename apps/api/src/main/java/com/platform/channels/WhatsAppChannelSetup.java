@@ -147,9 +147,8 @@ public class WhatsAppChannelSetup {
                                WHERE s.organization_id = ? AND s.status NOT IN ('CANCELED','EXPIRED'))""", Boolean.class, orgId);
         if (Boolean.TRUE.equals(alertsOnly)) {
             // Alert plans: the approved template itself carries "only an alert — contact the store" (Meta footers allow no variables).
-            String contact = jdbc.queryForObject("""
-                    SELECT COALESCE(s.alert_contact, o.contact_phone, o.contact_email::text) FROM organizations o
-                    LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE o.id = ?""", String.class, orgId);
+            var contact = com.platform.markets.AlertFooter.Contact.of(jdbc.queryForMap("SELECT " + com.platform.markets.AlertFooter.SQL_COLUMNS
+                    + " FROM organizations o LEFT JOIN organization_settings s ON s.organization_id = o.id WHERE o.id = ?", orgId));
             components.add(Map.of("type", "FOOTER", "text", com.platform.markets.AlertFooter.whatsapp((String) t.get("locale"), contact)));
         } else if (Set.of("MARKETING", "REACTIVATION").contains((String) t.get("purpose"))) {
             components.add(Map.of("type", "FOOTER", "text", "Reply STOP to opt out"));

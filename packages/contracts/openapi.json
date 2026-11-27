@@ -6667,6 +6667,12 @@
                         "type": "string",
                         "maxLength": 200,
                         "minLength": 0
+                    },
+                    "alertEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254,
+                        "minLength": 0
                     }
                 },
                 "required": [
@@ -6713,6 +6719,9 @@
                     },
                     "marketCode": {
                         "type": "string"
+                    },
+                    "alertEmail": {
+                        "type": "string"
                     }
                 }
             },
@@ -6735,6 +6744,12 @@
                     "alertContact": {
                         "type": "string",
                         "maxLength": 200,
+                        "minLength": 0
+                    },
+                    "alertEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 254,
                         "minLength": 0
                     },
                     "whatsappChoice": {
@@ -6788,6 +6803,9 @@
                         "type": "string"
                     },
                     "salesModel": {
+                        "type": "string"
+                    },
+                    "alertEmail": {
                         "type": "string"
                     }
                 }
@@ -10570,6 +10588,12 @@
                     "binary": {
                         "type": "boolean"
                     },
+                    "string": {
+                        "type": "boolean"
+                    },
+                    "integralNumber": {
+                        "type": "boolean"
+                    },
                     "valueNode": {
                         "type": "boolean"
                     },
@@ -10592,12 +10616,6 @@
                             "POJO",
                             "STRING"
                         ]
-                    },
-                    "string": {
-                        "type": "boolean"
-                    },
-                    "integralNumber": {
-                        "type": "boolean"
                     },
                     "number": {
                         "type": "boolean"
