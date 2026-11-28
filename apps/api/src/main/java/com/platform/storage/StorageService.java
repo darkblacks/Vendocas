@@ -55,6 +55,11 @@ public class StorageService {
                 RequestBody.fromBytes(content));
     }
 
+    public void delete(String key) {
+        init();
+        client.deleteObject(software.amazon.awssdk.services.s3.model.DeleteObjectRequest.builder().bucket(props.storage().bucket()).key(key).build());
+    }
+
     public String presignedGet(String key, Duration ttl) {
         init();
         return presigner.presignGetObject(GetObjectPresignRequest.builder().signatureDuration(ttl)

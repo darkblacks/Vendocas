@@ -98,8 +98,34 @@ uma vez, o intervalo típico da loja). Com `dias` = tempo desde a última compra
 - Kanbans, churn e Personas: plano **Alerta + Vendas** e acima (recurso `PIPELINE`, `PERSONAS`).
 
 ## PDV — Vendocas Vendas (`SALES_REGISTRY`, todos os planos)
-- **Alerta:** "venda seca" — cliente + valor pago (`amountMinor`), suficiente para ticket médio e janela.
-- **Alerta + Vendas e acima (`PRODUCT_CATALOG`):** produtos e itens.
+Tela com quatro abas: **Vender**, **Vendas**, **Produtos** e **Estoque**.
+
+| | Alerta (R$ 19,90) | Alerta + Vendas (R$ 29,90) e Ilimitado (`PRODUCT_CATALOG`) |
+|---|---|---|
+| Vender | "venda seca": cliente + valor pago | caixa com grade de produtos com foto, busca, leitor de código de barras (digita + Enter), carrinho, desconto e item avulso |
+| Vendas | histórico por período, situação e cliente; detalhe; cancelamento | + vendas por produto com faturamento e margem |
+| Produtos | — (cadeado) | foto, categoria, preço, custo e margem, código de barras, SKU, unidade (un, kg, L, caixa, serviço…), descrição, ativo/inativo |
+| Estoque | — (cadeado) | entrada (com custo), perda, inventário (contagem), estoque mínimo e aviso "Repor", valor do estoque a custo e a preço, últimas movimentações |
+
+Regras (V15):
+- **Estoque com livro-razão**: toda mudança grava uma linha em `stock_movements` (inicial, entrada, venda, venda cancelada,
+  inventário, perda) com o saldo depois. A venda trava os produtos (`FOR UPDATE`, sempre na mesma ordem) para vendas
+  simultâneas não perderem unidades. O caixa nunca é bloqueado: o estoque pode ficar negativo e aparece em vermelho.
+- **Custo na hora da venda** fica no item (`order_items.unit_cost_minor`): a margem do relatório não muda se o custo mudar depois.
+- **Desconto** só em venda com itens; não pode passar do subtotal.
+- **Cancelar venda** é do dono ou administrador (`ORG_MANAGE`): a venda sai dos totais e da atribuição, o estágio do cliente é
+  recalculado, o valor gasto do cliente diminui e as unidades voltam ao estoque. Fica registrado quem, quando e o motivo.
+- **Fotos** ficam no bucket privado, na pasta de cada loja: `org/{organizationId}/products/…`. Validadas pelo conteúdo do
+  arquivo (JPEG, PNG ou WEBP, até 5 MB, decodificadas), trocadas sem deixar arquivo órfão e lidas só por link temporário (1 h).
+- Categorias viraram tabela (`product_categories`); clientes antigos que mandam a categoria como texto continuam funcionando.
+
+Endpoints: `GET|POST /product-categories`, `PUT|DELETE /product-categories/{id}`, `GET|POST /products` (busca por nome, SKU ou
+código de barras; filtros `categoryId`, `lowStock`), `GET|PUT /products/{id}`, `POST|DELETE /products/{id}/photo`,
+`POST /products/{id}/stock` (`PURCHASE` / `LOSS` / `COUNT`), `GET /stock/movements`, `GET /stock/summary`,
+`GET /sales?status&q`, `GET /sales/{id}`, `POST /sales/{id}/cancel`, `GET /sales/by-product`.
+
+Próximo passo combinado: **banco de imagens padrão do Vendocas** por nicho (pizzaria, salão, pet shop…), para a loja escolher
+uma foto pronta em vez de subir a sua.
 
 ## Onboarding obrigatório (`/onboarding`)
 Loja (nome, **tipo de estabelecimento**, **modelo de venda B2C/B2B**, e-mail e telefone do rodapé) → WhatsApp (conectar o próprio / Vendocas providencia número) → e-mail (próprio /

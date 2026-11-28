@@ -19,6 +19,20 @@ public class TestProviders {
     public static final List<MessageProvider.Outbound> SENT = new CopyOnWriteArrayList<>();
     public static volatile MessageProvider.Outcome nextOutcome = MessageProvider.Outcome.ACCEPTED;
 
+    /** In-memory bucket: objects keyed exactly like production (org/{id}/...). */
+    public static final java.util.Map<String, byte[]> BUCKET = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Bean
+    @Primary
+    com.platform.storage.StorageService fakeStorage() {
+        return new com.platform.storage.StorageService(null) {
+            @Override public boolean configured() { return true; }
+            @Override public void put(String key, byte[] content, String contentType) { BUCKET.put(key, content); }
+            @Override public void delete(String key) { BUCKET.remove(key); }
+            @Override public String presignedGet(String key, java.time.Duration ttl) { return "https://bucket.test/" + key + "?sig=x"; }
+        };
+    }
+
     @Bean
     MessageProvider fakeEmailProvider() {
         return new MessageProvider() {

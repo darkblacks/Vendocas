@@ -286,11 +286,40 @@
             }
         },
         "/api/v1/products/{id}": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "get",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductView"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "put": {
                 "tags": [
                     "sales"
                 ],
-                "operationId": "updateProduct",
+                "operationId": "update_1",
                 "parameters": [
                     {
                         "name": "id",
@@ -330,6 +359,73 @@
                 }
             }
         },
+        "/api/v1/product-categories/{id}": {
+            "put": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "updateCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CategoryInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "deleteCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/api/v1/organizations/current": {
             "get": {
                 "tags": [
@@ -353,7 +449,7 @@
                 "tags": [
                     "organizations"
                 ],
-                "operationId": "update_1",
+                "operationId": "update_2",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -479,7 +575,7 @@
                 "tags": [
                     "onboarding"
                 ],
-                "operationId": "get",
+                "operationId": "get_1",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -561,7 +657,7 @@
                 "tags": [
                     "crm"
                 ],
-                "operationId": "update_2",
+                "operationId": "update_3",
                 "parameters": [
                     {
                         "name": "id",
@@ -624,7 +720,7 @@
                 "tags": [
                     "crm"
                 ],
-                "operationId": "update_3",
+                "operationId": "update_4",
                 "parameters": [
                     {
                         "name": "id",
@@ -731,7 +827,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "get_1",
+                "operationId": "get_2",
                 "parameters": [
                     {
                         "name": "id",
@@ -760,7 +856,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "update_4",
+                "operationId": "update_5",
                 "parameters": [
                     {
                         "name": "id",
@@ -940,7 +1036,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "update_5",
+                "operationId": "update_6",
                 "parameters": [
                     {
                         "name": "id",
@@ -1008,7 +1104,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "get_2",
+                "operationId": "get_3",
                 "parameters": [
                     {
                         "name": "id",
@@ -1396,6 +1492,23 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "COMPLETED|CANCELED"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -1436,6 +1549,46 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/SaleResult"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sales/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "cancel",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SaleDetail"
                                 }
                             }
                         }
@@ -1539,7 +1692,7 @@
                 "tags": [
                     "sales"
                 ],
-                "operationId": "products",
+                "operationId": "list_3",
                 "parameters": [
                     {
                         "name": "q",
@@ -1551,6 +1704,24 @@
                     },
                     {
                         "name": "includeInactive",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
+                        "name": "categoryId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "lowStock",
                         "in": "query",
                         "required": false,
                         "schema": {
@@ -1579,7 +1750,7 @@
                 "tags": [
                     "sales"
                 ],
-                "operationId": "createProduct",
+                "operationId": "create_1",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1608,12 +1779,179 @@
                 }
             }
         },
+        "/api/v1/products/{id}/stock": {
+            "post": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "stock",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StockInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductView"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{id}/photo": {
+            "post": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "photo",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductView"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "removePhoto",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/v1/product-categories": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CategoryView"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "createCategory",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CategoryInput"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/privacy/requests": {
             "get": {
                 "tags": [
                     "privacy"
                 ],
-                "operationId": "list_3",
+                "operationId": "list_4",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1634,7 +1972,7 @@
                 "tags": [
                     "privacy"
                 ],
-                "operationId": "create_1",
+                "operationId": "create_2",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1700,7 +2038,7 @@
                 "tags": [
                     "organizations"
                 ],
-                "operationId": "create_2",
+                "operationId": "create_3",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -1908,7 +2246,7 @@
                 "tags": [
                     "media"
                 ],
-                "operationId": "list_4",
+                "operationId": "list_5",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2266,7 +2604,7 @@
                 "tags": [
                     "crm"
                 ],
-                "operationId": "list_5",
+                "operationId": "list_6",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2287,7 +2625,7 @@
                 "tags": [
                     "crm"
                 ],
-                "operationId": "create_3",
+                "operationId": "create_4",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2383,7 +2721,7 @@
                 "tags": [
                     "crm"
                 ],
-                "operationId": "create_4",
+                "operationId": "create_5",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2495,7 +2833,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "list_6",
+                "operationId": "list_7",
                 "parameters": [
                     {
                         "name": "q",
@@ -2585,7 +2923,7 @@
                 "tags": [
                     "contacts"
                 ],
-                "operationId": "create_5",
+                "operationId": "create_6",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -2962,7 +3300,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "list_7",
+                "operationId": "list_8",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2983,7 +3321,7 @@
                 "tags": [
                     "campaigns"
                 ],
-                "operationId": "create_6",
+                "operationId": "create_7",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -3178,7 +3516,7 @@
                 "tags": [
                     "billing"
                 ],
-                "operationId": "cancel",
+                "operationId": "cancel_1",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3221,7 +3559,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "list_8",
+                "operationId": "list_9",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -3242,7 +3580,7 @@
                 "tags": [
                     "automations"
                 ],
-                "operationId": "create_7",
+                "operationId": "create_8",
                 "requestBody": {
                     "content": {
                         "application/json": {
@@ -4142,7 +4480,7 @@
                 "tags": [
                     "conversations"
                 ],
-                "operationId": "update_6",
+                "operationId": "update_7",
                 "parameters": [
                     {
                         "name": "id",
@@ -4241,7 +4579,7 @@
                 "tags": [
                     "merchants-controller"
                 ],
-                "operationId": "list_9",
+                "operationId": "list_10",
                 "parameters": [
                     {
                         "name": "X-Control-Admin-Token",
@@ -4417,12 +4755,107 @@
                 }
             }
         },
-        "/api/v1/sales/summary": {
+        "/api/v1/stock/summary": {
             "get": {
                 "tags": [
                     "sales"
                 ],
                 "operationId": "summary",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/StockSummary"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/stock/movements": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "movements",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/MovementView"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sales/{id}": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "detail_1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SaleDetail"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sales/summary": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "summary_1",
                 "parameters": [
                     {
                         "name": "from",
@@ -4450,6 +4883,49 @@
                             "*/*": {
                                 "schema": {
                                     "$ref": "#/components/schemas/SalesSummary"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/sales/by-product": {
+            "get": {
+                "tags": [
+                    "sales"
+                ],
+                "operationId": "byProduct",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProductSales"
+                                    }
                                 }
                             }
                         }
@@ -4514,7 +4990,7 @@
                 "tags": [
                     "markets"
                 ],
-                "operationId": "list_10",
+                "operationId": "list_11",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -4666,7 +5142,7 @@
                 "tags": [
                     "notifications"
                 ],
-                "operationId": "list_11",
+                "operationId": "list_12",
                 "parameters": [
                     {
                         "name": "unread",
@@ -4700,7 +5176,7 @@
                 "tags": [
                     "messages"
                 ],
-                "operationId": "list_12",
+                "operationId": "list_13",
                 "parameters": [
                     {
                         "name": "status",
@@ -4800,7 +5276,7 @@
                 "tags": [
                     "crm"
                 ],
-                "operationId": "summary_1",
+                "operationId": "summary_2",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5205,7 +5681,7 @@
                 "tags": [
                     "channels"
                 ],
-                "operationId": "list_13",
+                "operationId": "list_14",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -5761,7 +6237,7 @@
                 "tags": [
                     "audit"
                 ],
-                "operationId": "list_14",
+                "operationId": "list_15",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6414,12 +6890,66 @@
                         "maxLength": 100,
                         "minLength": 0
                     },
+                    "categoryId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "minLength": 0
+                    },
+                    "costMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                    },
+                    "barcode": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "minLength": 0,
+                        "pattern": "[0-9A-Za-z\\-]*"
+                    },
+                    "unit": {
+                        "type": "string"
+                    },
+                    "trackStock": {
+                        "type": "boolean"
+                    },
+                    "minStock": {
+                        "type": "integer",
+                        "format": "int32",
+                        "minimum": 0
+                    },
+                    "initialStock": {
+                        "type": "integer",
+                        "format": "int32",
+                        "maximum": 1000000,
+                        "minimum": -1000000
+                    },
                     "active": {
                         "type": "boolean"
                     }
                 },
                 "required": [
                     "currency",
+                    "name"
+                ]
+            },
+            "CategoryInput": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "minLength": 0
+                    },
+                    "position": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                },
+                "required": [
                     "name"
                 ]
             },
@@ -8143,6 +8673,11 @@
                         "maxLength": 500,
                         "minLength": 0
                     },
+                    "discountMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                    },
                     "alertConsents": {
                         "type": "array",
                         "items": {
@@ -8172,6 +8707,105 @@
                         "format": "int64"
                     },
                     "currency": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CancelInput": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 0
+                    }
+                }
+            },
+            "SaleDetail": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "occurredAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "contactId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "contactName": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "totalMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "discountMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "salesChannel": {
+                        "type": "string"
+                    },
+                    "paymentMethod": {
+                        "type": "string"
+                    },
+                    "notes": {
+                        "type": "string"
+                    },
+                    "registeredBy": {
+                        "type": "string"
+                    },
+                    "canceledAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "canceledBy": {
+                        "type": "string"
+                    },
+                    "cancelReason": {
+                        "type": "string"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SaleItemView"
+                        }
+                    }
+                }
+            },
+            "SaleItemView": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "unitAmountMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "unitCostMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "unit": {
                         "type": "string"
                     }
                 }
@@ -8229,6 +8863,101 @@
                     "publicKey",
                     "purpose"
                 ]
+            },
+            "StockInput": {
+                "type": "object",
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "PURCHASE|LOSS|COUNT"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int32",
+                        "maximum": 1000000,
+                        "minimum": 0
+                    },
+                    "unitCostMinor": {
+                        "type": "integer",
+                        "format": "int64",
+                        "minimum": 0
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "minLength": 0
+                    }
+                },
+                "required": [
+                    "kind"
+                ]
+            },
+            "ProductView": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "priceMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "categoryId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "costMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "barcode": {
+                        "type": "string"
+                    },
+                    "unit": {
+                        "type": "string"
+                    },
+                    "trackStock": {
+                        "type": "boolean"
+                    },
+                    "stockQuantity": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "minStock": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "lowStock": {
+                        "type": "boolean"
+                    },
+                    "photoUrl": {
+                        "type": "string"
+                    },
+                    "active": {
+                        "type": "boolean"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
             },
             "RequestInput": {
                 "type": "object",
@@ -9473,6 +10202,87 @@
                     }
                 }
             },
+            "StockSummary": {
+                "type": "object",
+                "properties": {
+                    "currency": {
+                        "type": "string"
+                    },
+                    "trackedProducts": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "units": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "valueAtCostMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "valueAtPriceMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "lowStock": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "outOfStock": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "withoutCost": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "MovementView": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "productName": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "balanceAfter": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "unitCostMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "orderId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "createdBy": {
+                        "type": "string"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
             "SaleView": {
                 "type": "object",
                 "properties": {
@@ -9516,6 +10326,10 @@
                     },
                     "notes": {
                         "type": "string"
+                    },
+                    "discountMinor": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -9562,6 +10376,37 @@
                             "type": "integer",
                             "format": "int64"
                         }
+                    }
+                }
+            },
+            "ProductSales": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "revenueMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "costMinor": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "marginMinor": {
+                        "type": "integer",
+                        "format": "int64"
                     }
                 }
             },
@@ -9823,7 +10668,7 @@
                     }
                 }
             },
-            "ProductView": {
+            "CategoryView": {
                 "type": "object",
                 "properties": {
                     "id": {
@@ -9833,21 +10678,13 @@
                     "name": {
                         "type": "string"
                     },
-                    "sku": {
-                        "type": "string"
+                    "position": {
+                        "type": "integer",
+                        "format": "int32"
                     },
-                    "priceMinor": {
+                    "products": {
                         "type": "integer",
                         "format": "int64"
-                    },
-                    "currency": {
-                        "type": "string"
-                    },
-                    "category": {
-                        "type": "string"
-                    },
-                    "active": {
-                        "type": "boolean"
                     }
                 }
             },
@@ -10588,12 +11425,6 @@
                     "binary": {
                         "type": "boolean"
                     },
-                    "string": {
-                        "type": "boolean"
-                    },
-                    "integralNumber": {
-                        "type": "boolean"
-                    },
                     "valueNode": {
                         "type": "boolean"
                     },
@@ -10616,6 +11447,12 @@
                             "POJO",
                             "STRING"
                         ]
+                    },
+                    "string": {
+                        "type": "boolean"
+                    },
+                    "integralNumber": {
+                        "type": "boolean"
                     },
                     "number": {
                         "type": "boolean"

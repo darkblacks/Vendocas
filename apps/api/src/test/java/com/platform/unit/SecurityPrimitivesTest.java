@@ -36,7 +36,7 @@ class SecurityPrimitivesTest {
 
     @Test
     void uploadSniffingRejectsDisguisedFiles() throws Exception {
-        Method sniff = Class.forName("com.platform.storage.MediaController").getDeclaredMethod("sniff", byte[].class);
+        Method sniff = Class.forName("com.platform.storage.MediaService").getDeclaredMethod("sniff", byte[].class);
         sniff.setAccessible(true);
         assertThat(sniff.invoke(null, (Object) "<html><script>alert(1)</script>".getBytes())).isNull();
         assertThat(sniff.invoke(null, (Object) new byte[]{(byte) 0x89, 'P', 'N', 'G', 13, 10, 26, 10, 0})).isEqualTo("image/png");
